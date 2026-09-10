@@ -1,0 +1,15 @@
+1. Play and Dice Rolling Shortcuts:
+• R or D: Roll available dice or repeat the last roll.
+• Up and Down Arrows: Navigate between the dice that appeared to read them.
+• Space: Select (isolate) or deselect the die the cursor is on.
+• Enter: End the turn, bank points, and pass the turn to the next player.
+2. Query and Information Shortcuts:
+• P: Announce the list and number of players present at the table.
+• T: Announce the name of the player whose turn it is.
+• S: Announce the total score of each player in the match.
+• C: Announce the temporary point balance you have collected in this round so far.
+3. Game Management Shortcuts (for the room host):
+• Enter: Start the game when positioned on the table item.
+• Shift + X: End the current game.
+• B: Add a robot (bot) player to the room.
+• Shift + B: Remove the last added bot.

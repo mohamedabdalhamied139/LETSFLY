@@ -1,0 +1,9 @@
+1. Game Table Shortcuts:
+• P: Announce the list and number of players present at the table.
+• T: Announce the name of the player whose turn it currently is.
+• S: Announce the players' results and rounds in the hunt.
+2. Game Management Shortcuts (for the Room Host):
+• Enter: Start the game when focused on the table element.
+• Shift + X: End the current game.
+• B: Add a robot (bot) player to the room.
+• Shift + B: Remove the last added bot.

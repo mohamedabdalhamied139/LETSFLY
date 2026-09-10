@@ -1,0 +1,14 @@
+1. Dice Rolling and Playing Shortcuts:
+• Enter: Roll the dice and advance on the board.
+2. Inquiry and Location Shortcuts:
+• P: Announce the list and number of players present at the table.
+• T: Announce the name of the player whose turn it currently is.
+• R: Board radar (know the closest ladder or snake to you).
+• V: Announce the locations and squares of all players on the board.
+• S: Announce the players' locations and the goal (square 100).
+• D: Re-announce the last dice roll.
+3. Game Management Shortcuts (for the room host):
+• Enter: Start the game when standing on the table item.
+• Shift + X: End the current game.
+• B: Add a robot (bot) player to the room.
+• Shift + B: Remove the last added bot.

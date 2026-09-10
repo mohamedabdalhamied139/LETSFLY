@@ -1,0 +1,169 @@
+Comprehensive Guide and Rules for Real Tennis Table
+
+Section One: Introduction and Basic Gameplay
+
+Game Concept and Main Objective
+The tennis game on the Let's Fly platform is a realistic 3D sports simulation of international tennis, specifically designed to be fully accessible to the blind and visually impaired, relying on Binaural 3D Audio engineering and an integrated screen reader.
+The match is played in singles mode (player vs player over the network or player vs bot). Each player aims to serve the ball and return the opponent's shots skillfully with the right timing and trajectory to win points, games, and sets.
+
+Introduction to the Foundational Project (Built Upon leap_tennis_win)
+This game is built upon the pioneering open-source project Leap Tennis (known programmatically as leap_tennis_win or Tennis for the Blind), developed and programmed by the developer nzorb in collaboration with the Greek non-profit organization SciFY (Science For You) as part of the Leap Motion 3D Jam competition in 2015, to enable the blind and visually impaired to play sports video games entirely relying on 3D audio.
+The Let's Fly platform has completely rebuilt and developed the game, moving it from the old motion sensing environment to the competitive table system via the keyboard, applying the official international regulations of the International Tennis Federation (ITF).
+
+Number of Players and Court Layout
+The tennis match is played between two players in singles mode.
+The audio court is divided into three main lanes:
+1. Left Lane: Covers the left side of the court and is heard clearly in the left earphone.
+2. Center Lane: Covers the middle of the court and is heard balanced between both earphones.
+3. Right Lane: Covers the right side of the court and is heard clearly in the right earphone.
+
+Step-by-Step Gameplay
+The tennis match proceeds according to the following steps:
+First: The game begins with the serving player serving the ball by pressing the Space bar or the Enter key.
+Second: The ball launches towards the opponent's court, crossing the net in the middle.
+Third: The ball hits the floor of the receiver's court in one of the three lanes, giving an immediate audio cue to determine the ball's trajectory.
+Fourth: The receiver moves to the same lane as the ball and presses the hit button the moment the ball reaches the baseline to return it.
+Fifth: The exchange of shots (rally) continues until one player fails to return the ball, scoring a point for the other party, accompanied by audience applause and the umpire calling the score.
+Sixth: After the end of the point, the players get a 4.5-second rest period to hear the score announcement and prepare for the next serve.
+
+Practical Example of Starting a Serve and Exchanging Shots Between Two Players:
+Suppose the match starts between the first player and the second player, and the serve is with the first player.
+What does the first player do and how does the second player respond?
+The first player presses the Space bar, launching a powerful serve towards the right lane.
+The second player hears the sound of the ball crossing over the net (air), followed by the sound of the ball bouncing on their court's floor on the right side (bounce).
+The second player immediately moves by pressing the right arrow, and as soon as the ball reaches their baseline, they press the Enter key, successfully hitting the ball towards the middle of the first player's court.
+The rally continues between them until one of them wins the point!
+
+
+Section Two: Precise Timeline of a Point and 3D Audio Physics
+
+Every shot in tennis follows a precise auditory timeline that allows the player to read the ball's trajectory and speed before it arrives:
+
+1. Moment of Launch and Strike (0% Strike)
+The sound of the racket hitting is emitted immediately upon launching the ball (hit_1 sound for the player or hit_2 for the opponent) in the specified lane, announcing the beginning of the ball's journey across the court.
+
+2. Crossing the Net in the Middle (50% Net Crossing)
+When the ball covers exactly half the distance, it crosses over the mid-court net, and the distinct sound of whistling air (air sound) is emitted, confirming that the ball has successfully crossed the net and hasn't hit it.
+
+3. Ball Bouncing on the Floor (75% Floor Bounce) - The Golden Cue
+When the ball reaches 75% of the journey's distance, it hits the floor of your half of the court, and a loud impact sound (bounce sound) is emitted in the specified lane (left, center, or right).
+This sound is the absolute most important audio cue! It accurately alerts you to the lane you need to be in before the ball reaches your racket by about a third to a half of a second, giving you ample time to adjust your position.
+
+4. Ball Reaching the Baseline and Striking (100% Baseline Reach)
+When the ball reaches 100% of the distance, it has fully reached your backline and your racket.
+If you are positioned in the same lane as the ball and press the hit key, your racket immediately strikes the ball, and it rebounds towards the opponent's court.
+However, if you are in a different lane or are late in hitting, you miss the ball, lose the point, and hear the audience's reaction.
+
+5. Rest Period After Each Point (Rest Period)
+In order to simulate real tennis and for the comfort of the players after every fast rally, the game automatically pauses for 4.5 seconds after the end of a point.
+During this period, players listen to the audience's cheering and applause and the official tennis umpire's call of the score, giving you time to catch your breath and focus before the next serve.
+
+Practical Example of Reading the Ball's Trajectory and Successful Striking:
+Suppose the opponent hit a powerful ball, and you heard the sound of the air over the net, then you heard the sound of it hitting the ground (bounce) clearly in your left earphone.
+What do you do to return the ball?
+You immediately press the left arrow to move to the left lane (you hear the jm step sound on the left confirming your arrival), wait a third of a second until the ball reaches the baseline, then press the Enter key, returning the ball powerfully!
+
+
+Section Three: Point System and Official International Tennis Rules
+
+The game applies the official international standards and regulations approved by the International Tennis Federation (ITF) and the Association of Tennis Professionals (ATP):
+
+First: Calculating Points Within a Single Game
+Every point starts at zero (Love), and points progress as follows:
+- First point: Equals 15.
+- Second point: Equals 30.
+- Third point: Equals 40.
+- Fourth point: Wins the game for the leading player.
+
+Second: The State of Tie and Advantage (Deuce & Advantage)
+If the two players reach a score of 40 to 40, the umpire announces: "Deuce".
+In this case, one of the players must win two consecutive points to win the game:
+- If the server wins the next point, the score becomes: "Advantage Server".
+- If the receiver wins the next point, the score becomes: "Advantage Receiver".
+- If the other player wins the next point after the advantage, the game immediately returns to "Deuce".
+- The competition continues until one of the players successfully secures two consecutive points to win the game.
+
+Third: Calculating Games and Sets
+- A player wins a Set upon reaching 6 games, provided they lead the opponent by a difference of at least two games (e.g., 6-0, 6-2, 6-4, or 7-5).
+- If the score reaches 6 games to 6 games, play continues until a two-game difference is achieved to win the set.
+
+Fourth: Winning the Match by International Standards (Match Win)
+- Tennis matches are held according to the approved international system: the Best of 3 Sets system.
+- The winner of the entire match is the first player to successfully win two full sets (2 Sets).
+
+Fifth: Alternating Serves
+- The two players alternate serving game by game; the first player serves throughout the entire first game, then the serve goes to the second player for the entire second game, and so on until the end of the match.
+
+Practical Example of a Game Scenario and Deuce:
+Suppose the score reached 40 for Ahmed versus 40 for Mahmoud (Deuce), and the serve is with Ahmed.
+Ahmed won the next point, so the umpire announced: "Advantage Server".
+Then Mahmoud won the point after that, so the umpire announced: "Deuce" again.
+Then Ahmed won two consecutive points, and the umpire announced Ahmed's victory in the game!
+
+Practical Example of Winning a Set and Match:
+Suppose Ahmed won the first set with a score of 6 games to 4 games.
+Then in the second set, Ahmed led with a score of 5 games to 3 games, and won the next game to make it 6 games to 3 games.
+Thus, Ahmed wins two sets to none (2 Sets to 0), and the umpire announces Ahmed's victory in the entire match!
+
+
+Section Four: Control Scheme, Positioning, and Shot Execution
+
+Controlling Positioning and Movement:
+- Left Arrow: Quick move to the left lane (you hear a footstep sound in the left earphone).
+- Up Arrow: Position in the center lane (you hear a footstep sound in the middle).
+- Right Arrow: Quick move to the right lane (you hear a footstep sound in the right earphone).
+
+Executing the Serve:
+- When it is your turn to serve after the rest period ends, press the Space bar or the Enter key to launch the ball and serve it powerfully to the opponent's court.
+
+Returning and Hitting Balls During a Rally:
+- As the ball approaches and you hear the sound of it hitting the ground (bounce), move to the ball's lane and press the Enter key or the Space bar to return the ball in the current lane.
+- Crosscourt Left Shot (Letter A): Hitting a fast ball aimed towards the far left of the opponent's court (Crosscourt Left).
+- Crosscourt Right Shot (Letter D): Hitting a fast ball aimed towards the far right of the opponent's court (Crosscourt Right).
+
+Practical Example of Executing a Surprise Crosscourt Shot:
+Suppose the opponent is positioned in the middle of the court, and hit a ball towards your center lane.
+You settle in the middle and press the letter A, hitting the ball at a sharp angle towards the far left of their court.
+The opponent is forced to move quickly to the left to catch up with it, which opens up their entire right side for you to hit the next shot using the letter D and win the point!
+
+
+Section Five: Audio Gameplay Instructions and Strategies for the Blind
+
+1. Wearing Headphones
+Always make sure to wear high-quality stereo surround headphones, as the gameplay relies entirely on instantaneous auditory discrimination between left, right, and center.
+
+2. Utilizing the Bounce Sound as an Early Warning
+The sound of the ball bouncing on the floor is your best friend on the court; it tells you the ball's trajectory a third of a second before its arrival, giving you enough time to move to the correct lane before pressing the hit button.
+
+3. Varying and Surprising with Crosscourt Shots
+Do not always play in the same lane; vary your shots between hitting in the middle and targeted crosscourt shots (A and D) to force the opponent or bot to move quickly and open up gaps in their court.
+
+4. Listening to the Tennis Umpire's Calls
+The tennis umpire accurately announces the details of the official score after every point and game.
+
+
+Section Sixth: Comprehensive Keyboard Shortcuts
+
+First: Gameplay and Hitting Shortcuts During a Match
+- Left Arrow: Move to the left lane to cover the ball.
+- Up Arrow: Position in the center lane.
+- Right Arrow: Move to the right lane to cover the ball.
+- Enter Key: Execute the serve / basic hit and return of the ball in the current lane.
+- Space Bar: Execute the serve / basic hit and return of the ball in the current lane.
+- Letter A: Hit a fast crosscourt shot towards the far left (Crosscourt Left).
+- Letter D: Hit a fast crosscourt shot towards the far right (Crosscourt Right).
+
+Second: Quick Audio Query Shortcuts
+- Letter S: Announce the current match score (points, games, and sets in detail, and the server).
+- Letter T: Announce the current server and the lane of play.
+- Letter P: Announce the names of the players present at the table.
+- Shift + Letter R: Announce the official rules and standards of the match (international standards - best of three sets).
+
+Third: Table and System Shortcuts
+- F1: Open the quick tennis shortcuts window.
+- Ctrl + F1: Open this comprehensive guide to tennis rules.
+- Apps Key or Shift + F10: Open the table context and options menu.
+- Letter Q: Leave the table (with a confirmation window navigable with up and down arrows).
+- Shift + Letter X: Stop the match and return to waiting (for the table host).
+- F2: Announce the wallet balance.
+- F3: Check the server connection speed (Ping).

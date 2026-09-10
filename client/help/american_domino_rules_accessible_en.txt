@@ -1,0 +1,150 @@
+Comprehensive Guide and Rules for American Dominoes (All Fives Dominoes)
+
+Section One: Introduction and Basic Game Concept
+
+The Concept of All Fives and the Secret to the Excitement
+American Dominoes or All Fives is one of the most exciting and strategically deep domino games in the world.
+In this game, your goal is not just to get rid of the tiles in your hand, but you compete to score points during play in every turn you place a tile on the table, in addition to winning extra points at the end of each round.
+The main secret to scoring points is making the sum of the numbers on the open ends of the table a multiple of five, such as 5, 10, 15, 20, at any moment you play your tile.
+
+Tile Set and Dealing
+The game is played with a twenty-eight-piece double-six domino set.
+In a two-player match: Each player receives seven tiles in their hand, and the remaining fourteen tiles are placed in the boneyard (draw bank).
+In a three-player match: Each player receives five tiles in their hand, and thirteen tiles are placed in the bank.
+In a four-player match: Each player receives five tiles in their hand, and eight tiles are placed in the bank.
+
+Opening the Table and Starting Play
+In the first round: The player with the highest double tile in their hand, such as 6-6 or 5-5, starts by opening the table and placing their tile in the middle. If there are no doubles, the player with the highest total value tile starts.
+In subsequent rounds: The winner of the previous round starts the round, and can open the table with any tile they deem appropriate from their hand.
+The table proceeds with two open ends for play: the right end and the left end.
+
+Practical Example of Opening the Table with a Double Tile That Immediately Scores Points:
+Suppose the first player opened the table by playing a double 5-5 tile.
+What happens and how many points does the first player get?
+Since the 5-5 tile is a double placed on the table, its value is calculated by the sum of its two halves (5 plus 5 equals 10).
+Since the number 10 is a multiple of five, the first player immediately gets 10 points in their score at the beginning of the match.
+
+Practical Example of Opening the Table with a Regular Tile That Scores Points:
+Suppose the first player in the second round chose to open the table with a 5-0 or 6-4 tile.
+What does the first player get?
+If they open with a 5-0 tile, the sum of its ends is 5 plus 0 equals 5, so they immediately get 5 points.
+If they open with a 6-4 tile, the sum of its ends is 6 plus 4 equals 10, so they immediately get 10 points.
+
+
+Section Two: The Secret of the Game and How to Score Points During Play
+
+How to Calculate the Sum of the Open Ends
+Every time you place a tile on one of the ends of the table, the game calculates the sum of the exposed numbers on all open ends:
+First: Regular tiles on the end: Only the open outer number is counted. For example, if the left end ends with a 3-2 tile and the number 2 is on the outside, the left end is counted as 2.
+Second: Double tiles on the end: The sum of both halves is counted together. For example, if the right end ends with a double 4-4 tile, the right end is counted as 8 (4 plus 4 equals 8). If it ends with a 6-6 tile, it is counted as 12 (6 plus 6 equals 12).
+Third: Summing the ends: The value of the left end is added to the value of the right end. If the result is a multiple of five (5, 10, 15, 20), these points are immediately added to your score and a score sound is played.
+
+Practical Examples of Scoring Multiples of Five:
+
+Example of Scoring 5 Points:
+Suppose the left end of the table has the number 2, and the right end has the number 4. It's your turn and you play a 4-3 tile on the right end.
+What do the ends of the table become and how many points do you score?
+The left end remains with a value of 2, and the new right end becomes a value of 3.
+The sum of the two ends: 2 plus 3 equals 5.
+Congratulations! You immediately scored 5 points in your score.
+
+Example of Scoring 10 Points by Playing a Double Tile:
+Suppose the left end of the table has the number 0, and the right end has the number 5. You play a 5-5 tile on the right end.
+What do the ends of the table become and how many points do you score?
+The left end has the number 0 (its value is 0).
+The right end has a double 5-5 tile (its value is 5 plus 5 equals 10).
+The sum of the two ends: 0 plus 10 equals 10.
+You immediately get 10 full points added to your account.
+
+Example of Scoring 15 Points:
+Suppose the left end has a double 5-5 tile (value 10), and the right end has the number 2. You play a 2-5 tile on the right end.
+What does the total become?
+The left end has a value of 10 (5-5 tile).
+The right end now has the number 5 after playing the 2-5 tile.
+The sum of the two ends: 10 plus 5 equals 15.
+Congratulations! You earned 15 immediate points in your score.
+
+Example of Scoring 20 Points (Highest Score in a Single Move):
+Suppose the left end of the table ends with a double 6-6 tile (value 12), and the right end ends with the number 1. You play a 1-4 tile followed by a double 4-4 tile on the right end (value 8).
+What does the sum of the two ends become?
+The left end has a value of 12 (6-6 tile).
+The right end has a value of 8 (4-4 tile).
+The sum of the two ends: 12 plus 8 equals 20.
+You immediately get 20 full points!
+
+
+Section Three: Identical Ends and Tactical End Selection
+
+The Importance of End Selection in American Dominoes
+In some situations, both ends of the table might be identical in number (e.g., number 5 on the left and number 5 on the right), and you hold a tile like 5-2 in your hand.
+If one end ends with a regular tile (value 5) and the other end ends with a double 5-5 tile (value 10), placing your tile on the left will completely change the score compared to placing it on the right:
+If you play on the regular end, the value becomes 2 and the double remains 10, so the sum is: 2 plus 10 equals 12 (no points scored).
+If you play on the double end, you cover the double and the value becomes 2 while the regular end remains 5, so the sum is: 2 plus 5 equals 7.
+In these situations, the game provides a selection menu allowing you to choose the desired end with the arrow keys and confirm with the Enter key, enabling tactical planning to block the opponent or hunt for fives.
+
+Tactical Example of End Selection:
+Suppose the left end has a 3-3 tile (value 6), and the right end has a regular tile with the number 3 (value 3). You are holding a 3-4 tile.
+What happens if you play on the right?
+The right end becomes 4, and the left end remains 6 (the double 3-3), so the sum is: 6 plus 4 equals 10.
+You choose to play on the right end to immediately score 10 points!
+
+
+Section Four: Drawing and Passing the Turn
+
+Drawing Rules
+If it is your turn and you do not have any tile in your hand that matches either open end, you must draw from the boneyard by pressing the Space bar or the D key.
+You continue to draw until you get a playable tile, and you play it immediately.
+If the boneyard is empty and you have no valid move, you pass (Pass) to pass the turn to the next player.
+Important rule: Voluntary drawing is prohibited if you hold a playable tile in your hand.
+
+Example of Drawing:
+Suppose the table ends are 4 and 6, and your hand does not contain a 4 or a 6.
+You press Space and draw from the bank until a 6-1 tile comes out, you stop drawing and immediately play it on the right end.
+
+
+Section Five: End of the Round and Final Score Calculation
+
+A round of American Dominoes ends in one of two ways:
+First: When one of the players finishes all the tiles in their hand (domino).
+Second: When the table is blocked and all players pass because they are unable to play and the bank is empty.
+
+Method of Calculating End-of-Round Points (Rounding to the Nearest Five)
+The winning player of the round (who finishes their tiles first, or has the lowest hand points in a block) receives a final bonus equal to the sum of the points of the remaining tiles in all opponents' hands, rounded to the nearest multiple of five:
+If the opponents' total points are 1 or 2, it rounds to zero.
+If the total is 3, 4, 5, 6, or 7, it rounds to 5 points.
+If the total is 8, 9, 10, 11, or 12, it rounds to 10 points.
+If the total is 13, 14, 15, 16, or 17, it rounds to 15 points.
+If the total is 18, 19, 20, 21, or 22, it rounds to 20 points.
+And so on for every additional five points.
+
+Practical Example of Round End and Winner's Score Calculation:
+Suppose the first player finished all their tiles and won the round, and the second player's hand contained two tiles: 6-5, and 4-2 (sum of their points: 11 plus 6 equals 17 points).
+How many points does the first player get?
+The number 17 is rounded to the nearest multiple of five, which is 15.
+15 points are immediately added to the first player's score as a round win bonus.
+
+
+Section Six: Scoring Systems and Winning the Match
+
+The game supports two official scoring systems, which are selected in the room settings:
+
+First System: Standard Scoring
+In this system, points are calculated by their direct natural value (5, 10, 15, 20...).
+The default target for a match is 150 points (or any target set by the room host such as 100, 200, or 250).
+The winner of the match is the first player whose cumulative score reaches the set target (150 points).
+
+Second System: Unit Scoring
+The unit scoring system is the approved system in official world championships for American Dominoes.
+In this system, every 5 points you score equals 1 Unit:
+Scoring 5 points equals one unit (1).
+Scoring 10 points equals two units (2).
+Scoring 15 points equals 3 units (3).
+Scoring 20 points equals 4 units (4).
+The default target for a match in the unit system is 31 units.
+The winner of the match is the first player whose cumulative units reach 31 units.
+
+Comprehensive Practical Example of a Full Match with Unit Scoring:
+Suppose the match is played with the unit system up to a target of 31 units between two players.
+In the first turn, the first player scored 15 points by playing a tile that made a sum of 15 on the ends, earning 3 units in their score.
+At the end of the round, they gained 20 points from the opponent's hand after rounding, earning an additional 4 units, bringing their total score to 7 units.
+The rounds continue until the first player reaches 31 units to be crowned the champion of the match.

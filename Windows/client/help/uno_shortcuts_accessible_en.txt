@@ -1,0 +1,19 @@
+1. General Game Table Shortcuts:
+• P: Announce the list and number of players present at the table.
+• T: Announce the name of the player whose turn it is currently.
+• C: Call Uno (when one card remains).
+• S: Announce the current score, points, and target.
+• V: Announce the number of cards in players' hands.
+• Space: Draw a card from the pile.
+• R: Announce the currently played card and selected color.
+• U: Announce a win or shout Uno to catch a player who forgot to say Uno.
+• X: Challenge a colored Draw 4 card.
+2. Card Reading Shortcuts (During Play):
+• Left and Right Arrows: Navigate between color groups.
+• Up and Down Arrows: Navigate between cards of the selected color.
+• Enter: Play the currently selected card.
+3. Game Management Shortcuts (For Room Owner):
+• Enter: Start the game when standing on the table item.
+• Shift + X: End the current game.
+• B: Add a bot player to the room.
+• Shift + B: Remove the last added bot.

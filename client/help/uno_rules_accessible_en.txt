@@ -1,0 +1,371 @@
+Comprehensive Uno Game Guide and Rules
+
+Section One: Introduction and Basic Gameplay
+
+Goal of the Game
+The primary goal in the game of Uno is to be the first player to get rid of all the cards in their hand, while attempting to prevent opponents from getting rid of theirs.
+The winner at the end of each round receives the total points of the remaining cards in the losers' hands. The rounds continue until a player reaches the target set for the match, which is 500 points in standard mode.
+
+Number of Players
+Uno is played with two to ten players in the same room.
+
+Beginning of the Match and Round
+At the beginning of each new round:
+The deck of cards is completely shuffled.
+Each player receives seven cards in their hand.
+One card is drawn and placed face up in the center of the table as the starting card. If the starting card is a wild draw card, it is returned to the deck and another one is drawn.
+
+Starting Card Scenarios
+If the starting card is a regular number card, the first player begins play directly by matching its color or number.
+If the starting card is a Skip card, the first player is skipped and the second player begins immediately.
+If the starting card is a Reverse card, the direction of play is immediately reversed.
+If the starting card is a Draw 2 card, the first player draws two cards from the deck and loses their turn, unless the stacking rule is enabled, in which case play begins with a pending draw sequence.
+
+Who Starts and Direction of Play
+The turn begins with the first player, and the default direction of play goes clockwise until it is reversed by a Reverse card.
+
+What a Player Does in Their Turn
+When it is your turn, you can choose and play one valid card from your hand, or draw a card from the deck if you do not have any valid cards to play.
+After playing a card or drawing, the turn automatically passes to the next player in the direction of play.
+
+When Do the Round and Match End
+The round ends immediately when a player successfully discards their last card and their card balance becomes zero.
+The entire match ends in favor of the first player to reach a cumulative score equal to the target set for the match (500 points).
+
+Practical Example of a Round Start in a Three-Player Match:
+Suppose a round starts with three players, and the face-up starting card on the table is a Blue 4.
+What does the first player, whose turn it is, do?
+The first player must play a blue card from their hand, or a card bearing the number 4 of any other color, or any wild card. If they don't have any matching cards, they must press the draw command to draw a card from the deck.
+
+
+Section Two: Default Mode
+
+Basic Rules of Play
+In the game's default mode, playing cards is subject to the following classic matching rules:
+
+Color Matching
+You can play any card from your hand that has the same color as the face-up table card, such as playing a red card on a red card.
+
+Number Matching
+You can play any number card from your hand that has the same numerical value as the face-up table card even if the color is different, such as playing a Green 6 on a Yellow 6.
+
+Card Type Matching
+You can play an action card of the same type even if the color is different, such as playing a Blue Skip on a Red Skip.
+
+Wild Cards
+Wild cards are always valid to play at any time regardless of the current color on the table.
+
+Default Draw Rule
+If you do not have a valid card to play, you draw one card from the deck. If the drawn card is valid, you can play it immediately or pass your turn and keep it. If it is invalid, the turn automatically passes to the next player.
+Important Note: The game prevents voluntary drawing of cards if you hold any valid playable card in your hand.
+
+Practical Example of the Default Mode:
+Suppose the table card is a Green 7, and the second player's hand contains: Red 7, Green 2, and Yellow 5.
+What can the second player do?
+The second player can play the Red 7 to match the number, or play the Green 2 to match the color. They cannot play the Yellow 5 because it matches neither color nor number.
+
+
+Section Three: The Cards
+
+Uno cards are divided into major groups, each with a specific function:
+
+Regular Cards (Number Cards)
+The deck includes number cards from 0 to 9 in four colors: red, yellow, green, and blue.
+Their function: matching color or number to pass the turn and reduce hand cards without triggering a special effect on the next player (except when 0 and 7 rules are active).
+
+Example of a Number Card:
+Suppose the face-up table card is a Red 3, and the first player played a Yellow 3.
+What does the second player do?
+The new active color becomes yellow, and the second player must play a yellow card, a card with the number 3, or a wild card.
+
+
+Action Cards
+
+Skip Card
+Its function: immediately skips the next player, depriving them of their turn, and passes play to the player after them.
+
+Example of a Skip Card between Two Players:
+Suppose the first player plays a Blue Skip card against the second player in a two-player match.
+What happens to the second player?
+The second player is completely deprived of their turn, and the turn immediately returns to the first player to play a new card on the color blue.
+
+Example of a Skip Card between Three Players:
+Suppose the order is first, then second, then third, and the first player plays a Red Skip card.
+What do the second and third players do?
+The second player is skipped without playing, and the third player must play their turn on the color red.
+
+Example of a Skip Card between Four Players:
+Suppose the order is first, then second, then third, then fourth, and the first player plays a Green Skip card.
+What happens to the players?
+Only the second player is skipped, and the turn passes directly to the third player to play on the color green, while the fourth player waits for their turn after the third.
+
+
+Reverse Card
+Its function: reverses the direction of play from clockwise to counter-clockwise and vice versa.
+
+Example of a Reverse Card between Two Players:
+Suppose the first player plays a Yellow Reverse card in a two-player match.
+What happens to the second player?
+In a two-player match, the Reverse card acts exactly like a Skip card, depriving the second player of their turn and immediately returning the turn to the first player.
+
+Example of a Reverse Card between Three Players:
+Suppose the play path is: first, then second, then third, and the first player plays a Green Reverse card.
+What happens to the turn?
+The play path reverses to go backwards, skipping the second player, and the turn immediately passes to the third player to play on the color green.
+
+Example of a Reverse Card between Four Players:
+Suppose the play path was: first, then second, then third, then fourth, and the second player played a Blue Reverse card.
+What happens to the turn?
+The direction of play reverses towards the first player instead of the third player, so the first player plays directly after the second player on the color blue.
+
+
+Draw 2 Card
+Its function: forces the next player to draw two cards from the deck and lose their turn (or contribute to a pending draw sequence if the stacking rule is enabled).
+
+Example of a Draw 2 Card in Default Mode:
+Suppose the first player played a Red Draw 2 card in standard mode.
+What does the second player do?
+The second player must draw two cards from the deck and add them to their hand, automatically losing their turn without playing, and the turn passes directly to the third player.
+
+
+Discard All Card
+Its function: When the Discard All rule is enabled, this card allows a player to discard the played card along with all other cards in their hand of the same color all at once.
+
+Example of a Discard All Card:
+Suppose the first player holds in their hand: Blue 2, Blue 7, Blue Draw 2, and a Blue Discard All card, and they play the Discard All card.
+What happens to the first player's hand?
+All four blue cards drop from the first player's hand onto the table at once, their hand balance becomes zero, and they win the round immediately.
+
+
+Skip Everyone Card
+Its function: a wild card that skips all players sitting at the table regardless of their number, and immediately returns the turn to the same player to play again on the color they choose.
+
+Example of a Skip Everyone Card:
+Suppose the first player played a Skip Everyone card at a table with four players.
+What do the other players do?
+The turns of the second, third, and fourth players are all skipped without them playing, and the turn immediately returns to the first player to play another card from their hand.
+
+
+Section Four: Wild Cards
+
+Wild Color Card
+Its function: a wild card that allows the player to choose the new active color (red, yellow, green, or blue) and can be played at any time.
+
+Example of a Wild Color Card:
+Suppose the first player played a Wild Color card and chose yellow.
+What does the second player do?
+The second player must play a yellow card, any other wild card, or draw from the deck if they do not have any yellow cards.
+
+
+Wild Draw 4 Card
+Its function: a wild card that allows the player to choose the new color, and forces the next player to draw four cards and lose their turn. In this project, a player can play this card at any time even if they have cards matching the current table color.
+
+Example of a Wild Draw 4 Card:
+Suppose the table card was a Red 9, and the first player had a Red 3 and a Wild Draw 4 card, and played the Draw 4.
+What do the first and second players do?
+The first player chooses, for example, blue. The second player must draw four cards from the deck and lose their turn, and then the third player plays on the color blue.
+
+
+Major Wild Draw Cards: Draw 2, Draw 6, and Draw 10
+Their function: wild cards that allow choosing the new color and force the next player to draw the specified number of cards (2, 6, or 10 cards) and lose their turn.
+
+Example of a Draw 10 Card:
+Suppose the first player played a Wild Draw 10 card and chose green.
+What does the second player do?
+The second player must draw ten full cards from the deck, add them to their hand, and lose their turn, then the third player plays on the color green.
+
+
+Wild Reverse Draw 4 Card
+Its function: combines changing the color, immediately reversing the direction of play, and forcing the new next player in the new direction to draw four cards and lose their turn.
+
+Example of a Wild Reverse Draw 4 Card:
+Suppose the direction of play goes from first to second then third, and the first player plays a Wild Reverse Draw 4 and chooses red.
+What happens to the turn and what does the third player do?
+The direction of play reverses towards the third player. The third player must draw four cards and lose their turn, and then the second player plays on the color red.
+
+
+Color Wheel Card
+Its function: the player selects a target color when playing this card, then forces the next player to keep drawing cards from the deck one by one continuously until they draw a card matching the target color.
+
+Example of a Color Wheel Card:
+Suppose the first player played a Color Wheel card and chose blue.
+What does the second player do?
+The second player begins drawing cards from the deck one by one until they draw a blue card; at that point the drawing process stops and they keep all drawn cards in their hand, then the turn passes to the next player.
+
+
+Section Five: Special Rules
+
+Sequence Rule
+What is the sequence rule:
+The sequence rule is a special feature that allows a player to get rid of multiple number cards in the same turn all at once.
+
+Conditions for Triggering a Sequence:
+The sequence must begin by legally playing a regular number card (0 to 9) on the table card.
+The matching cards must be of the exact same color as the first card.
+The numbers must be sequentially in steps of one (ascending +1 like 3 then 4 then 5, or descending -1 like 5 then 4 then 3).
+The sequence must consist of at least two cards.
+The sequence is strictly limited to number cards; neither action cards nor wild cards can be used within a sequence.
+
+How the Sequence Works:
+When the player plays the first card, the game automatically checks their hand in both directions (ascending and descending), selects the longest sequential path of the same color, and drops all cards of the path onto the table at once in the same turn.
+If the ascending and descending paths are of equal length, the system automatically chooses the ascending path.
+The last card in the sequence becomes the face-up top card on the table, and the turn passes to the next player to play on it.
+
+Example of an Ascending Sequence:
+Suppose the table card is Green 1, and the first player's hand contains: Green 3, Green 4, Green 5, and Yellow 8, and they play the Green 3.
+What happens to the first player's hand and what does the second player do?
+The system automatically drops the three cards: Green 3 then Green 4 then Green 5 at once. The face-up top card on the table becomes Green 5, and the first player is left with only one card, the Yellow 8, entering the Uno state. The second player must play their turn on the Green 5 card.
+
+Example of a Descending Sequence:
+Suppose the table card is Red 8, and the first player holds: Red 6, Red 5, Red 4, and Red 3, and they play the Red 6.
+What happens to the first player's hand?
+The system automatically drops the four cards: Red 6 then Red 5 then Red 4 then Red 3 at once. The top of the table becomes Red 3, and the next player plays on the Red 3 card.
+
+Example of a Sequence between Two Players:
+Suppose the first player played a sequence of Green 2, 3, 4 against the second player in a two-player match.
+What does the second player do?
+The turn immediately passes to the second player (the direct opponent) and they must play on the Green 4 card.
+
+Example of a Sequence between Three Players:
+Suppose the order of play goes from first to second then third, and the first player played a sequence of Red 4, 5, 6.
+What do the second and third players do?
+The turn immediately passes to the second player to play on the Red 6 card, while the third player waits their turn after the second.
+
+Example of Winning a Round with a Sequence:
+Suppose the first player holds only two cards: Blue 7 and Blue 8, and the table card was Blue 2, and they played the Blue 7.
+What happens?
+The sequence of Blue 7 and Blue 8 drops, the first player's hand is completely emptied (zero cards), and they win the round immediately.
+
+
+0 and 7 Rule
+When the 0/7 rule is enabled:
+Zero (0) Card: When any card bearing the number 0 is played, all players' hands rotate one step in the direction of play, with each player giving their entire hand to the next player.
+Seven (7) Card: When any card bearing the number 7 is played, the turn progression pauses until the player chooses another player to swap hands with completely.
+
+Example of a 7 Card:
+Suppose the first player holds six cards including a Blue 7, and the second player holds only one card, and the first player plays the Blue 7.
+What does the first player do?
+The first player chooses the second player as the target for the swap, so their hands are swapped immediately; the first player's hand now contains one card and they enter Uno state, while the second player's hand now contains six cards.
+
+
+Uno Call and Catching Violators Rule
+Calling Uno: When a player plays a card and only one card remains in their hand, they must immediately press the Uno call key (U key).
+Catching a Violator: If a player forgets to call Uno and is late, and any other player presses the catch violator key (C key), the game imposes a penalty on the one-card holder, forcing them to draw four penalty cards from the deck and add them to their hand.
+
+Example of Catching Uno:
+Suppose the first player had two cards, played one and was left with one card, but did not press the U key to call Uno.
+What does the second player do?
+The second player can immediately press the C key to catch the violation, and the game punishes the first player by making them draw four penalty cards from the deck to add to their hand.
+
+
+Draw 4 Bluff Challenge Rule
+When the challenge rule is enabled and a Wild Draw 4 card is played:
+The system secretly checks whether the player who played the Draw 4 holds in their hand any regular card matching the previous table color.
+The targeted player is presented with two options: accept the draw, or challenge by pressing the X key.
+If the challenge succeeds (it is proven that the first player held a matching color): the first player is penalized by drawing four penalty cards, and the challenger draws nothing.
+If the challenge fails (the first player was innocent and didn't hold a matching color): the challenger draws six full cards (four base cards plus two penalty cards for the false challenge).
+
+Example of a Challenge:
+Suppose the table color was red, the first player played a Draw 4 card and chose blue, and the first player held a Red 5 in their hand.
+What happens if the second player chooses to challenge?
+The second player presses the X key, proving the existence of the red card in the first player's hand. The first player is penalized by drawing four cards, and the second player is spared from drawing.
+
+
+Jump-In and Interception Rule
+When the interception rule is enabled:
+If the face-up table card is Red 4, and any player out of turn has an exact matching card, Red 4 (same color and number), this player can press the Enter key to jump in and play the card immediately, intercepting the turn without waiting for it to reach them. The play path changes to start from them.
+In super interception, intercepting is allowed if the number or symbol matches, even if the color differs.
+
+Example of Jump-In:
+Suppose it's the first player's turn and the face-up table card is Green 9, and the third player also holds a Green 9.
+What does the third player do?
+The third player can press the Enter key and immediately play the Green 9 before the first player plays. The card drops, intercepting the turn, and the next turn goes to the player following the third player.
+
+
+Bell Card
+When the Bell rule is enabled and the Bell card is played:
+The game enters a state of alert for all active players.
+Every player at the table must immediately press the Bell key (B key) as fast as possible.
+The game records the order of players' presses, and the last player to press the key is penalized by drawing penalty cards from the deck.
+
+Example of a Bell Card:
+Suppose the first player played the Bell card in a room with three players.
+What do the players do?
+The first, second, and third players must press the B key immediately. If the second presses first, then the first, and the third is late, the third player is penalized by drawing the penalty cards.
+
+
+Stacking Draw and Response Chain Rule
+When the stacking rule is enabled and a draw card is played, a pending draw sequence is created.
+The next player can respond with an appropriate draw card, stacking the draws and passing them to the next player until someone is unable to respond and must draw the total accumulated sum of all cards.
+In No Mercy mode, responses follow a hierarchy of power (responding with an equivalent or stronger draw).
+
+Example of Stacking Draws:
+Suppose the first player played a Red Draw 2, the second player has a Blue Draw 2, and the third player has no draw cards.
+What do the second and third players do?
+The second player plays the Blue Draw 2, making the total draw four cards, and the turn passes to the third player. Since the third player has no draw cards, they must draw four full cards and lose their turn.
+
+
+Section Six: Drawing Rules
+
+Normal Draw and Passing the Turn
+If a player has no valid cards, they draw one card from the deck. If it is valid, they can play it immediately or press the draw command to pass the turn and keep the card. If it is invalid, the turn automatically passes to the next player.
+
+Preventing Drawing When a Valid Card is Available
+If you hold any card that can be legally played, the game prevents you from drawing and displays a warning that a playable card exists.
+
+Draw Until You Can Play
+When the "Draw Until Play" option is enabled, if a player has no valid card, the game continuously draws cards automatically and adds them to their hand until a playable card is drawn.
+
+Reshuffling the Discard Pile
+When the draw pile runs out of cards, the game automatically takes all cards from the discard pile except for the last face-up card, and shuffles them completely to form a new draw pile so play can continue smoothly.
+
+
+Section Seven: Game Modes
+
+Standard Mode
+The game is played with the classic Uno deck (108 cards) and default matching and drawing rules.
+
+No Mercy Mode
+A ruthless mode featuring major draw cards (Draw 6 and Draw 10), Skip Everyone, Discard All, and the Color Wheel, with the elimination rule active upon reaching 25 cards in hand.
+
+Example of Elimination in No Mercy Mode:
+Suppose the second player held 20 cards and received a draw sequence of 6 cards, bringing their total to 26 cards.
+What happens to the second player?
+The game immediately announces the elimination of the second player for exceeding the maximum limit (25 cards). They are removed from the round, and competition continues among the remaining players.
+
+Uno Flip Mode
+Features a light side and a dark side. When a Flip card is played, all cards flip to the dark side with new colors (orange, pink, purple, teal) and cards transform into stronger versions (like Skip turning into Skip Everyone, and Draw 2 into Draw 5).
+
+Example of Flip Mode:
+Suppose the game was on the light side and the first player played a Flip card.
+What happens to the second player's hand?
+The second player's hand and all table cards flip to dark colors, the play color changes to one of the dark colors, and the Draw 2 cards in the second player's hand become Draw 5 cards.
+
+
+Section Eight: Scoring
+
+Scoring Points
+At the end of each round, the winner receives the total points of the remaining cards in the hands of all losing players according to the following fixed values:
+Number cards from 0 to 9: scored by their face value (zero is 0, five is 5, nine is 9 points).
+Colored action cards (Skip, Reverse, Draw 2, Discard All, Flip, Draw 5): 20 points per card.
+Draw 1 card: 10 points.
+Wild cards of all types (Wild Color, Draw 4, Wild Draw 2, Draw 6, Draw 10, Reverse Draw 4, Color Wheel, Skip Everyone): 50 points per card.
+Bell card: 0 points.
+
+Scoring Example for the End of a Round:
+Suppose the first player empties their cards and wins the round. The second player's hand has: Red 7 (7 points) and a Skip card (20 points). The third player's hand has: a Wild Draw 4 card (50 points).
+How many points does the first player get?
+Points are summed up: 7 + 20 + 50 = 77 points. A full 77 points are added to the first player's cumulative score in the match.
+
+
+Section Nine: End of Round and Match
+
+End of the Round
+The round ends immediately upon a player successfully getting rid of all their cards, after the completion of any pending actions.
+The round points are calculated and added to the winner's cumulative match score.
+
+Start of the Next Round
+If no player has reached the target set for the match, a new round begins by dealing seven new cards to each player, rotating the starting card, and continuing the competition.
+
+End of the Match and Determining the Winner
+The match completely ends in favor of the first player to reach their cumulative score to the target set for the match (500 points in standard mode). The game announces their victory in the tournament and plays a celebratory winning sound.

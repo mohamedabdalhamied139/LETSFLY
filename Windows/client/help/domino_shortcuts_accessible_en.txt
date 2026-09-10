@@ -1,0 +1,16 @@
+1. Play Table Shortcuts:
+• P: Announce the list and number of players present at the table.
+• T: Announce the name of the player whose turn it currently is.
+• R: Announce the ends of the open domino pieces on the table.
+• C: Announce the number of remaining pieces in the draw (bank).
+• S: Announce the total points each player has in the match.
+• V: Display the list of pieces played on the table.
+2. Playing and Drawing Shortcuts:
+• Up and Down Arrows: Navigate between your domino pieces.
+• Enter: Play the currently selected piece.
+• Space or D: Draw from the bank when you do not have a matching piece.
+3. Game Management Shortcuts (for the room host):
+• Enter: Start the game when standing on the table item.
+• Shift + X: End the current game.
+• B: Add a robot (bot) player to the room.
+• Shift + B: Remove the last added bot.

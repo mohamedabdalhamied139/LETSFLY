@@ -1,0 +1,30 @@
+Windows fatal exception: code 0x8001010d
+
+Thread 0x00003830 [AnyIO worker thread] (most recent call first):
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\threading.py", line 369 in wait
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\queue.py", line 199 in get
+  File "C:\Users\midoa\Downloads\Compressed\LetsFly_TableVoice_Fixed_NoTableText_20260902_Final\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 1089 in run
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\threading.py", line 1082 in _bootstrap_inner
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\threading.py", line 1044 in _bootstrap
+
+Thread 0x00002b7c [Thread-1 (_run)] (most recent call first):
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\windows_events.py", line 778 in _poll
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\windows_events.py", line 446 in select
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\base_events.py", line 2018 in _run_once
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\base_events.py", line 677 in run_forever
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\base_events.py", line 706 in run_until_complete
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\runners.py", line 128 in run
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\runners.py", line 205 in run
+  File "C:\Users\midoa\Downloads\Compressed\LetsFly_TableVoice_Fixed_NoTableText_20260902_Final\.venv\Lib\site-packages\uvicorn\server.py", line 77 in run
+  File "C:\Users\midoa\Downloads\Compressed\LetsFly_TableVoice_Fixed_NoTableText_20260902_Final\.venv\Lib\site-packages\uvicorn\main.py", line 621 in run
+  File "C:\Users\midoa\Downloads\Compressed\LetsFly_TableVoice_Fixed_NoTableText_20260902_Final\client\main.py", line 73 in _run
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\threading.py", line 1024 in run
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\threading.py", line 1082 in _bootstrap_inner
+  File "C:\Users\midoa\AppData\Local\Python\pythoncore-3.14-64\Lib\threading.py", line 1044 in _bootstrap
+
+Current thread 0x00003780 (most recent call first):
+  File "C:\Users\midoa\Downloads\Compressed\LetsFly_TableVoice_Fixed_NoTableText_20260902_Final\client\main.py", line 132 in main
+  File "C:\Users\midoa\Downloads\Compressed\LetsFly_TableVoice_Fixed_NoTableText_20260902_Final\client\main.py", line 135 in <module>
+
+Current thread's C stack trace (most recent call first):
+  <cannot get C stack on this system>

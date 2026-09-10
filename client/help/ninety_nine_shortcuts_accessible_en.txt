@@ -1,0 +1,14 @@
+Ninety-Nine Game Shortcuts:
+1. Play Shortcuts:
+• Left and Right Arrows: Navigate between hand cards.
+• Enter: Play the selected card and add it to the total.
+• Space: Draw a card from the pile (in draw mode).
+• S: Announce the current total and remaining points for players.
+• P: Announce the list of players at the table.
+• T: Announce the name of the player whose turn it is currently.
+• C: Announce the last card played on the table.
+
+2. Game Management Shortcuts (For Room Owner):
+• Shift + X: Stop the game and return to waiting.
+• B: Add a bot player.
+• Shift + B: Remove the last added bot.

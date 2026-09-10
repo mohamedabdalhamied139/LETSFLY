@@ -1,0 +1,120 @@
+Comprehensive Snakes and Ladders Guide and Rules (The Hundred-Square Journey)
+
+Part One: Introduction and Basic Gameplay
+
+Game Concept and Main Objective
+Snakes and Ladders is the most famous and entertaining classic racing game in the world, filled with surprises and unexpected turns.
+The game consists of a board with squares numbered in ascending order from square number 1 to square number 100.
+All players start outside the board at point zero.
+The main objective is to roll the dice and advance through the board's path to be the first player to reach exactly square number 100.
+
+Turn Sequence and Movement
+The turn passes among the players sequentially in a clockwise direction.
+On your turn, you press the roll dice option or the Enter key.
+The dice generates a fair random number from 1 to 6.
+Your token advances on the board by a number of steps equal to the number rolled, accompanied by the sound of movement steps and the announcement of the new square number you landed on.
+
+Practical Example of Starting a Game Between Two Players:
+Suppose the match started between two players, and both are at point zero.
+The first player rolled the dice and got the number 5.
+What happens?
+The first player advances five steps and lands on square number 5, and the turn passes to the second player.
+
+Practical Example of Gameplay Between Three Players:
+Suppose the first player is on square 10, the second player is on square 15, and the third player is on square 20.
+The second player rolled the dice and got the number 3.
+What happens?
+The second player advances 3 steps to land on square 18 (15 plus 3 equals 18), then the turn passes to the third player.
+
+
+Part Two: Classic Ladders and Snakes
+
+Ladders and the Rocket Ascent Path
+The board contains eight ladders placed in specific and fixed squares.
+If your dice movement ends exactly at the base of a ladder, you instantly climb the ladder to reach its top in one step, saving you massive distances!
+Locations of the eight ladders and their values:
+First Ladder: From square 4 climbs you to square 14.
+Second Ladder: From square 9 climbs you to square 31.
+Third Ladder: From square 20 climbs you to square 38.
+Fourth Ladder: From square 28 climbs you to square 84.
+Fifth Ladder: From square 40 climbs you to square 59.
+Sixth Ladder: From square 51 climbs you to square 67.
+Seventh Ladder: From square 63 climbs you to square 81.
+Eighth Ladder: From square 71 climbs you to square 91.
+
+Snakes and Backward Sliding Bites
+The board contains eight cunning snakes lurking for advancing players.
+If your dice movement ends exactly at the head of a snake, you instantly slide down with the sound of a snake bite, dropping to its tail in a lower square, sending you backward!
+Locations of the eight snakes and their results:
+First Snake: On square 17 bites you down to square 7.
+Second Snake: On square 54 bites you down to square 34.
+Third Snake: On square 62 bites you down to square 19.
+Fourth Snake: On square 64 bites you down to square 60.
+Fifth Snake: On square 87 bites you down to square 24.
+Sixth Snake: On square 93 bites you down to square 73.
+Seventh Snake: On square 95 bites you down to square 75.
+Eighth Snake: On square 98 bites you down to square 79.
+
+Practical Example of Climbing a Ladder:
+Suppose a player is standing on square number 24, and rolled the dice and got the number 4.
+What happens to the player?
+The player advances 4 steps and reaches square 28 (24 plus 4 equals 28).
+Since square 28 is the base of a giant ladder, the player instantly climbs to the top of the ladder at square 84 and becomes very close to the finish line!
+
+Practical Example of a Snake Bite:
+Suppose a player was on square number 83, and rolled the dice and got the number 4.
+What happens to the player?
+The player advances 4 steps and reaches square 87 (83 plus 4 equals 87).
+Since square 87 contains a snake's head, the snake bites them instantly and they slide down to its tail on square 24!
+
+
+Part Three: Special Dice Rules and Deciding the End
+
+The Rule of Number 6 and the Free Extra Roll
+If you roll the dice and get the number 6:
+You advance 6 full steps forward.
+You immediately receive a bonus, which is a free extra roll in the same turn to roll again and advance further!
+
+The Penalty Rule of Three Consecutive Sixes
+If you are lucky enough to roll the number 6 twice in a row and then roll the number 6 for a third consecutive time in the same turn:
+The game considers this excessive greed, and completely cancels all your moves made during this turn.
+The game immediately returns you to the square you were standing on before the turn started, and your turn ends automatically and passes to the next player!
+
+The Rule of Reaching Square 100 Exactly and Exceeding the End
+To win the match, the game requires reaching square number 100 with the exact remaining number without excess:
+If the number rolled exceeds square 100 (for example, you were on square 97 and rolled a 5, totaling 102), your move is considered invalid and you do not move a single step. You remain fixed in your place on square 97, and the game announces that no move is possible and passes the turn to the next player.
+There is no backward bouncing upon exceeding one hundred; the player simply remains standing in place until they get the exact roll.
+
+Practical Example of Attempting to Win and Exceeding the End:
+Suppose a player is standing on square number 98, and needs exactly two steps to win.
+If the player rolls and gets the number 3 (98 plus 3 equals 101):
+The player does not move at all, remains on square 98, and the turn passes to the next player.
+However, if on their next turn they roll exactly the number 2 (98 plus 2 equals 100):
+They reach square 100 and win the match instantly!
+
+
+Part Four: Advanced Modes (Knockout and Mystery Tiles)
+
+Knockout and Attack Mode (Knockout Mode)
+When this mode is activated in the room settings:
+If your dice movement ends exactly on the same square occupied by an opposing player, you forcibly knock them out, sending them 10 steps backward towards the start!
+
+Mystery Tiles Mode (Mystery Tiles Mode)
+Random gift and surprise boxes are scattered across the board, which continuously regenerate whenever opened by a player.
+When you land on a mystery box, it opens one of the following surprises for you:
+1. Shield: Grants you a shield that automatically protects you from the next bite of any snake and destroys the snake instead of you sliding down.
+2. Freeze Trap: Freezes you in a block of ice for a full turn, causing you to skip your next turn without playing until the ice melts on the turn after.
+3. Boost: Instantly propels you forward by an additional 3 to 7 steps.
+4. Magic Swap: Magically and instantly swaps your position with the leading player in the game, taking their advanced spot!
+5. Golden Dice (Bonus Roll): Grants you an immediate free extra dice roll.
+6. Wind Storm: A storm blows you backward by 2 to 4 steps.
+7. Coin Box (Coins): Grants you a balance of coins added to your account.
+
+Practical Example of Knockout Mode:
+Suppose the second player is standing on square 50, and the first player was standing on square 46 and rolled a 4.
+The first player reaches square 50 and knocks out the second player, pushing them 10 steps backward so the second player lands on square 40!
+
+Practical Example of the Swap Box:
+Suppose the third player was behind on square 12, and the leader was on square 85.
+The third player landed on a mystery box and got the magic position swap:
+The third player instantly moves to square 85, and the leader drops to square 12!

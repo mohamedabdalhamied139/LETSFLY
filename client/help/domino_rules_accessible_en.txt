@@ -1,0 +1,168 @@
+Comprehensive Classic Dominoes Guide and Rules
+
+Part One: Introduction and Basic Gameplay
+
+Game Concept and Main Objective
+Classic Dominoes is a game of strategy and planning that relies on matching numbers and smartly getting rid of pieces or blocking the opponent.
+The game is played with the classic double-six set consisting of twenty-eight rectangular pieces. Each piece is divided into two halves, and each half carries a number of dots ranging from zero (blank or white tile) to six.
+The main objective in each round is to get rid of all the pieces in your hand before your competitors, or to reach the lowest hand score in the event of the table being blocked (the block).
+
+Number of Players and Tile Distribution
+Dominoes is played with two, three, or four players.
+In a two-player game: Each player receives seven pieces in their hand, and the remaining fourteen pieces are placed in the draw bank (the boneyard).
+In a three-player game: Each player receives five pieces in their hand, and the remaining thirteen pieces are placed in the draw bank.
+In a four-player game: Each player receives five pieces in their hand, and the remaining eight pieces are placed in the draw bank.
+The distribution system features automatic protection that ensures fairness for all players, preventing any player from receiving more than five double pieces or more than five pieces of the same number in their opening hand.
+
+Opening the Table and Starting the Game
+In the first round of the match: The play begins with the player who holds the highest double piece in their hand, such as 6 and 6 (double-six), 5 and 5, or 4 and 4, and so on down to 0 and 0. If no player holds a double piece in their hand, the player with the piece containing the highest total of dots, such as 6 and 5, starts. The player places this piece in the center of the table to become the starting point of the chain.
+In subsequent rounds: The winner of the previous round starts the round, and has the right to open the table with any piece they choose from their hand, without it needing to be a double. If the previous round ended in a tie, the opening right goes back to the holder of the highest double piece.
+
+Open Ends and Flow of Play
+Once the opening piece is placed on the table, the table has two open ends for play: the left end and the right end.
+The turn proceeds sequentially clockwise among the players.
+When it is your turn, you must play a piece from your hand where one of its halves matches the number on the right end or the left end of the table.
+
+Practical Example of Starting a Round in a Two-Player Game:
+Suppose the first round started between two players, and the first player had the 6 and 6 piece in their hand.
+What does the first player do and what happens to the table?
+The first player opens the table by placing the 6 and 6 piece in the middle. The left end of the table carries the number 6 and the right end carries the number 6, and the turn passes to the second player who must play any piece that contains the number 6 on one of its halves.
+
+Practical Example of Starting a Round in a Three-Player Game:
+Suppose the round started between three players, and the order was the first player, then the second player, then the third player. The highest dealt double piece was 5 and 5 with the second player.
+What do the second and third players do?
+The second player starts by placing the 5 and 5 piece on the table, making the two ends of the table 5 and 5. Then the turn passes directly to the third player to play a piece that matches the number 5, followed by the first player.
+
+Practical Example of Starting a Round in a Four-Player Game:
+Suppose the round started between four players, and the first player opened the table with the 4 and 4 piece.
+What does the second player and the subsequent players do?
+The two ends of the table become 4 and 4. The second player plays the 4 and 1 piece on the right end, so the right end changes to become the number 1 while the left end still carries the number 4. Now, when it is the third player's turn, they can play either on the number 4 on the left or on the number 1 on the right.
+
+
+Part Two: Rules of Placing Pieces and Matching Ends
+
+Matching Numbers on the Ends
+When you play a regular piece on one of the ends, the matching half connects to the inner end of the table, while the other half becomes the new open end available for play.
+For example, if the right end carries the number 3, and you play the 3 and 5 piece on the right end, the number 3 connects to the chain and the new right end of the table becomes the number 5.
+
+Double Pieces (Doubles)
+A piece where both halves carry the same number is called a double piece, such as 6 and 6, 3 and 3, or 0 and 0.
+When playing a double piece on one of the ends, it matches the number and the same number remains open on that end, such as placing 3 and 3 on an end that carries the number 3, so the end remains open with the number 3.
+
+How to Choose the Playing End (Left or Right)
+If the piece you choose to play matches only one of the table's two ends, the game automatically places it on that end without the need to choose.
+However, if the piece matches both ends (for example, the table ends are 2 and 4 and your hand contains a 2 and 4 piece), or if placing the piece results in a different change for the ends, the game opens a selection menu for you to determine using the arrows the end you want to play on: the right end or the left end.
+
+Practical Example of Matching Pieces and Changing Ends:
+Suppose the ends of the table are: the left end carries the number 6 and the right end carries the number 2, and the second player's hand contained: 6 and 1, 5 and 3, and 2 and 0.
+What can the second player do?
+The second player can play the 6 and 1 piece on the left end to make the new left end the number 1, or play the 2 and 0 piece on the right end to make the new right end the number 0. They cannot play the 5 and 3 piece because it does not contain the number 6 or the number 2.
+
+Practical Example of Placing a Double Piece:
+Suppose the left end of the table is the number 4, and the first player played the 4 and 4 piece on the left end.
+What happens to the left end of the table and what does the next player do?
+The 4 and 4 piece settles on the left end and the left end still carries the number 4, and the next player must play a piece containing the number 4 if they want to play on this end.
+
+Practical Example of Choosing the End in a Symmetrical Chain:
+Suppose the left end of the table is the number 5 and the right end is the number 0, and the player chooses to play the 5 and 0 piece from their hand.
+What does the game show the player and what do they choose?
+The game presents the player with two options: either place the piece on the right to make the table ends 5 and 5, or place the piece on the left to make the table ends 0 and 0. The player uses the arrows to choose the most appropriate strategic option for their hand's pieces and presses the Enter key to confirm the play.
+
+
+Part Three: Drawing, Passing, and Game Modes
+
+Default Draw Mode (Draw Mode)
+In Draw Mode, which is the most common mode in Dominoes:
+If it is your turn and you do not have any piece in your hand that matches the right end or the left end of the table, you must draw from the draw bank by pressing the Spacebar or the D key.
+You draw pieces one by one until a piece appears that matches one of the ends, at which point you can play it immediately on the table.
+If all the pieces in the draw bank run out and your turn remains without a valid move, you are given the option to pass (knock or Pass) by pressing the Spacebar or selecting pass from the menu to pass the turn to the next player.
+Important rule: The game prevents you from voluntarily drawing pieces if you have any valid playable piece in your hand, and forces you to play immediately.
+
+Block Mode
+When Block Mode is selected in the room settings:
+There is no drawing of pieces during the round, and the remaining pieces stay out of play in the bank untouched by anyone.
+If it is your turn and you do not have a valid piece to play, you do not draw any piece, but rather pass directly (Pass) to let the turn go to the next player.
+
+Practical Example of Mandatory Drawing in Draw Mode:
+Suppose the ends of the table are 6 and 3, and it is the first player's turn and their hand contains: 1 and 1, 5 and 2, and 4 and 0.
+What does the first player do?
+Since the first player does not possess any piece containing the number 6 or the number 3, they press the Spacebar and draw the 2 and 2 piece (invalid), so they draw a second time and get the 6 and 4 piece (valid), then the drawing stops and they play the 6 and 4 piece immediately on the left end so the new left end becomes the number 4.
+
+Practical Example of Passing when the Bank Runs Out:
+Suppose the ends of the table are 5 and 1, and the bank is completely empty with a zero piece balance, and it is the second player's turn and they don't have any piece containing a 5 or 1.
+What does the second player do?
+Since the bank is empty and there is no valid piece in their hand, the second player presses the Spacebar to pass the turn, and the turn automatically passes to the next player.
+
+Practical Example of Passing in Block Mode:
+Suppose the match is played in Block Mode, and it is the third player's turn and they find no matching move for their hand's pieces.
+What does the third player do?
+The third player passes immediately without drawing, and the turn passes directly to the fourth player.
+
+
+Part Four: End of the Round and the Block
+
+A classic dominoes round ends in one of two situations:
+
+First Situation: Natural Win (Domino)
+This situation is achieved when a player successfully plays the last remaining piece in their hand and their piece balance becomes zero.
+This player is immediately declared the winner of the round and the round ends.
+
+Second Situation: The Block (Blocked Game)
+The block is achieved when no player at the table can place any piece, and the draw bank is completely empty (or in Block Mode), so all players pass sequentially one after the other without playing.
+When all players make consecutive passes, the game declares the table blocked and immediately calculates the total points of the pieces remaining in each player's hand.
+The player with the lowest total score in their hand is the winner of the round.
+
+Tie Situation in a Block
+If two or more players tie with the lowest total hand score at a block, the round is considered a tie between them.
+
+Practical Example of a Natural Win by Domino:
+Suppose the first player had only one piece which is 4 and 2, and the right end of the table carried the number 2, while the second player had three pieces totaling 18 points.
+What does the first player do and what happens?
+The first player plays the 4 and 2 piece on the right end and gets rid of all their pieces, immediately winning the round and a Domino message appears.
+
+Practical Example of a Block and Determining the Winner Between Two Players:
+Suppose the table ends were blocked by the numbers 6 and 6, and all pieces bearing the number 6 had already been played and the bank ran out.
+The first player passed due to having no move, then the second player passed, so the table was blocked.
+The first player's hand contained: a 1 and 1 piece (totaling two points).
+The second player's hand contained: a 5 and 4 piece (totaling nine points).
+Who wins the round?
+The first player wins the round because they have the lowest total score in hand (two points compared to nine points for the second player).
+
+Practical Example of a Block and Determining the Winner Between Three Players:
+Suppose the table was blocked between three players, and their hand scores were as follows:
+First player: has the 3 and 1 piece with a total of 4 points.
+Second player: has the 5 and 5 piece with a total of 10 points.
+Third player: has the 6 and 2 piece with a total of 8 points.
+Who wins the round?
+The first player wins the round because their hand score (4 points) is the lowest among all competitors.
+
+Practical Example of a Tie in a Block:
+Suppose the table was blocked between two players, and the first player's hand contained 2 and 1 (3 points) and the second player's hand contained 3 and 0 (3 points).
+What happens?
+Since the hand points are equal (3 points each), the round ends in a tie and no one earns penalty points, and the player with the highest double starts the next round.
+
+
+Part Five: Penalty Scoring System and Winning the Match
+
+Reverse Penalty Scoring System (Penalty Scoring)
+Classic Dominoes in this project relies on a reverse penalty scoring system, which is the most accurate and fair system in Dominoes tournaments:
+The goal is to keep your score as low as possible, because the points added to your balance are penalty points you earn from the remaining pieces in your hand upon losing.
+At the end of each round:
+The player who wins the round (whether by Domino or lowest points in a block) receives zero penalty points, so their score balance remains unchanged.
+The losing players each receive the total points of the remaining pieces in their hand, which are added in full to their cumulative account score.
+In the event of a tie in a block, the tying players with the lowest points receive zero, while the hand points of the other losers, if any, are added.
+
+Set Target for the Match and Winning Conditions
+The default target for the match is 100 points (or any target set by the room host, such as 50 or 150).
+The rounds continue one after another, and penalty points accumulate for the losers.
+The entire match ends as soon as any player reaches or exceeds the set target (for example, a player reaching 100 points or more).
+When the match ends, the tournament winner is declared as the player with the lowest total cumulative score in the room.
+
+Comprehensive Practical Example of Scoring and Crowning the Match Champion:
+Suppose the match is played up to a target of 100 points between two players, and the score before the last round was: First player 40 points, and second player 90 points.
+In this round, the first player won and put down the last piece in their hand, while the second player was left with pieces totaling 15 points.
+What happens to the score and who wins the match?
+The first player who won the round receives zero penalty points, so their balance remains 40 points.
+The second player receives 15 penalty points, so their total balance becomes: 90 plus 15 equals 105 points.
+Since the second player's score exceeded the target (100 points), the match ends immediately.
+The first player is crowned champion of the match because they have the lowest total score (40 points compared to 105 points for the opponent).

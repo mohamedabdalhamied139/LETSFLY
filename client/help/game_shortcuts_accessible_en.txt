@@ -1,0 +1,11 @@
+Let's Fly — General Shortcuts for the Current Game
+F1
+Open the shortcuts list for the current game.
+Ctrl+F1
+Run the explanation and rules of the current game.
+S
+Display the current score, if the game supports displaying the score with this shortcut.
+Q
+Exit the table after confirmation.
+Note:
+Each game may contain its own additional shortcuts. When adding a new game, its specific shortcuts file is placed inside the help folder while maintaining the same F1 and Ctrl+F1 system.

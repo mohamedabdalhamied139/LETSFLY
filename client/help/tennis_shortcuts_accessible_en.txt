@@ -1,0 +1,25 @@
+Keyboard Shortcuts Guide for Real Tennis Table
+
+First: Real-time Movement and Shot Execution Shortcuts
+- Left Arrow: Quick move to the left lane to cover the ball.
+- Up Arrow: Position in the center lane.
+- Right Arrow: Quick move to the right lane to cover the ball.
+- Enter Key: Execute the serve / basic hit and return of the ball in the current lane.
+- Space Bar: Execute the serve / basic hit and return of the ball in the current lane.
+- Letter A: Hit a fast crosscourt shot towards the far left (Crosscourt Left).
+- Letter D: Hit a fast crosscourt shot towards the far right (Crosscourt Right).
+
+Second: Quick Audio Query and Information Shortcuts
+- Letter S: Announce the current match score (points, games, and sets for both players in detail, and the server's name).
+- Letter T: Announce the current server and the lane of play.
+- Letter P: Announce the names of the players present at the table.
+- Shift + Letter R: Announce the official rules and standards of the match (international standards - best of three sets).
+
+Third: System and Help Shortcuts
+- F1: Open this window to review quick tennis shortcuts.
+- Ctrl + F1: Open the comprehensive guide to tennis rules and laws.
+- Apps Key or Shift + F10: Open the table context and options menu.
+- Letter Q: Leave the table (with a confirmation window navigable with up and down arrows).
+- Shift + Letter X: Stop the match and return to waiting (for the table host).
+- F2: Announce the wallet balance.
+- F3: Check the server connection speed (Ping).

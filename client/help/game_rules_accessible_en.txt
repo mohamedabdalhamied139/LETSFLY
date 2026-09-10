@@ -1,0 +1,4 @@
+Let's Fly — Explanation of the Current Game
+The explanation of the game for the current table has not been added yet.
+Use F1 to view the available game shortcuts.
+Use Ctrl+F1 to open the full game explanation once its rules file has been added.

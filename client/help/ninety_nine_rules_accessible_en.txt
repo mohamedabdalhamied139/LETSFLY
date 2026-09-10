@@ -1,0 +1,19 @@
+Explanation and Rules of the Ninety-Nine Game:
+Goal of the Game:
+Maintain the cumulative total under or equal to 99. The player forced to exceed the total of 99 loses a point (a life). The last player holding a life wins the game!
+
+Rules of Play:
+1. Each player starts with three cards and three points (lives).
+2. On your turn, you play one card from your hand, which is added to the shared cumulative total, and then you draw a new card.
+3. If your card causes the total to exceed 99, you lose a point and the round ends.
+4. When a player loses all three of their lives, they are eliminated from the match.
+
+Values of Special Cards:
+• Ace: Adds 1 or 11 (at the player's choice).
+• Cards 2 to 8: Add their face value directly.
+• 9: Pass card (passes the turn without changing the total).
+• 10: Subtracts 10 from the cumulative total.
+• Jack: Adds 10.
+• Queen: Adds 10.
+• King: Directly sets the cumulative total to 99!
+• 4: Reverses the direction of play.
