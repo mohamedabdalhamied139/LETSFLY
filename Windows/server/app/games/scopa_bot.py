@@ -150,6 +150,16 @@ async def run_scopa_bots(room: Room):
                     "room_id": room.room_id,
                     "state": state
                 })
+                if getattr(game, "pending_deal_batch", False):
+                    game.pending_deal_batch = False
+                    await asyncio.sleep(1.0)
+                    if game.active:
+                        game._deal_next_batch()
+                        ws_manager.broadcast_room(room.room_id, {
+                            "type": "scopa_state_changed",
+                            "room_id": room.room_id,
+                            "state": game.public_state()
+                        })
                 if not game.active:
                     await check_and_finalize_scopa_round(room)
                     break

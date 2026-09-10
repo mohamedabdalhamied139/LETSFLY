@@ -544,12 +544,18 @@ async def scopa_action(room, user_id, req):
         raise ValueError("إجراء إسكوبا غير معروف.")
     _queue_gameplay_event(room, user_id, room.scopa_game)
     room.scores = dict(room.scopa_game.team_scores if room.scopa_game.is_team_game else room.scopa_game.scores)
+    ws_manager.broadcast_room(room.room_id, {"type": "game_state_changed", "room_id": room.room_id})
+    if getattr(room.scopa_game, "pending_deal_batch", False):
+        room.scopa_game.pending_deal_batch = False
+        await asyncio.sleep(1.0)
+        if room.scopa_game and room.scopa_game.active:
+            room.scopa_game._deal_next_batch()
+            ws_manager.broadcast_room(room.room_id, {"type": "game_state_changed", "room_id": room.room_id})
+
     if not room.scopa_game.active:
-        ws_manager.broadcast_room(room.room_id, {"type": "game_state_changed", "room_id": room.room_id})
         await check_and_finalize_scopa_round(room)
         return state
     else:
-        ws_manager.broadcast_room(room.room_id, {"type": "game_state_changed", "room_id": room.room_id})
         if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_scopa_bots(room))
         return state
 

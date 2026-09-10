@@ -83,6 +83,7 @@ class ScopaGame:
         self.event_type: str = ""
         self.sound_cue: str = ""
         self.round_summary: str = ""
+        self.pending_deal_batch: bool = False
 
     @property
     def match_finished(self) -> bool:
@@ -114,6 +115,7 @@ class ScopaGame:
         self.active = True
         self.pending_choice = None
         self.round_summary = ""
+        self.pending_deal_batch = False
 
         # Build 40-card deck
         self.deck = []
@@ -346,7 +348,7 @@ class ScopaGame:
     def _advance_turn(self):
         if all(len(h) == 0 for h in self.hands.values()):
             if self.deck:
-                self._deal_next_batch()
+                self.pending_deal_batch = True
             else:
                 self._finalize_round()
             return

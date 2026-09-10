@@ -229,20 +229,6 @@ def _load_legacy_credentials() -> tuple:
         return "", ""
 
 def load_credentials() -> tuple:
-    creds_target = _creds_file()
-    if creds_target.exists():
-        try:
-            raw = base64.b64decode(creds_target.read_bytes())
-            import json
-            data = json.loads(_dpapi(raw, True).decode("utf-8"))
-            u = data.get("u", "")
-            p = data.get("p", "")
-            if u and p:
-                return u, p
-        except Exception:
-            clear_credentials()
-            return "", ""
-
     active = get_active_account_profile()
     if active and active.get("username") and active.get("password"):
         return active.get("username"), active.get("password")
@@ -257,4 +243,3 @@ def clear_credentials() -> None:
         _accounts_file().unlink(missing_ok=True)
     except OSError:
         pass
-
