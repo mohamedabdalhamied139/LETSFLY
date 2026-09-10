@@ -1689,11 +1689,8 @@ class TableView(QWidget):
             })
 
         if not hand and is_active:
-            hands_count = state.get("hands_count", {})
-            other_cards_remain = any(cnt > 0 for uid, cnt in hands_count.items() if str(uid) != str(my_id))
-            wait_text = tr("بانتظار لعب باقي اللاعبين...") if other_cards_remain else tr("بانتظار التوزيعة الجديدة...")
             desired_items_data.append({
-                "text": wait_text,
+                "text": "",
                 "data": {"type": "waiting"},
                 "is_waiting": True
             })
@@ -1721,9 +1718,9 @@ class TableView(QWidget):
             accessible_description_role = getattr(Qt.ItemDataRole, "AccessibleDescriptionRole", None)
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
             if accessible_text_role is not None:
-                item.setData(accessible_text_role, item_spec["text"])
+                item.setData(accessible_text_role, item_spec["text"] if not item_spec["is_waiting"] else "")
             if accessible_description_role is not None:
-                item.setData(accessible_description_role, item_spec["text"])
+                item.setData(accessible_description_role, item_spec["text"] if not item_spec["is_waiting"] else "")
 
         self.scopa_card_list.blockSignals(False)
 
