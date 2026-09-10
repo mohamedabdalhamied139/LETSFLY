@@ -373,6 +373,11 @@ class DominoGame:
             if max_score >= self.target_score:
                 min_score = min(self.scores.values())
                 winner_candidates = [uid for uid, s in self.scores.items() if s == min_score]
+                if len(winner_candidates) != 1:
+                    self.event_type = "ROUND_FINISHED"
+                    self.sound_cue = "ROUND_END"
+                    self.last_action = f"تعادل في صدارة المباراة. تبدأ جولة فاصلة. النتائج: {scores_summary}"
+                    return
                 self.winner_id = winner_candidates[0]
                 match_winner_name = self.player_names[self.winner_id]
                 self.event_type = "MATCH_FINISHED"

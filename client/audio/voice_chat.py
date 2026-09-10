@@ -4,13 +4,15 @@ from __future__ import annotations
 import logging
 import queue
 import threading
+import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtMultimedia import QAudioFormat, QAudioSource, QAudioSink, QMediaDevices
 
 from client.audio.voice_codec import encode_pcm16, decode_pcm16
 
-logger = logging.getLogger("letsfly.voice")
+logger = logging.getLogger("tableverse.voice")
 
 SAMPLE_RATE = 16000
 CHANNELS = 1
@@ -37,18 +39,30 @@ class VoiceChatManager(QObject):
         self._sink = None
         self._sink_device = None
         self._play_queue: queue.Queue[bytes] = queue.Queue(maxsize=_MAX_PCM_QUEUE)
-        self._executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="LetsFly-Voice")
+        self._executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="TableVerse-Voice")
         self._encode_slots = threading.BoundedSemaphore(_MAX_PACKET_QUEUE)
         self._decode_slots = threading.BoundedSemaphore(_MAX_PACKET_QUEUE)
         self._closed = False
+        self._generation = 0
         self._send_busy = False
         self._voice_join_pending = False
         self._capture_pcm_buffer = bytearray()
         self._capture_lock = threading.Lock()
+        self._playback_history = deque(maxlen=25)  # holds recent incoming frames for echo subtraction
+        self._last_playback_time = 0.0
+        self._playback_lock = threading.Lock()
         self._play_timer = QTimer(self)
         self._play_timer.setInterval(10)
         self._play_timer.timeout.connect(self._drain_playback)
         self._outputRequested.connect(self._ensure_output)
+
+    def _is_stereo_mix_source(self) -> bool:
+        """Detect if the current microphone is Stereo Mix, What U Hear, or a loopback device."""
+        if not self._source_device or self._source_device.isNull():
+            return False
+        name = (self._source_device.description() or "").lower()
+        stereo_mix_keywords = ["stereo mix", "what u hear", "wave out", "waveout", "loopback", "مزيج ستيريو", "ستيريو ميكس"]
+        return any(kw in name for kw in stereo_mix_keywords)
 
     @staticmethod
     def _format() -> QAudioFormat:
@@ -80,6 +94,7 @@ class VoiceChatManager(QObject):
             # clear an active voice session merely because a room snapshot arrived.
             return
         self.leave_room()
+        self._generation += 1
         self.room_id = room_id
         self._voice_session_active = False
         self._announce("voice_connection_restored" if self.enabled else "voice_ready")
@@ -115,6 +130,7 @@ class VoiceChatManager(QObject):
             self.ws.send_json({"type": "voice_leave"})
         was_active = self._voice_session_active or self._voice_join_pending
         self._voice_session_active = False
+        self._generation += 1
         self._voice_join_pending = False
         self.stop_microphone(silent=True)
         self._capture_pcm_buffer.clear()
@@ -147,6 +163,8 @@ class VoiceChatManager(QObject):
         # The user must explicitly unmute with M.
         self.stop_microphone(silent=True)
         self.muted = True
+        from client.audio.sound_engine import sound_engine
+        sound_engine.play_event("VOICE_JOINED")
         self._announce("voice_entered_muted")
 
     def activate_voice_session(self, start_microphone: bool = False):
@@ -167,15 +185,18 @@ class VoiceChatManager(QObject):
     def toggle_mute(self) -> bool:
         if not self.room_id or not self._voice_session_active:
             return False
+        from client.audio.sound_engine import sound_engine
         if self.muted:
             self.muted = False
             if not self.start_microphone():
                 self.muted = True
                 return True
+            sound_engine.play_event("MIC_ON")
             self._announce("microphone_unmuted")
         else:
             self.muted = True
             self.stop_microphone(silent=True)
+            sound_engine.play_event("MIC_OFF")
             self._announce("microphone_muted")
         return self.muted
 
@@ -250,7 +271,7 @@ class VoiceChatManager(QObject):
             if not self._encode_slots.acquire(blocking=False):
                 return
             fmt = self._input_format
-            future = self._executor.submit(self._prepare_and_send, data, fmt)
+            future = self._executor.submit(self._prepare_and_send, data, fmt, self._generation)
             future.add_done_callback(lambda _f: self._encode_slots.release())
         except Exception:
             logger.exception("Microphone capture failed")
@@ -316,7 +337,20 @@ class VoiceChatManager(QObject):
             out.append(max(-32768, min(32767, value)))
         return struct.pack("<%dh" % len(out), *out)
 
-    def _prepare_and_send(self, data: bytes, fmt):
+    def _filter_echo_from_frame(self, frame: bytes) -> bytes:
+        """If using Stereo Mix and remote audio is currently playing, suppress the loopback."""
+        if not self._is_stereo_mix_source():
+            return frame
+        now = time.monotonic()
+        with self._playback_lock:
+            time_since_playback = now - self._last_playback_time
+            if time_since_playback < 0.45:  # Within echo window of remote speech
+                # If there's recent incoming audio playing on speakers, mute Stereo Mix capture
+                # so other players' voices are not looped back to the server
+                return bytes(len(frame))
+        return frame
+
+    def _prepare_and_send(self, data: bytes, fmt, generation: int):
         if self._closed or self.muted or not self.room_id or not self._voice_session_active:
             return
         try:
@@ -332,8 +366,9 @@ class VoiceChatManager(QObject):
                 while len(self._capture_pcm_buffer) >= FRAME_BYTES:
                     frame = bytes(self._capture_pcm_buffer[:FRAME_BYTES])
                     del self._capture_pcm_buffer[:FRAME_BYTES]
+                    frame = self._filter_echo_from_frame(frame)
                     packet = encode_pcm16(frame, SAMPLE_RATE)
-                    if packet and not self._closed and not self.muted and self.room_id and self._voice_session_active:
+                    if packet and generation == self._generation and not self._closed and not self.muted and self.room_id and self._voice_session_active:
                         if not self.ws.send_bytes(packet):
                             logger.debug("Voice packet send returned false")
         except Exception:
@@ -359,14 +394,16 @@ class VoiceChatManager(QObject):
         payload = bytes(data[8:])
         if len(payload) > 4096 or len(payload) < 9 or payload[:4] != b"LFV1" or not self._decode_slots.acquire(blocking=False):
             return
-        future = self._executor.submit(self._decode_and_queue, payload)
+        future = self._executor.submit(self._decode_and_queue, payload, self._generation)
         future.add_done_callback(lambda _f: self._decode_slots.release())
 
-    def _decode_and_queue(self, payload: bytes):
+    def _decode_and_queue(self, payload: bytes, generation: int):
         if self._closed:
             return
         try:
             pcm = decode_pcm16(payload)
+            if generation != self._generation:
+                return
             if not pcm:
                 return
             output_fmt = getattr(self, "_output_format", None)
@@ -507,6 +544,9 @@ class VoiceChatManager(QObject):
             chunk = pcm[:budget]
             try:
                 written = int(io.write(chunk))
+                if written > 0:
+                    with self._playback_lock:
+                        self._last_playback_time = time.monotonic()
             except Exception:
                 logger.debug("Voice playback write failed", exc_info=True)
                 return

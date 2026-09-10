@@ -24,7 +24,7 @@ async def _persist_match(room, winners):
     await asyncio.to_thread(save)
 async def check_and_finalize_american_domino_round(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.american_domino.lifecycle")
+    logger = logging.getLogger("tableverse.american_domino.lifecycle")
     from server.app.hub.room_manager import room_manager
     if room.status == "round_finished":
         return
@@ -85,7 +85,7 @@ async def check_and_finalize_american_domino_round(room: Room):
 
 async def _start_next_american_domino_round_after_delay(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.american_domino.lifecycle")
+    logger = logging.getLogger("tableverse.american_domino.lifecycle")
     from server.app.hub.room_manager import room_manager
     from server.app.games.american_domino import AmericanDominoGame
     from server.app.games.american_domino_bot import run_american_domino_bots

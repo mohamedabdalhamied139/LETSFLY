@@ -1,4 +1,4 @@
-"""Official NVDA Controller Client integration for Let's Fly.
+"""Official NVDA Controller Client integration for TableVerse.
 
 This module intentionally does not use SAPI, pywin32, or any third-party TTS.
 The only speech backend is the official NV Access NVDA Controller Client DLL.

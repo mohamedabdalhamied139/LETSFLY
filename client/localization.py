@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Runtime localization and language system for Let's Fly.
+"""Runtime localization and language system for TableVerse.
 
 Provides a centralized, production-ready TranslationManager supporting Arabic
 and English. Automatically detects operating system language on startup, supports
@@ -20,11 +20,11 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from client import settings_store
 
 TranslationCallback = Callable[[str], None]
-logger = logging.getLogger("letsfly.localization")
+logger = logging.getLogger("tableverse.localization")
 
 
 class TranslationManager:
-    """Centralized translation and localization manager for Let's Fly."""
+    """Centralized translation and localization manager for TableVerse."""
 
     _instance: Optional[TranslationManager] = None
 
@@ -110,6 +110,9 @@ class TranslationManager:
                         for op, arg in tokens:
                             if op is sre_parse.LITERAL:
                                 literal_count += 1
+                            elif op in (sre_parse.MAX_REPEAT, sre_parse.MIN_REPEAT):
+                                literal_count += 0.5
+                                walk(arg[2])
                             elif op is sre_parse.IN:
                                 # Character classes are less specific than fixed text.
                                 literal_count += 0.25
@@ -345,7 +348,7 @@ class TranslationManager:
                     join_sep = " and " if sep in (" و ", " و") else sep
                     return f"{leading}{join_sep.join(translated_parts)}{trailing}"
 
-        # 2. Compound Arabic-comma clauses.
+        # 2. Compound Arabic-comma or em-dash clauses.
         # Some game summaries contain several independently localizable events
         # in one sentence. Try clause-level localization before broad regex
         # patterns; only commit when every clause is actually translated. This
@@ -360,6 +363,15 @@ class TranslationManager:
                     leading = s[:len(s) - len(s.lstrip())]
                     trailing = s[len(s.rstrip()):]
                     return f"{leading}{', '.join(translated_parts)}{trailing}"
+
+        if " — " in stripped:
+            parts = [p.strip() for p in stripped.split(" — ") if p.strip()]
+            if len(parts) > 1:
+                translated_parts = [self.tr(part) for part in parts]
+                if all(tp != part for tp, part in zip(translated_parts, parts)):
+                    leading = s[:len(s) - len(s.lstrip())]
+                    trailing = s[len(s.rstrip()):]
+                    return f"{leading}{' — '.join(translated_parts)}{trailing}"
 
         # 3. Dynamic regex template pattern matching on whole string
         for pattern, template, roles in self._patterns:

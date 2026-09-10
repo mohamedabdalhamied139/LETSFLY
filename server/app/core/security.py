@@ -12,29 +12,29 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-_SECRET_ENV = os.environ.get("LETSFLY_SECRET_KEY")
+_SECRET_ENV = os.environ.get("TABLEVERSE_SECRET_KEY")
 
 _appdata = os.getenv('APPDATA')
 if _appdata:
-    _APP_DIR = Path(_appdata) / 'LetsFly'
+    _APP_DIR = Path(_appdata) / 'TableVerse'
 else:
-    _APP_DIR = Path.home() / '.letsfly'
+    _APP_DIR = Path.home() / '.tableverse'
 _APP_DIR.mkdir(parents=True, exist_ok=True)
-_SECRET_FILE = _APP_DIR / "letsfly_secret.key"
+_SECRET_FILE = _APP_DIR / "tableverse_secret.key"
 
 def _load_or_create_secret() -> str:
     if _SECRET_ENV:
         value = _SECRET_ENV.strip()
-        if len(value) < (64 if os.getenv("LETSFLY_ENV", "development").strip().lower() in {"production", "prod"} else 32):
-            required = 64 if os.getenv("LETSFLY_ENV", "development").strip().lower() in {"production", "prod"} else 32
-            raise RuntimeError(f"LETSFLY_SECRET_KEY must contain at least {required} characters.")
+        if len(value) < (64 if os.getenv("TABLEVERSE_ENV", "development").strip().lower() in {"production", "prod"} else 32):
+            required = 64 if os.getenv("TABLEVERSE_ENV", "development").strip().lower() in {"production", "prod"} else 32
+            raise RuntimeError(f"TABLEVERSE_SECRET_KEY must contain at least {required} characters.")
         return value
 
     # Never silently generate a production signing secret. Local/development
     # runs may persist a random secret for convenience; production must opt in
     # with an explicit environment variable.
-    if os.getenv("LETSFLY_ENV", "development").strip().lower() in {"production", "prod"}:
-        raise RuntimeError("LETSFLY_SECRET_KEY must be configured in production.")
+    if os.getenv("TABLEVERSE_ENV", "development").strip().lower() in {"production", "prod"}:
+        raise RuntimeError("TABLEVERSE_SECRET_KEY must be configured in production.")
 
     try:
         if _SECRET_FILE.exists():
@@ -50,14 +50,14 @@ def _load_or_create_secret() -> str:
         return value
     except OSError as exc:
         raise RuntimeError(
-            "LETSFLY_SECRET_KEY is not configured and the development secret file cannot be created."
+            "TABLEVERSE_SECRET_KEY is not configured and the development secret file cannot be created."
         ) from exc
 
 SECRET_KEY = _load_or_create_secret()
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("LETSFLY_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours; revocable server-side
-JWT_ISSUER = os.getenv("LETSFLY_JWT_ISSUER", "letsfly")
-JWT_AUDIENCE = os.getenv("LETSFLY_JWT_AUDIENCE", "letsfly-client")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("TABLEVERSE_ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours; revocable server-side
+JWT_ISSUER = os.getenv("TABLEVERSE_JWT_ISSUER", "tableverse")
+JWT_AUDIENCE = os.getenv("TABLEVERSE_JWT_AUDIENCE", "tableverse-client")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)

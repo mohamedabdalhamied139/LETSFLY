@@ -27,7 +27,7 @@ from client.views.online_users_view import OnlineUsersView
 from client.views.social_center_views import PrivateMessagesView, NotificationsView, MyProfileEditDialog, ChallengeDialog
 from client.views.game_settings_view import GameSettingsView
 from client.views.table_view import TableView
-from client.views.table_players_dialog import TablePlayersDialog, TablePlayerActionsDialog, TableVoiceSubmenuDialog
+from client.views.table_players_dialog import TablePlayersDialog, TablePlayerActionsDialog, TableVoiceSubmenuDialog, TableSubstituteChoiceDialog
 from core_shared.constants import CARD_TYPES
 from core_shared.time_utils import parse_timestamp, format_duration
 from core_shared.rules_config import RULE_DEFINITIONS
@@ -1220,7 +1220,20 @@ class TableVerseApp(QMainWindow):
             # to this client because the room WebSocket starts after creation.
             sound_engine.play_event("TABLE_JOIN")
             my_name = (self.user or {}).get("display_name", "محمد")
-            reader.speak(tr("{name} انضم للطاولة", name=my_name), interrupt=False)
+            if getattr(self, "default_as_spectator", False):
+                reader.speak(tr("{name} انضم للطاولة كمتفرج", name=my_name), interrupt=False)
+                rid = str(room.get("id") or "")
+                def spec_done(r):
+                    if isinstance(r.get("room"), dict):
+                        self.current_room = r["room"]
+                    elif self.current_room:
+                        self.current_room["is_spectator"] = True
+                    if self.current_room:
+                        my_id = int((self.user or {}).get("id") or 0)
+                        self.current_room["is_host"] = (int(self.current_room.get("host_id") or 0) == my_id)
+                self._run_async(lambda: self.api.toggle_spectator(rid), spec_done)
+            else:
+                reader.speak(tr("{name} انضم للطاولة", name=my_name), interrupt=False)
         self._run_async(lambda: self.api.create_room(game), done)
 
     def _handle_join_room(self, room_id: str, as_spectator: bool = False):
@@ -1332,7 +1345,8 @@ class TableVerseApp(QMainWindow):
             # for the first round; later rounds use the shared round-start cue.
             if current_round == 1:
                 sound_engine.play_event("THIEF_GAME_START")
-            reader.speak(tr(f"الجولة {current_round}"), interrupt=True)
+            if self.thief_state.get("event_type") != "ESCAPE_START":
+                reader.speak(tr(f"الجولة {current_round}"), interrupt=False)
         eid = int(self.thief_state.get("event_id", 0) or 0)
         et = self.thief_state.get("event_type", "")
         key = f"{eid}:{et}"
@@ -1346,6 +1360,8 @@ class TableVerseApp(QMainWindow):
                 floor = self.thief_state.get("start_floor")
                 dirs = self.thief_state.get("directions", [])
                 narration_parts = []
+                if current_round:
+                    narration_parts.append(f"الجولة {current_round}")
                 if floor:
                     narration_parts.append(f"اللص في الطابق {floor}")
                 if dirs:
@@ -1355,7 +1371,7 @@ class TableVerseApp(QMainWindow):
                     # Send the narration as one NVDA utterance. This avoids a
                     # second queued speech command whose duration was previously
                     # omitted from the local transition estimate.
-                    reader.speak(tr(narration), interrupt=True)
+                    reader.speak(tr(narration), interrupt=False)
                 # NVDA Controller has no speech-completion callback. Keep the
                 # answer field hidden and the table focused while the queued
                 # narration is spoken, then open the field immediately after
@@ -1426,6 +1442,8 @@ class TableVerseApp(QMainWindow):
             return False
         request_id = uuid.uuid4().hex
         self._ws_action_pending[request_id] = (on_success, on_error, self._room_generation, str(room_id))
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(10_000, lambda rid=request_id: self._expire_ws_action(rid))
         payload = {
             "action": str(action),
             "card_id": str(card_id or ""),
@@ -1437,6 +1455,13 @@ class TableVerseApp(QMainWindow):
             self._ws_action_pending.pop(request_id, None)
             return False
         return True
+
+    def _expire_ws_action(self, request_id: str):
+        pending = self._ws_action_pending.pop(request_id, None)
+        if pending:
+            _success, on_error, _generation, _room_id = pending
+            if on_error:
+                on_error("انتهت مهلة تنفيذ الحركة. حاول مرة أخرى.")
 
     def _handle_thief_action(self, action, value):
         if not self.current_room or self.current_room.get("game") != "THIEF_HUNT":
@@ -1893,7 +1918,8 @@ class TableVerseApp(QMainWindow):
     def on_add_bot(self):
         if not self.current_room:
             return
-        if not self.current_room.get("is_host"):
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        if not is_host:
             reader.speak(tr("إضافة بوت متاح لمضيف الطاولة فقط."), interrupt=True)
             return
         rid = self.current_room.get("id")
@@ -1907,7 +1933,8 @@ class TableVerseApp(QMainWindow):
     def on_remove_bot(self):
         if not self.current_room:
             return
-        if not self.current_room.get("is_host"):
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        if not is_host:
             reader.speak(tr("إزالة بوت متاح لمضيف الطاولة فقط."), interrupt=True)
             return
         bot_ids = [uid for uid in self.current_room.get("players", []) if uid < 0]
@@ -1961,31 +1988,43 @@ class TableVerseApp(QMainWindow):
         reader.speak(tr(text), interrupt=True)
 
     def on_open_table_players(self):
-        """Open the Table Players list dialog with captain at the top and contextual actions."""
+        """Open the Table Players list dialog with captain at the top, vice-captain, and contextual actions."""
         if not self.current_room:
             return
         my_id = int((self.user or {}).get("id") or 0)
         dlg = TablePlayersDialog(self.current_room, my_id, self)
-        if dlg.exec() != QDialog.Accepted or not dlg.selected_user:
+        res = dlg.exec()
+        if res != QDialog.Accepted:
             return
-        self._open_table_player_actions(dlg.selected_user)
+        if getattr(dlg, "quick_action", None):
+            tag, target_user = dlg.quick_action
+            self._execute_table_player_action(tag, target_user)
+            return
+        if dlg.selected_user:
+            self._open_table_player_actions(dlg.selected_user)
 
     def _open_table_player_actions(self, target_user: dict):
         if not self.current_room or not isinstance(target_user, dict):
             return
-        rid = str(self.current_room.get("id") or "")
         my_id = int((self.user or {}).get("id") or 0)
-        is_host = bool(self.current_room.get("is_host"))
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        is_co_host = str(self.current_room.get("co_host_id")) == str((self.user or {}).get("id"))
         target_id = int(target_user.get("id") or 0)
-        target_name = str(target_user.get("display_name") or "لاعب")
         voice_muted_list = self.current_room.get("voice_muted") or []
         is_target_muted = target_id in voice_muted_list
 
-        act_dlg = TablePlayerActionsDialog(target_user, is_host, my_id, is_target_muted, self)
+        act_dlg = TablePlayerActionsDialog(target_user, is_host, my_id, is_target_muted, is_co_host=is_co_host, parent=self)
         if act_dlg.exec() != QDialog.Accepted or not act_dlg.selected_tag:
             return
+        self._execute_table_player_action(act_dlg.selected_tag, target_user)
 
-        tag = act_dlg.selected_tag
+    def _execute_table_player_action(self, tag: str, target_user: dict):
+        if not self.current_room or not isinstance(target_user, dict):
+            return
+        rid = str(self.current_room.get("id") or "")
+        target_id = int(target_user.get("id") or 0)
+        target_name = str(target_user.get("display_name") or "لاعب")
+
         if tag == "kick":
             self._run_async(
                 lambda: self.api.kick_player(rid, target_id),
@@ -1998,6 +2037,42 @@ class TableVerseApp(QMainWindow):
                 lambda _r: reader.speak(tr("تم حظر {name} من الطاولة.", name=target_name), interrupt=True),
                 lambda e: reader.speak(tr("تعذر حظر اللاعب: {error}", error=tr(str(e))), interrupt=True)
             )
+        elif tag == "transfer_host":
+            self._run_async(
+                lambda: self.api.transfer_host(rid, target_id),
+                lambda _r: reader.speak(tr("تم نقل قيادة الطاولة إلى {name}.", name=target_name), interrupt=True),
+                lambda e: reader.speak(tr("تعذر نقل القيادة: {error}", error=tr(str(e))), interrupt=True)
+            )
+        elif tag == "set_co_host":
+            self._run_async(
+                lambda: self.api.set_co_host(rid, target_id),
+                lambda r: reader.speak(
+                    tr("تم تعيين {name} نائباً للقائد." if r.get("is_co_host") else "تم إلغاء تعيين {name} كنائب للقائد.", name=target_name),
+                    interrupt=True
+                ),
+                lambda e: reader.speak(tr("تعذر تغيير نائب القائد: {error}", error=tr(str(e))), interrupt=True)
+            )
+        elif tag == "substitute":
+            sub_dlg = TableSubstituteChoiceDialog(target_user, self.current_room, my_id, self)
+            if sub_dlg.exec() != QDialog.Accepted or not sub_dlg.selected_choice:
+                return
+            choice = sub_dlg.selected_choice
+            is_bot = bool(choice.get("is_bot"))
+            rep_id = choice.get("id")
+            rep_name = str(choice.get("display_name") or "لاعب")
+
+            if is_bot:
+                self._run_async(
+                    lambda: self.api.substitute_player(rid, target_id, is_bot=True),
+                    lambda _r: reader.speak(tr("تم استبدال {name} ببوت.", name=target_name), interrupt=True),
+                    lambda e: reader.speak(tr("تعذر استبدال اللاعب: {error}", error=tr(str(e))), interrupt=True)
+                )
+            else:
+                self._run_async(
+                    lambda: self.api.substitute_player(rid, target_id, replacement_user_id=rep_id, is_bot=False),
+                    lambda _r: reader.speak(tr("تم استبدال {name} بـ {rep}.", name=target_name, rep=rep_name), interrupt=True),
+                    lambda e: reader.speak(tr("تعذر استبدال اللاعب: {error}", error=tr(str(e))), interrupt=True)
+                )
         elif tag == "make_spectator":
             self._run_async(
                 lambda: self.api.toggle_spectator(rid, target_id),
@@ -2070,6 +2145,13 @@ class TableVerseApp(QMainWindow):
             rid = str(self.current_room.get("id") or "")
             def done(r):
                 is_spec = bool(r.get("is_spectator"))
+                if isinstance(r.get("room"), dict):
+                    self.current_room = r["room"]
+                elif self.current_room:
+                    self.current_room["is_spectator"] = is_spec
+                if self.current_room:
+                    my_id = int((self.user or {}).get("id") or 0)
+                    self.current_room["is_host"] = (int(self.current_room.get("host_id") or 0) == my_id)
                 msg = "أنت الآن في وضع المتفرج." if is_spec else "أنت الآن في وضع اللعب."
                 reader.speak(tr(msg), interrupt=True)
             def fail(e):
@@ -2115,7 +2197,7 @@ class TableVerseApp(QMainWindow):
         self._room_ws_url = self.api.get_ws_url(f"/ws/room/{room_id}")
         self.ws.start(self._emit_ws_event, self._room_ws_url, (self.api.token or ""))
 
-    def _recover_room_snapshot(self, room, uno_state=None, thief_state=None, farkle_state=None, domino_state=None, american_domino_state=None, snakes_state=None, scopa_state=None, tennis_state=None):
+    def _recover_room_snapshot(self, room, uno_state=None, thief_state=None, farkle_state=None, domino_state=None, american_domino_state=None, snakes_state=None, scopa_state=None, tennis_state=None, ninety_nine_state=None):
         if not room or not self.current_room or room.get("id") != self.current_room.get("id"):
             return
         self.current_room = room
@@ -2149,6 +2231,8 @@ class TableVerseApp(QMainWindow):
             self._apply_scopa_state(scopa_state)
         if tennis_state is not None:
             self._apply_tennis_state(tennis_state)
+        if ninety_nine_state is not None:
+            self._apply_ninety_nine_state(ninety_nine_state)
 
         focus = self._reconnect_focus
         self._reconnect_focus = None
@@ -2233,7 +2317,13 @@ class TableVerseApp(QMainWindow):
         if et in ("kicked_from_room", "banned_from_room"):
             msg = event.get("message") or ("تم طردك من الطاولة." if et == "kicked_from_room" else "تم حظرك من الطاولة.")
             reader.speak(tr(msg), interrupt=True)
-            self.on_leave_room_shortcut()
+            if QApplication.activePopupWidget() is not None:
+                try:
+                    QApplication.activePopupWidget().close()
+                except Exception:
+                    pass
+                self._active_context_menu = None
+            self._menu_leave_room()
             return
 
         if et == "voice_kicked":
@@ -2303,6 +2393,7 @@ class TableVerseApp(QMainWindow):
                     event.get("snakes_state"),
                     event.get("scopa_state"),
                     event.get("tennis_state"),
+                    event.get("ninety_nine_state"),
                 )
             return
 
@@ -2398,6 +2489,10 @@ class TableVerseApp(QMainWindow):
                         self.current_room["player_names"] = event["player_names"]
                     if "players_dict" in event:
                         self.current_room["players_dict"] = event["players_dict"]
+                    my_id = int((self.user or {}).get("id") or 0)
+                    if str(event.get("user_id")) == str(my_id):
+                        self.current_room["is_spectator"] = is_spec
+                    self.current_room["is_host"] = (int(self.current_room.get("host_id") or 0) == my_id)
             elif et == "voice_mute_changed":
                 name = event.get('name', 'لاعب')
                 is_muted = bool(event.get('is_muted'))
@@ -2424,6 +2519,45 @@ class TableVerseApp(QMainWindow):
                 name = event.get('name', 'لاعب')
                 self.table_view.add_log(tr("{name} أصبح كابتن الطاولة", name=name), category="FRIENDS")
                 handle_template_event("game_events", "{name} أصبح كابتن الطاولة", "", interrupt=False, name=name)
+                if self.current_room:
+                    self.current_room["host_id"] = event.get("user_id")
+                    self.current_room["host_name"] = name
+                    my_id = int((self.user or {}).get("id") or 0)
+                    self.current_room["is_host"] = (event.get("user_id") == my_id)
+                    if "co_host_id" in event:
+                        self.current_room["co_host_id"] = event.get("co_host_id")
+                        self.current_room["is_co_host"] = (event.get("co_host_id") == my_id)
+            elif et == "co_captain_changed":
+                name = event.get('name', '')
+                is_co = bool(event.get('is_co_host'))
+                if is_co and name:
+                    self.table_view.add_log(tr("{name} أصبح نائب كابتن الطاولة", name=name), category="FRIENDS")
+                    handle_template_event("game_events", "{name} أصبح نائب كابتن الطاولة", "", interrupt=False, name=name)
+                else:
+                    self.table_view.add_log(tr("تم إلغاء نائب كابتن الطاولة"), category="FRIENDS")
+                if self.current_room:
+                    self.current_room["co_host_id"] = event.get("co_host_id")
+                    my_id = int((self.user or {}).get("id") or 0)
+                    self.current_room["is_co_host"] = (event.get("co_host_id") == my_id if event.get("co_host_id") is not None else False)
+            elif et == "player_substituted":
+                name = event.get('name', 'لاعب')
+                is_bot = bool(event.get('is_bot', True))
+                if is_bot:
+                    rep_name = event.get('bot_name', 'بوت')
+                else:
+                    rep_name = event.get('replacement_name', 'لاعب')
+                self.table_view.add_log(tr("تم استبدال {name} بـ {rep}", name=name, rep=rep_name), category="FRIENDS")
+                if str(event.get("user_id")) != str((self.user or {}).get("id")):
+                    reader.speak(tr("تم استبدال {name} بـ {rep}", name=name, rep=rep_name), interrupt=False)
+                if self.current_room:
+                    if "players" in event:
+                        self.current_room["players"] = event["players"]
+                    if "spectators" in event:
+                        self.current_room["spectators"] = event["spectators"]
+                    if "player_names" in event:
+                        self.current_room["player_names"] = event["player_names"]
+                    if "players_dict" in event:
+                        self.current_room["players_dict"] = event["players_dict"]
             return
 
         if et == "chat_message" or "text" in (event or {}):
@@ -2466,6 +2600,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "tennis_match_finished":
+            self._announce_terminal_result(event)
             self.tennis_state = None
             self.table_view.set_game_type("TENNIS")
             self.table_view.set_playing_mode(False)
@@ -2474,6 +2609,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et in ("domino_match_finished", "american_domino_match_finished"):
+            self._announce_terminal_result(event)
             self.domino_state = None
             gtype = self.current_room.get("game", "DOMINO")
             self.table_view.set_game_type(gtype)
@@ -2483,6 +2619,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "farkle_match_finished":
+            self._announce_terminal_result(event)
             self.farkle_state = event.get("state") or {}
             self.table_view.set_game_type("FARKLE")
             self.table_view.set_playing_mode(False)
@@ -2492,6 +2629,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "scopa_match_finished":
+            self._announce_terminal_result(event)
             self.scopa_state = None
             self.table_view.set_game_type("SCOPA")
             self.table_view.set_playing_mode(False)
@@ -2500,6 +2638,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "snakes_match_finished":
+            self._announce_terminal_result(event)
             self.snakes_state = None
             self.table_view.set_game_type("SNAKES_LADDERS")
             self.table_view.set_playing_mode(False)
@@ -2508,6 +2647,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "thief_match_finished":
+            self._announce_terminal_result(event)
             self.thief_state = None
             self.uno_state = None
             self.farkle_state = None
@@ -2532,6 +2672,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "match_finished":
+            self._announce_terminal_result(event)
             self.uno_state = None
             self.thief_state = None
             self._was_my_turn = False
@@ -2573,6 +2714,12 @@ class TableVerseApp(QMainWindow):
                 # replaced by one shared broadcast payload.
                 self._poll_table_state()
             return
+
+    def _announce_terminal_result(self, event: dict):
+        winner_id = event.get("winner_id") or event.get("match_winner_id")
+        won = winner_id is not None and str(winner_id) == str((self.user or {}).get("id"))
+        sound_engine.play_event("MATCH_WIN" if won else "MATCH_LOSS")
+        reader.speak(tr("فزت بالمباراة." if won else "انتهت المباراة."), interrupt=False)
     def _on_language_changed(self, _value=None):
         """Apply language changes immediately to all existing UI without restart."""
         try:
@@ -2669,6 +2816,7 @@ class TableVerseApp(QMainWindow):
 
     def _leave_table_after_failed_reconnect(self):
         self.voice.leave_room()
+        self.ws.stop()
         self.current_room = None
         self.poll_timer.stop()
         self.setWindowTitle(tr("TableVerse"))
@@ -3328,15 +3476,16 @@ class TableVerseApp(QMainWindow):
     def _show_room_context_menu(self):
         menu = QMenu(self)
         menu.setAccessibleName(tr("قائمة خيارات الطاولة"))
-        is_host = bool(self.current_room.get("is_host"))
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        is_co_host = str(self.current_room.get("co_host_id")) == str((self.user or {}).get("id"))
         status = self.current_room.get("status")
         if status == "playing":
             start_act = menu.addAction(tr("إيقاف اللعبة"))
-            start_act.setEnabled(is_host)
+            start_act.setEnabled(is_host or is_co_host)
             start_act.triggered.connect(self._menu_stop_game)
         else:
             start_act = menu.addAction(tr("بدء اللعبة"))
-            start_act.setEnabled(is_host and status == "waiting")
+            start_act.setEnabled((is_host or is_co_host) and status == "waiting")
             start_act.triggered.connect(self._menu_start_game)
         players_act = menu.addAction(tr("قائمة اللاعبين"))
         spectator_act = menu.addAction(tr("وضع المتفرج"))
@@ -3450,8 +3599,10 @@ class TableVerseApp(QMainWindow):
             return
         if not self.current_room or self.current_room.get("status") != "waiting":
             return
-        if not self.current_room.get("is_host"):
-            reader.speak(tr("بدء اللعبة متاح لمضيف الطاولة فقط."), interrupt=True)
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        is_co_host = str(self.current_room.get("co_host_id")) == str((self.user or {}).get("id"))
+        if not (is_host or is_co_host):
+            reader.speak(tr("بدء اللعبة متاح للقائد أو نائب القائد فقط."), interrupt=True)
             return
         if len((self.current_room or {}).get("players", [])) < 2:
             reader.speak(tr("يجب وجود لاعبين اثنين على الأقل لبدء اللعبة."), interrupt=True)

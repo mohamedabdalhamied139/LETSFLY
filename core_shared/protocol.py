@@ -85,4 +85,6 @@ class ChatMessage(BaseModel):
 
 class TargetUserRequest(BaseModel):
     target_user_id: Optional[int] = None
+    replacement_user_id: Optional[int] = None
+    is_bot: Optional[bool] = False
 

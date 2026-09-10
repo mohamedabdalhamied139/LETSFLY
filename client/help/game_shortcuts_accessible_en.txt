@@ -1,4 +1,4 @@
-Let's Fly — General Shortcuts for the Current Game
+TableVerse — General Shortcuts for the Current Game
 F1
 Open the shortcuts list for the current game.
 Ctrl+F1

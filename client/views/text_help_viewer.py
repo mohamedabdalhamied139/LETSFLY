@@ -1,4 +1,4 @@
-"""Accessible In-Game Notepad-style Text Help Viewer for Let's Fly."""
+"""Accessible In-Game Notepad-style Text Help Viewer for TableVerse."""
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QPlainTextEdit
 from PySide6.QtGui import QTextCursor
 from PySide6.QtCore import Qt

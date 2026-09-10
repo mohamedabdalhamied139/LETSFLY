@@ -6,9 +6,10 @@ from collections import defaultdict
 """Room and game endpoints."""
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 from core_shared.protocol import CreateRoomRequest, StartGameRequest, RoomActionRequest, TargetUserRequest
 from server.app.db.database import User, CoinTransaction, ChallengeInvitation, SessionLocal, get_db
 from server.app.api.users import get_current_user
@@ -28,6 +29,12 @@ _ROOM_CREATE_MAX_PER_USER = 10
 _ROOM_CREATE_MAX_TRACKED_USERS = 10_000
 _room_create_times = defaultdict(list)
 def _record_activity(recipient_ids, category, text, event_type, actor_id=None, room_id=None):
+    try:
+        _record_activity_sync(recipient_ids, category, text, event_type, actor_id, room_id)
+    except Exception:
+        logger.exception("Activity delivery failed for room %s", room_id)
+
+def _record_activity_sync(recipient_ids, category, text, event_type, actor_id=None, room_id=None):
     """Persist one central activity event for each recipient and push it live."""
     ids = sorted({int(uid) for uid in recipient_ids if uid is not None and int(uid) > 0})
     if not ids:
@@ -44,6 +51,10 @@ def _record_activity(recipient_ids, category, text, event_type, actor_id=None, r
             # event.id after close can raise DetachedInstanceError.
             events[uid] = int(event.id) if event.id is not None else None
         db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Activity persistence failed for room %s", room_id)
+        return
     finally:
         db.close()
     for uid in ids:
@@ -60,10 +71,23 @@ _SUGGESTION_MAX_PER_USER = 5
 _SUGGESTION_MAX_TRACKED_USERS = 10_000
 _suggestion_times = defaultdict(list)
 _suggestion_lock = threading.Lock()
+_game_action_times = defaultdict(deque)
+_game_action_lock = asyncio.Lock()
+
+async def _consume_game_action_budget(room_id: str, user_id: int) -> None:
+    now = time.monotonic()
+    key = (str(room_id), int(user_id))
+    async with _game_action_lock:
+        entries = _game_action_times[key]
+        while entries and now - entries[0] >= 1.0:
+            entries.popleft()
+        if len(entries) >= 20:
+            raise HTTPException(429, "عدد كبير جدًا من حركات اللعبة.")
+        entries.append(now)
 
 
 def _require_room_member(room, user: User) -> None:
-    if user.id not in room.players or user.id in room.banned_players:
+    if (user.id not in room.players and user.id not in room.spectators) or user.id in room.banned_players:
         raise HTTPException(403, "أنت لست عضوًا في هذه الطاولة.")
 
 
@@ -102,6 +126,9 @@ def _refund_coins(db: Session, user: User, amount: int, reason: str) -> int:
     db.add(CoinTransaction(user_id=user.id, amount=amount, reason=reason))
     try:
         db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "تم إرسال دعوة لهذا اللاعب بالفعل.")
     except Exception:
         db.rollback()
         raise
@@ -221,6 +248,9 @@ async def invite_user_to_room(room_id: str, user_id: int, user: User = Depends(g
     event = create_event(db, user_id, "INVITATIONS", text_msg, event_type="CHALLENGE_INVITATION", actor_id=user.id, room_id=room.room_id, payload={"invitation_id": inv.id, "room_id": room.room_id, "game": room.game})
     try:
         db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "تم إرسال دعوة لهذا اللاعب بالفعل.")
     except Exception:
         db.rollback()
         raise
@@ -273,7 +303,9 @@ async def join_room(room_id: str, as_spectator: bool = False, user: User = Depen
             "name": user.display_name,
             "is_spectator": True,
             "spectators": list(room.spectators),
-            "players": list(room.players)
+            "players": list(room.players),
+            "player_names": [room.player_names[uid] for uid in room.players if uid in room.player_names],
+            "players_dict": {str(uid): room.player_names.get(uid, "لاعب") for uid in set(room.players) | set(room.spectators)},
         })
         return room.public_dict(user.id)
 
@@ -288,7 +320,6 @@ async def join_room(room_id: str, as_spectator: bool = False, user: User = Depen
     ws_manager.broadcast_room(room.room_id, {"type": "player_joined", "user_id": user.id, "name": user.display_name})
     return room.public_dict(user.id)
 
-@router.post("/{room_id}/leave")
 async def leave_room_internal(room_id: str, user_id: int, user_display_name: str):
     room = room_manager.get_room(room_id)
     if not room:
@@ -301,26 +332,28 @@ async def leave_room_internal(room_id: str, user_id: int, user_display_name: str
     was_host = user_id == room.host_id
     
     bot_id = -user_id
-    while bot_id in room.players:
-        bot_id -= 1
     bot_name = f"Bot_{user_display_name}"
     
     async with room._mutation_lock:
         if room.status in ("playing", "round_finished", "match_finished"):
+            from server.app.games.registry import get_plugin
+            plugin = get_plugin(room.game)
+            game = plugin.get_engine(room) if plugin else None
+            occupied = set(room.players) | set(getattr(game, "player_ids", ()))
+            while bot_id in occupied:
+                bot_id -= 1
             if room.game == "FARKLE" and user_id in room.spectators:
                 room.spectators.remove(user_id)
             else:
                 if bot_id not in room.players:
                     room.add_player(bot_id, bot_name)
-                from server.app.games.registry import get_plugin
-                plugin = get_plugin(room.game)
                 if plugin and plugin.bot_replace_handler:
                     plugin.bot_replace_handler(room, user_id, bot_id, bot_name, plugin)
                 room.players = [uid for uid in room.players if uid != user_id]
                 room.player_names.pop(user_id, None)
                 room.scores.pop(user_id, None)
-                if user_id in room.assistants:
-                    room.assistants.remove(user_id)
+                if user_id == room.co_host_id:
+                    room.co_host_id = None
                 if user_id in room.spectators:
                     room.spectators.remove(user_id)
         else:
@@ -378,8 +411,14 @@ async def add_bot(room_id: str, user: User = Depends(get_current_user), db: Sess
     bot_id = None
     name = None
     async with room._mutation_lock:
-        if user.id != room.host_id or user.id not in room.players or user.id in room.banned_players:
+        uid_int = int(user.id)
+        is_member = (uid_int in room.players or uid_int in room.spectators)
+        # The host may deliberately observe their own table as a spectator.
+        # Do not require a player-seat membership for that administrative role.
+        if uid_int != int(room.host_id) or uid_int in room.banned_players:
             raise HTTPException(403, "لم تعد مخولًا لإضافة بوت إلى هذه الطاولة.")
+        if not is_member:
+            room.add_spectator(uid_int, user.display_name)
         if room.status != "waiting" or len(room.players) >= 10:
             raise HTTPException(409, "تغيرت حالة الطاولة. حاول مرة أخرى.")
         bot_id = room._next_bot_id
@@ -425,13 +464,17 @@ async def remove_bot(room_id: str, user: User = Depends(get_current_user)):
     room = room_manager.get_room(room_id)
     if not room:
         raise HTTPException(404, "الطاولة غير موجودة.")
-    if user.id != room.host_id:
+    if int(user.id) != int(room.host_id):
         raise HTTPException(403, "إزالة بوت متاح للمضيف فقط.")
     if room.status != "waiting":
         raise HTTPException(400, "لا يمكن إزالة بوت بعد بدء المباراة.")
     async with room._mutation_lock:
-        if user.id != room.host_id or user.id not in room.players or user.id in room.banned_players:
+        uid_int = int(user.id)
+        is_member = (uid_int in room.players or uid_int in room.spectators)
+        if uid_int != int(room.host_id) or uid_int in room.banned_players:
             raise HTTPException(403, "لم تعد مخولًا لإزالة بوت من هذه الطاولة.")
+        if not is_member:
+            room.add_spectator(uid_int, user.display_name)
         if room.status != "waiting":
             raise HTTPException(409, "تغيرت حالة الطاولة. حاول مرة أخرى.")
         name = room.remove_bot()
@@ -503,12 +546,13 @@ def _validate_game_configuration(game: str, target_score: int, rules: dict) -> t
 
 
 @router.post("/{room_id}/start")
-async def start_game(room_id: str, req: StartGameRequest, user: User = Depends(get_current_user)):
+async def start_game(room_id: str, req: StartGameRequest, background_tasks: BackgroundTasks, user: User = Depends(get_current_user)):
     room = room_manager.get_room(room_id)
     if not room:
         raise HTTPException(404, "Room not found.")
-    if user.id != room.host_id:
-        raise HTTPException(403, "Only the captain can start the game.")
+    is_authorized = (user.id == room.host_id or (room.co_host_id is not None and user.id == room.co_host_id))
+    if not is_authorized:
+        raise HTTPException(403, "بدء اللعبة متاح للقائد أو نائب القائد فقط.")
 
     from server.app.games.registry import get_plugin
     plugin = get_plugin(room.game)
@@ -516,8 +560,13 @@ async def start_game(room_id: str, req: StartGameRequest, user: User = Depends(g
         raise HTTPException(400, "Unknown game.")
 
     async with room._mutation_lock:
-        if user.id != room.host_id or user.id not in room.players or user.id in room.banned_players:
+        is_member = (user.id in room.players or user.id in room.spectators)
+        is_host = user.id == room.host_id
+        is_co_host = room.co_host_id is not None and user.id == room.co_host_id
+        if not (is_host or is_co_host) or user.id in room.banned_players or (not is_member and not is_host):
             raise HTTPException(403, "Access denied.")
+        if is_host and not is_member:
+            room.add_spectator(user.id, user.display_name)
         if room.status != "waiting":
             raise HTTPException(400, "Game already started.")
         
@@ -571,7 +620,7 @@ async def start_game(room_id: str, req: StartGameRequest, user: User = Depends(g
 
     ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room_id})
     ws_manager.broadcast_room(room_id, {"type": "game_state_changed", "room_id": room_id})
-    _record_activity([uid for uid in room.players if uid > 0], "GAMEPLAY", f"بدأت لعبة {room.game}", "GAME_STARTED", user.id, room_id)
+    background_tasks.add_task(_record_activity, [uid for uid in room.players if uid > 0], "GAMEPLAY", f"بدأت لعبة {room.game}", "GAME_STARTED", user.id, room_id)
     return room.public_dict(user.id)
 
 @router.get("/{room_id}/game/state")
@@ -596,6 +645,8 @@ async def game_action(room_id: str, req: RoomActionRequest, user: User = Depends
     if not room:
         raise HTTPException(404, "Room not found.")
     _require_room_member(room, user)
+    if room.game != "TENNIS" or req.action != "position":
+        await _consume_game_action_budget(room_id, user.id)
     async with room._mutation_lock:
         _require_room_member(room, user)
         from server.app.games.registry import get_plugin
@@ -608,7 +659,7 @@ async def game_action(room_id: str, req: RoomActionRequest, user: User = Depends
             raise HTTPException(400, str(e))
 
 @router.post("/{room_id}/stop")
-async def stop_game(room_id: str, user: User = Depends(get_current_user)):
+async def stop_game(room_id: str, background_tasks: BackgroundTasks, user: User = Depends(get_current_user)):
     room = room_manager.get_room(room_id)
     if not room:
         raise HTTPException(404, "Room not found.")
@@ -616,7 +667,8 @@ async def stop_game(room_id: str, user: User = Depends(get_current_user)):
         raise HTTPException(403, "Only the captain can stop the game.")
 
     async with room._mutation_lock:
-        if user.id != room.host_id or user.id not in room.players or user.id in room.banned_players:
+        is_member = (user.id in room.players or user.id in room.spectators)
+        if user.id != room.host_id or not is_member or user.id in room.banned_players:
             raise HTTPException(403, "Access denied.")
         if room.status not in ("playing", "round_finished", "match_finished"):
             raise HTTPException(400, "Game is not playing.")
@@ -634,7 +686,7 @@ async def stop_game(room_id: str, user: User = Depends(get_current_user)):
 
     ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room_id})
     ws_manager.broadcast_room(room_id, {"type": "game_stopped", "room_id": room_id})
-    _record_activity([uid for uid in room.players if uid > 0], "GAMEPLAY", f"توقفت لعبة {room.game}", "GAME_STOPPED", user.id, room_id)
+    background_tasks.add_task(_record_activity, [uid for uid in room.players if uid > 0], "GAMEPLAY", f"توقفت لعبة {room.game}", "GAME_STOPPED", user.id, room_id)
     return room.public_dict(user.id)
 
 @router.post("/{room_id}/kick")
@@ -642,13 +694,16 @@ async def kick_player(room_id: str, req: TargetUserRequest, user: User = Depends
     room = room_manager.get_room(room_id)
     if not room:
         raise HTTPException(404, "الطاولة غير موجودة.")
-    if user.id != room.host_id:
-        raise HTTPException(403, "طرد اللاعبين متاح للقائد فقط.")
+    is_authorized = (user.id == room.host_id or (room.co_host_id is not None and user.id == room.co_host_id))
+    if not is_authorized:
+        raise HTTPException(403, "طرد اللاعبين متاح للقائد أو نائب القائد فقط.")
     if room.status != "waiting":
         raise HTTPException(400, "لا يمكن طرد لاعب أثناء اللعب.")
     target_id = req.target_user_id
     if target_id == room.host_id:
-        raise HTTPException(400, "لا يمكن للقائد طرد نفسه.")
+        raise HTTPException(400, "لا يمكن طرد قائد الطاولة.")
+    if user.id == room.co_host_id and target_id == room.co_host_id:
+        raise HTTPException(400, "لا يمكن لنائب القائد طرد نفسه بهذا الإجراء.")
     target_name = room.player_names.get(target_id, "لاعب")
     if target_id < 0:
         async with room._mutation_lock:
@@ -664,8 +719,9 @@ async def kick_player(room_id: str, req: TargetUserRequest, user: User = Depends
         })
         return {"ok": True}
     await leave_room_internal(room_id, target_id, target_name)
-    ws_manager.broadcast_user(target_id, {"type": "kicked_from_room", "room_id": room_id, "message": "تم طردك من الطاولة بواسطة القائد."})
-    ws_manager.broadcast_room(room_id, {"type": "player_kicked", "user_id": target_id, "name": target_name})
+    actor_label = "القائد" if user.id == room.host_id else "نائب القائد"
+    ws_manager.broadcast_user(target_id, {"type": "kicked_from_room", "room_id": room_id, "message": f"تم طردك من الطاولة بواسطة {actor_label}."})
+    ws_manager.broadcast_room(room_id, {"type": "player_kicked", "user_id": target_id, "name": target_name, "actor_id": user.id, "actor_label": actor_label})
     return {"ok": True}
 
 @router.post("/{room_id}/ban")
@@ -673,13 +729,16 @@ async def ban_player(room_id: str, req: TargetUserRequest, user: User = Depends(
     room = room_manager.get_room(room_id)
     if not room:
         raise HTTPException(404, "الطاولة غير موجودة.")
-    if user.id != room.host_id:
-        raise HTTPException(403, "حظر اللاعبين متاح للقائد فقط.")
+    is_authorized = (user.id == room.host_id or (room.co_host_id is not None and user.id == room.co_host_id))
+    if not is_authorized:
+        raise HTTPException(403, "حظر اللاعبين متاح للقائد أو نائب القائد فقط.")
     if room.status != "waiting":
         raise HTTPException(400, "لا يمكن حظر لاعب أثناء اللعب.")
     target_id = req.target_user_id
     if target_id == room.host_id:
-        raise HTTPException(400, "لا يمكن للقائد حظر نفسه.")
+        raise HTTPException(400, "لا يمكن حظر قائد الطاولة.")
+    if user.id == room.co_host_id and target_id == room.co_host_id:
+        raise HTTPException(400, "لا يمكن لنائب القائد حظر نفسه.")
     target_name = room.player_names.get(target_id, "لاعب")
     if target_id < 0:
         async with room._mutation_lock:
@@ -696,9 +755,17 @@ async def ban_player(room_id: str, req: TargetUserRequest, user: User = Depends(
         return {"ok": True}
     room.banned_players.add(target_id)
     await leave_room_internal(room_id, target_id, target_name)
-    ws_manager.broadcast_user(target_id, {"type": "banned_from_room", "room_id": room_id, "message": "تم حظرك من هذه الطاولة."})
-    ws_manager.broadcast_room(room_id, {"type": "player_banned", "user_id": target_id, "name": target_name})
+    actor_label = "القائد" if user.id == room.host_id else "نائب القائد"
+    ws_manager.broadcast_user(target_id, {"type": "banned_from_room", "room_id": room_id, "message": f"تم حظرك من هذه الطاولة بواسطة {actor_label}."})
+    ws_manager.broadcast_room(room_id, {"type": "player_banned", "user_id": target_id, "name": target_name, "actor_id": user.id, "actor_label": actor_label})
     return {"ok": True}
+
+def _require_voice_moderation_target(room, user, target_id):
+    _require_room_member(room, user)
+    if user.id != room.host_id:
+        raise HTTPException(403, "Access denied.")
+    if target_id not in room.players and target_id not in room.spectators:
+        raise HTTPException(404, "Target is not a member of this room.")
 
 @router.post("/{room_id}/voice/mute")
 async def voice_mute_player(room_id: str, req: TargetUserRequest, user: User = Depends(get_current_user)):
@@ -708,12 +775,14 @@ async def voice_mute_player(room_id: str, req: TargetUserRequest, user: User = D
     if user.id != room.host_id:
         raise HTTPException(403, "كتم ميكروفون اللاعبين متاح للقائد فقط.")
     target_id = req.target_user_id
-    if target_id in room.voice_muted:
-        room.voice_muted.remove(target_id)
-        action = "unmuted"
-    else:
-        room.voice_muted.add(target_id)
-        action = "muted"
+    async with room._mutation_lock:
+        _require_voice_moderation_target(room, user, target_id)
+        if target_id in room.voice_muted:
+            room.voice_muted.remove(target_id)
+            action = "unmuted"
+        else:
+            room.voice_muted.add(target_id)
+            action = "muted"
     target_name = room.player_names.get(target_id, "لاعب")
     ws_manager.broadcast_room(room_id, {
         "type": "voice_mute_changed",
@@ -731,10 +800,12 @@ async def voice_kick_player(room_id: str, req: TargetUserRequest, user: User = D
     if user.id != room.host_id:
         raise HTTPException(403, "إزالة اللاعبين من المحادثة الصوتية متاح للقائد فقط.")
     target_id = req.target_user_id
-    with ws_manager._state_lock:
-        sockets = [ws for ws in ws_manager.voice_connections.get(room_id, set()) if ws_manager.connection_users.get(ws) == target_id]
-    for ws in sockets:
-        ws_manager.leave_voice(room_id, ws)
+    async with room._mutation_lock:
+        _require_voice_moderation_target(room, user, target_id)
+        with ws_manager._state_lock:
+            sockets = [ws for ws in ws_manager.voice_connections.get(room_id, set()) if ws_manager.connection_users.get(ws) == target_id]
+        for ws in sockets:
+            ws_manager.leave_voice(room_id, ws)
     target_name = room.player_names.get(target_id, "لاعب")
     ws_manager.broadcast_user(target_id, {"type": "voice_kicked", "room_id": room_id, "message": "تم إخراجك من المحادثة الصوتية بواسطة القائد."})
     ws_manager.broadcast_room(room_id, {"type": "voice_user_kicked", "user_id": target_id, "name": target_name})
@@ -748,11 +819,13 @@ async def voice_ban_player(room_id: str, req: TargetUserRequest, user: User = De
     if user.id != room.host_id:
         raise HTTPException(403, "حظر اللاعبين من المحادثة الصوتية متاح للقائد فقط.")
     target_id = req.target_user_id
-    room.voice_banned.add(target_id)
-    with ws_manager._state_lock:
-        sockets = [ws for ws in ws_manager.voice_connections.get(room_id, set()) if ws_manager.connection_users.get(ws) == target_id]
-    for ws in sockets:
-        ws_manager.leave_voice(room_id, ws)
+    async with room._mutation_lock:
+        _require_voice_moderation_target(room, user, target_id)
+        room.voice_banned.add(target_id)
+        with ws_manager._state_lock:
+            sockets = [ws for ws in ws_manager.voice_connections.get(room_id, set()) if ws_manager.connection_users.get(ws) == target_id]
+        for ws in sockets:
+            ws_manager.leave_voice(room_id, ws)
     target_name = room.player_names.get(target_id, "لاعب")
     ws_manager.broadcast_user(target_id, {"type": "voice_banned", "room_id": room_id, "message": "تم حظرك من المحادثة الصوتية في هذه الطاولة."})
     ws_manager.broadcast_room(room_id, {"type": "voice_user_banned", "user_id": target_id, "name": target_name})
@@ -770,6 +843,11 @@ async def toggle_spectator(room_id: str, req: Optional[TargetUserRequest] = None
         raise HTTPException(400, "لا يمكن تغيير وضع المتفرج أثناء اللعب.")
 
     async with room._mutation_lock:
+        _require_room_member(room, user)
+        if target_id not in room.players and target_id not in room.spectators:
+            raise HTTPException(404, "اللاعب غير موجود في الطاولة.")
+        if target_id != user.id and user.id != room.host_id:
+            raise HTTPException(403, "تحويل لاعب آخر لمتفرج متاح للقائد فقط.")
         if target_id in room.spectators:
             room.spectators.remove(target_id)
             if target_id not in room.players:
@@ -792,7 +870,180 @@ async def toggle_spectator(room_id: str, req: Optional[TargetUserRequest] = None
         "name": target_name,
         "is_spectator": is_spectator,
         "spectators": list(room.spectators),
-        "players": list(room.players)
+        "players": list(room.players),
+        "player_names": [room.player_names[uid] for uid in room.players if uid in room.player_names],
+        "players_dict": {str(uid): room.player_names.get(uid, "لاعب") for uid in set(room.players) | set(room.spectators)},
     })
-    return {"ok": True, "is_spectator": is_spectator}
+    return {"ok": True, "is_spectator": is_spectator, "room": room.public_dict(user.id)}
+
+@router.post("/{room_id}/transfer_host")
+async def transfer_host(room_id: str, req: TargetUserRequest, user: User = Depends(get_current_user)):
+    room = room_manager.get_room(room_id)
+    if not room:
+        raise HTTPException(404, "الطاولة غير موجودة.")
+    target_id = req.target_user_id
+    if not target_id or target_id <= 0:
+        raise HTTPException(400, "يجب تحديد لاعب لنقل القيادة إليه.")
+    if target_id == room.host_id:
+        raise HTTPException(400, "أنت قائد الطاولة بالفعل.")
+    async with room._mutation_lock:
+        _require_room_member(room, user)
+        if user.id != room.host_id or target_id not in room.players:
+            raise HTTPException(403, "نقل القيادة متاح للقائد إلى لاعب موجود فقط.")
+        target_name = room.player_names.get(target_id, "لاعب")
+        room.host_id = target_id
+        room.host_name = target_name
+        if room.co_host_id == target_id:
+            room.co_host_id = None
+
+    ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room_id})
+    ws_manager.broadcast_room(room_id, {
+        "type": "captain_changed",
+        "user_id": target_id,
+        "name": target_name,
+        "co_host_id": room.co_host_id,
+    })
+    return {"ok": True, "host_id": target_id, "host_name": target_name}
+
+@router.post("/{room_id}/set_co_host")
+async def set_co_host(room_id: str, req: TargetUserRequest, user: User = Depends(get_current_user)):
+    room = room_manager.get_room(room_id)
+    if not room:
+        raise HTTPException(404, "الطاولة غير موجودة.")
+    target_id = req.target_user_id
+    if not target_id or target_id <= 0:
+        raise HTTPException(400, "يجب تحديد لاعب.")
+    if target_id == room.host_id:
+        raise HTTPException(400, "لا يمكن تعيين القائد كنائب للقائد.")
+    async with room._mutation_lock:
+        _require_room_member(room, user)
+        if user.id != room.host_id or target_id not in room.players:
+            raise HTTPException(403, "تعيين نائب القائد متاح للقائد إلى لاعب موجود فقط.")
+        target_name = room.player_names.get(target_id, "لاعب")
+        if room.co_host_id == target_id:
+            room.co_host_id = None
+            is_co_host = False
+        else:
+            room.co_host_id = target_id
+            is_co_host = True
+
+    ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room_id})
+    ws_manager.broadcast_room(room_id, {
+        "type": "co_captain_changed",
+        "user_id": target_id if is_co_host else None,
+        "name": target_name if is_co_host else "",
+        "co_host_id": room.co_host_id,
+        "is_co_host": is_co_host,
+    })
+    return {"ok": True, "co_host_id": room.co_host_id, "is_co_host": is_co_host}
+
+@router.post("/{room_id}/substitute")
+async def substitute_player(room_id: str, req: TargetUserRequest, user: User = Depends(get_current_user)):
+    room = room_manager.get_room(room_id)
+    if not room:
+        raise HTTPException(404, "الطاولة غير موجودة.")
+    is_authorized = (user.id == room.host_id or (room.co_host_id is not None and user.id == room.co_host_id))
+    if not is_authorized:
+        raise HTTPException(403, "الاستبدال متاح للقائد أو نائب القائد فقط.")
+    target_id = req.target_user_id
+    if not target_id or target_id <= 0:
+        raise HTTPException(400, "يجب تحديد لاعب للاستبدال.")
+    if target_id == room.host_id:
+        raise HTTPException(400, "لا يمكن استبدال قائد الطاولة.")
+    if target_id not in room.players and target_id not in room.spectators:
+        raise HTTPException(400, "اللاعب غير موجود في الطاولة.")
+
+    target_name = room.player_names.get(target_id, "لاعب")
+    actor_label = "القائد" if user.id == room.host_id else "نائب القائد"
+
+    # Check replacement type: bot or another user
+    rep_id = req.replacement_user_id
+    is_bot_replacement = bool(req.is_bot) or (rep_id is None) or (rep_id <= 0)
+
+    if not is_bot_replacement:
+        if rep_id not in room.players and rep_id not in room.spectators:
+            raise HTTPException(400, "اللاعب البديل غير موجود في الطاولة.")
+        if rep_id == target_id:
+            raise HTTPException(400, "لا يمكن استبدال اللاعب بنفسه.")
+        rep_name = room.player_names.get(rep_id, "لاعب")
+
+        async with room._mutation_lock:
+            # If replacement is a spectator: promote replacement to player, demote target to spectator
+            if rep_id in room.spectators:
+                room.spectators.remove(rep_id)
+                if rep_id not in room.players:
+                    room.players.append(rep_id)
+                if target_id in room.players:
+                    room.players.remove(target_id)
+                if target_id not in room.spectators:
+                    room.spectators.append(target_id)
+            elif rep_id in room.players and target_id in room.players:
+                # Both are players: swap positions in room.players
+                idx1 = room.players.index(target_id)
+                idx2 = room.players.index(rep_id)
+                room.players[idx1], room.players[idx2] = room.players[idx2], room.players[idx1]
+
+            # In an active match: swap player in the game engine
+            if room.status in ("playing", "round_finished", "match_finished"):
+                from server.app.games.registry import get_plugin
+                plugin = get_plugin(room.game)
+                if plugin:
+                    from server.app.games.plugins.all_games import generic_player_swap
+                    generic_player_swap(room, target_id, rep_id, rep_name, plugin)
+
+        ws_manager.broadcast_user(target_id, {"type": "kicked_from_room", "room_id": room_id, "message": f"تم استبدالك بـ {rep_name} في الطاولة بواسطة {actor_label}."})
+        ws_manager.broadcast_room(room_id, {
+            "type": "player_substituted",
+            "user_id": target_id,
+            "name": target_name,
+            "replacement_user_id": rep_id,
+            "replacement_name": rep_name,
+            "is_bot": False,
+            "players": list(room.players),
+            "spectators": list(room.spectators),
+            "player_names": [room.player_names[uid] for uid in room.players if uid in room.player_names],
+            "players_dict": {str(uid): room.player_names.get(uid, "لاعب") for uid in set(room.players) | set(room.spectators)},
+        })
+        if room.status in ("playing", "round_finished", "match_finished"):
+            ws_manager.broadcast_room(room_id, {"type": "game_state_changed", "room_id": room_id})
+        ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room_id})
+        return {"ok": True, "target_user_id": target_id, "replacement_user_id": rep_id, "replacement_name": rep_name, "is_bot": False}
+
+    # Bot replacement
+    bot_name = None
+    if room.status == "waiting":
+        async with room._mutation_lock:
+            room.remove_player(target_id)
+            bot_name = room.add_bot()
+        await ws_manager.disconnect_user_from_room(room_id, target_id)
+        ws_manager.broadcast_user(target_id, {"type": "kicked_from_room", "room_id": room_id, "message": f"تم استبدالك ببوت في هذه الطاولة بواسطة {actor_label}."})
+        ws_manager.broadcast_room(room_id, {
+            "type": "player_substituted",
+            "user_id": target_id,
+            "name": target_name,
+            "bot_name": bot_name,
+            "is_bot": True,
+            "players": list(room.players),
+            "spectators": list(room.spectators),
+            "player_names": [room.player_names[uid] for uid in room.players if uid in room.player_names],
+            "players_dict": {str(uid): room.player_names.get(uid, "لاعب") for uid in set(room.players) | set(room.spectators)},
+        })
+        ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room_id})
+    else:
+        # In playing match: leave_room_internal replaces player with a bot in game state
+        await leave_room_internal(room_id, target_id, target_name)
+        ws_manager.broadcast_user(target_id, {"type": "kicked_from_room", "room_id": room_id, "message": f"تم استبدالك ببوت في هذه الطاولة بواسطة {actor_label}."})
+        ws_manager.broadcast_room(room_id, {
+            "type": "player_substituted",
+            "user_id": target_id,
+            "name": target_name,
+            "is_bot": True,
+            "players": list(room.players),
+            "spectators": list(room.spectators),
+            "player_names": [room.player_names[uid] for uid in room.players if uid in room.player_names],
+            "players_dict": {str(uid): room.player_names.get(uid, "لاعب") for uid in set(room.players) | set(room.spectators)},
+        })
+    return {"ok": True, "target_user_id": target_id, "bot_name": bot_name, "is_bot": True}
+
+
 

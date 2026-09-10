@@ -1,4 +1,4 @@
-# Let's Fly v2.0 — Gaming Platform for the Blind
+# TableVerse v2.0 — Gaming Platform for the Blind
 
 ## Project Architecture
 
@@ -32,7 +32,7 @@
 - views/: Shared TableView, AuthView, HomeView, RoomsMenuView, JoinRoomsView, ListMenu, and TextHelpViewer.
 
 ## Running the Project
-Execute START_LETSFLY.bat or run:
+Execute START_TABLEVERSE.bat or run:
 1. python server/run_server.py
 2. python client/main.py
 
@@ -42,20 +42,20 @@ The bundled local server is a development launcher. For an online deployment:
 
 - Put a TLS reverse proxy (for example Nginx/Caddy/Apache) in front of FastAPI.
 - Keep FastAPI bound to `127.0.0.1` so the application port is not exposed directly to the Internet.
-- Set `LETSFLY_ENV=production`.
-- Set a high-entropy `LETSFLY_SECRET_KEY` outside the project files.
-- Set `LETSFLY_CORS_ORIGINS` to the exact HTTPS frontend origin(s); never use `*`.
-- Set `LETSFLY_ALLOWED_HOSTS` to the exact production API hostname(s); never use `*`.
-- Set `LETSFLY_FORWARDED_ALLOW_IPS` to the IP address(es) of the trusted reverse proxy, so client IP and HTTPS scheme are derived only from trusted forwarding headers.
-- Keep `LETSFLY_REQUIRE_HTTPS=true` in production.
+- Set `TABLEVERSE_ENV=production`.
+- Set a high-entropy `TABLEVERSE_SECRET_KEY` outside the project files.
+- Set `TABLEVERSE_CORS_ORIGINS` to the exact HTTPS frontend origin(s); never use `*`.
+- Set `TABLEVERSE_ALLOWED_HOSTS` to the exact production API hostname(s); never use `*`.
+- Set `TABLEVERSE_FORWARDED_ALLOW_IPS` to the IP address(es) of the trusted reverse proxy, so client IP and HTTPS scheme are derived only from trusted forwarding headers.
+- Keep `TABLEVERSE_REQUIRE_HTTPS=true` in production.
 - Use one Uvicorn worker unless a shared rate-limit backend is deployed; the current in-process abuse controls are intentionally process-local. Do not scale this process horizontally until the rate-limit state is moved to a shared backend (for example Redis).
 - Do not expose the SQLite database file, secret files, or server logs through the web server.
 - Do not run with `--reload` in production.
 
 ## Security configuration
 
-- Production deployments must set `LETSFLY_ENV=production` and provide `LETSFLY_SECRET_KEY` with at least 64 characters.
-- Access tokens expire after 24 hours by default; override with `LETSFLY_ACCESS_TOKEN_EXPIRE_MINUTES` when required.
+- Production deployments must set `TABLEVERSE_ENV=production` and provide `TABLEVERSE_SECRET_KEY` with at least 64 characters.
+- Access tokens expire after 24 hours by default; override with `TABLEVERSE_ACCESS_TOKEN_EXPIRE_MINUTES` when required.
 - Logout and password changes revoke all previously issued access tokens for that account.
 - Login failures are rate-limited per client address and username, with an additional per-address aggregate limit.
 - New registrations and password changes require passwords of at least 8 characters. Existing accounts remain compatible and can upgrade through `/api/auth/change-password`.
@@ -66,7 +66,7 @@ The bundled local server is a development launcher. For an online deployment:
 
 ## Production security notes
 - Run exactly one Uvicorn worker until a shared rate-limiting/state backend is configured.
-- Use a cryptographically random production `LETSFLY_SECRET_KEY` of at least 64 characters.
+- Use a cryptographically random production `TABLEVERSE_SECRET_KEY` of at least 64 characters.
 - Set explicit HTTPS CORS origins; production rejects non-HTTPS origins.
-- Configure `LETSFLY_FORWARDED_ALLOW_IPS` to trusted reverse-proxy addresses only.
-- Configure `LETSFLY_JWT_ISSUER` and `LETSFLY_JWT_AUDIENCE` consistently with the deployed client.
+- Configure `TABLEVERSE_FORWARDED_ALLOW_IPS` to trusted reverse-proxy addresses only.
+- Configure `TABLEVERSE_JWT_ISSUER` and `TABLEVERSE_JWT_AUDIENCE` consistently with the deployed client.

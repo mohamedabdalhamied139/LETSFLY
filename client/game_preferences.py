@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import os
 
-APP_DIR = Path(os.getenv("APPDATA") or (Path.home() / ".letsfly")) / "LetsFly"
+APP_DIR = Path(os.getenv("APPDATA") or (Path.home() / ".tableverse")) / "TableVerse"
 FILE = APP_DIR / "game_preferences.json"
 
 def load_all():

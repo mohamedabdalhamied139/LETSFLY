@@ -10,6 +10,7 @@ import json
 import time
 import struct
 from collections import deque
+from contextlib import asynccontextmanager, suppress
 from server.app.api.auth import router as auth_router
 from server.app.api.users import router as users_router
 from server.app.api.rooms import router as rooms_router
@@ -22,20 +23,36 @@ from server.app.db.database import SessionLocal, User
 from server.app.activity import create_event
 from core_shared.version import BUILD
 from core_shared.protocol import RoomActionRequest
-app = FastAPI(title="Let's Fly Server v2", version="2.0.0")
+@asynccontextmanager
+async def lifespan(app):
+    app.state.chat_persist_queue = asyncio.Queue(maxsize=500)
+    worker = asyncio.create_task(_chat_persist_worker(app.state.chat_persist_queue))
+    try:
+        yield
+    finally:
+        try:
+            await asyncio.wait_for(app.state.chat_persist_queue.join(), timeout=10)
+        except asyncio.TimeoutError:
+            logger.warning("Chat persistence queue did not drain before shutdown")
+        finally:
+            worker.cancel()
+            with suppress(asyncio.CancelledError):
+                await worker
+
+app = FastAPI(title="TableVerse Server v2", version="2.0.0", lifespan=lifespan)
 
 _MAX_HTTP_BODY_BYTES = 64 * 1024
-_environment = os.getenv("LETSFLY_ENV", "development").strip().lower()
-_REQUIRE_HTTPS = os.getenv("LETSFLY_REQUIRE_HTTPS", "true" if _environment in {"production", "prod"} else "false").strip().lower() in {"1", "true", "yes", "on"}
+_environment = os.getenv("TABLEVERSE_ENV", "development").strip().lower()
+_REQUIRE_HTTPS = os.getenv("TABLEVERSE_REQUIRE_HTTPS", "true" if _environment in {"production", "prod"} else "false").strip().lower() in {"1", "true", "yes", "on"}
 
-_allowed_hosts_raw = os.getenv("LETSFLY_ALLOWED_HOSTS")
+_allowed_hosts_raw = os.getenv("TABLEVERSE_ALLOWED_HOSTS") or os.getenv("LETSFLY_ALLOWED_HOSTS")
 if _environment in {"production", "prod"} and not _allowed_hosts_raw:
-    raise RuntimeError("LETSFLY_ALLOWED_HOSTS must be explicitly configured in production.")
+    raise RuntimeError("TABLEVERSE_ALLOWED_HOSTS must be explicitly configured in production.")
 if not _allowed_hosts_raw:
-    _allowed_hosts_raw = "127.0.0.1,localhost,testserver"
+    _allowed_hosts_raw = "127.0.0.1,localhost,testserver,letsfly.onrender.com,tableverse.onrender.com"
 _allowed_hosts = [x.strip() for x in _allowed_hosts_raw.split(",") if x.strip()]
 if "*" in _allowed_hosts:
-    raise RuntimeError("LETSFLY_ALLOWED_HOSTS must not contain '*' in production.")
+    raise RuntimeError("TABLEVERSE_ALLOWED_HOSTS must not contain '*' in production.")
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=_allowed_hosts)
 
 def _request_host_is_allowed(request) -> bool:
@@ -113,7 +130,7 @@ async def security_headers_and_body_limit(request, call_next):
         request._receive = receive_from_buffer
 
     response = await call_next(request)
-    response.headers.setdefault("X-LetsFly-Process-Time-Ms", f"{(time.perf_counter() - request_started) * 1000:.2f}")
+    response.headers.setdefault("X-TableVerse-Process-Time-Ms", f"{(time.perf_counter() - request_started) * 1000:.2f}")
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "no-referrer")
@@ -123,7 +140,7 @@ async def security_headers_and_body_limit(request, call_next):
     if request.url.scheme == "https":
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
     return response
-logger = logging.getLogger("letsfly.server")
+logger = logging.getLogger("tableverse.server")
 
 def _persist_chat_activity(room_id: str, sender_id: int, sender: str, text: str, recipients: list[int]):
     """Persist chat activity without blocking the WebSocket event loop."""
@@ -142,6 +159,16 @@ def _persist_chat_activity(room_id: str, sender_id: int, sender: str, text: str,
     finally:
         db.close()
 
+async def _chat_persist_worker(queue):
+    while True:
+        args = await queue.get()
+        try:
+            await asyncio.to_thread(_persist_chat_activity, *args)
+        except Exception:
+            logger.exception("Chat persistence worker failed")
+        finally:
+            queue.task_done()
+
 _WS_CHAT_WINDOW_SECONDS = 5.0
 _WS_CHAT_MAX_MESSAGES = 10
 _WS_MAX_JSON_BYTES = 4096
@@ -151,14 +178,14 @@ _WS_EVENTS_MAX_MESSAGES = 30
 # Keep the desktop/local deployment safe by default. Production deployments can
 # explicitly provide a comma-separated allow-list without changing the shared
 # room/table architecture.
-_cors_raw = os.getenv("LETSFLY_CORS_ORIGINS")
+_cors_raw = os.getenv("TABLEVERSE_CORS_ORIGINS")
 if _environment in {"production", "prod"} and not _cors_raw:
-    raise RuntimeError("LETSFLY_CORS_ORIGINS must be explicitly configured in production.")
+    raise RuntimeError("TABLEVERSE_CORS_ORIGINS must be explicitly configured in production.")
 if not _cors_raw:
     _cors_raw = "http://127.0.0.1:8000,http://localhost:8000"
 _cors_origins = [x.strip() for x in _cors_raw.split(",") if x.strip()]
 if "*" in _cors_origins:
-    raise RuntimeError("LETSFLY_CORS_ORIGINS must not contain '*' when credentials are enabled.")
+    raise RuntimeError("TABLEVERSE_CORS_ORIGINS must not contain '*' when credentials are enabled.")
 if _environment in {"production", "prod"} and any(not origin.lower().startswith("https://") for origin in _cors_origins):
     raise RuntimeError("Production CORS origins must use HTTPS.")
 
@@ -203,7 +230,7 @@ def _ws_user_id(websocket: WebSocket):
 
 @app.websocket("/ws/events")
 async def ws_events(websocket: WebSocket):
-    user_id = _ws_user_id(websocket)
+    user_id = await asyncio.to_thread(_ws_user_id, websocket)
     if user_id is None:
         await websocket.close(code=1008, reason="Authentication required")
         return
@@ -212,7 +239,7 @@ async def ws_events(websocket: WebSocket):
     try:
         event_times = deque()
         while True:
-            raw = await websocket.receive_text()
+            raw = await asyncio.wait_for(websocket.receive_text(), timeout=45)
             if len(raw.encode("utf-8")) > _WS_MAX_JSON_BYTES:
                 await websocket.close(code=1009, reason="Message too large")
                 ws_manager.disconnect(websocket)
@@ -224,7 +251,7 @@ async def ws_events(websocket: WebSocket):
                     response = {"type": "pong"}
                     if isinstance(ping_id, str) and len(ping_id) <= 64:
                         response["ping_id"] = ping_id
-                    await websocket.send_json(response)
+                    await ws_manager.send_json(websocket, response)
                     continue
             except Exception:
                 pass
@@ -242,21 +269,68 @@ async def ws_events(websocket: WebSocket):
         logger.exception("Lobby WebSocket failed for user %s", user_id)
         ws_manager.disconnect(websocket)
 
+_disconnect_grace_tasks: dict[tuple[str, int], asyncio.Task] = {}
+
+def cancel_disconnect_grace_timer(room_id: str, user_id: int):
+    """Cancel pending disconnect timer if player rejoins or explicitly leaves."""
+    task = _disconnect_grace_tasks.pop((str(room_id), int(user_id)), None)
+    if task and not task.done():
+        task.cancel()
+
+def cancel_room_disconnect_grace_timers(room_id: str):
+    """Cancel all pending disconnect timers for a room being deleted or stopped."""
+    target_keys = [k for k in _disconnect_grace_tasks if k[0] == str(room_id)]
+    for k in target_keys:
+        task = _disconnect_grace_tasks.pop(k, None)
+        if task and not task.done():
+            task.cancel()
+
+async def _disconnect_grace_timeout(room_id: str, user_id: int, player_name: str):
+    """Wait 120 seconds before treating unexpected disconnection as room departure."""
+    try:
+        await asyncio.sleep(120)
+        _disconnect_grace_tasks.pop((str(room_id), int(user_id)), None)
+        room = room_manager.get_room(room_id)
+        if room and user_id in room.players:
+            from server.app.api.rooms import leave_room_internal
+            await leave_room_internal(room_id, user_id, player_name)
+    except asyncio.CancelledError:
+        pass
+    except Exception:
+        logger.exception("Error in disconnect grace timeout for user %s in room %s", user_id, room_id)
+
 @app.websocket("/ws/room/{room_id}")
 async def ws_room(websocket: WebSocket, room_id: str):
-    user_id = _ws_user_id(websocket)
+    user_id = await asyncio.to_thread(_ws_user_id, websocket)
     room = room_manager.get_room(room_id)
-    if user_id is None or room is None or user_id not in room.players or user_id in room.banned_players:
+    is_room_member = room is not None and (user_id in room.players or user_id in room.spectators)
+    if user_id is None or room is None or not is_room_member or user_id in room.banned_players:
         await websocket.close(code=1008, reason="Room access denied")
         return
     if not await ws_manager.connect(websocket, user_id, room_id=room_id):
         return
+
+    # If this user had a pending disconnect grace timer, cancel it and announce reconnection!
+    had_grace = (str(room_id), int(user_id)) in _disconnect_grace_tasks
+    cancel_disconnect_grace_timer(room_id, user_id)
+    player_name = room.player_names.get(user_id, "لاعب")
+    if had_grace:
+        logger.info("[انقطاع] %s أعاد الاتصال مجددا بالطاولة %s (user_id=%s)", player_name, room_id, user_id)
+        print(f"[انقطاع] {player_name} أعاد الاتصال مجددا بالطاولة {room_id} (user_id={user_id})")
+        ws_manager.broadcast_room(room_id, {
+            "type": "player_reconnected",
+            "user_id": user_id,
+            "name": player_name,
+            "room_id": room_id
+        })
+
     # Build the initial snapshot while holding the room mutation lock so a
     # concurrent leave/stop/action cannot produce a mixed-version snapshot.
     try:
         async with room._mutation_lock:
             current_room = room_manager.get_room(room_id)
-            if current_room is None or user_id not in current_room.players or user_id in current_room.banned_players:
+            is_room_member = current_room is not None and (user_id in current_room.players or user_id in current_room.spectators)
+            if current_room is None or not is_room_member or user_id in current_room.banned_players:
                 await websocket.close(code=1008, reason="Room access denied")
                 ws_manager.disconnect(websocket, room_id=room_id)
                 return
@@ -271,18 +345,21 @@ async def ws_room(websocket: WebSocket, room_id: str):
                 "snakes_state": current_room.snakes_game.get_state(user_id) if current_room.snakes_game else None,
                 "scopa_state": current_room.scopa_game.public_state(user_id) if current_room.scopa_game else None,
                 "tennis_state": current_room.tennis_game.full_state() if current_room.tennis_game else None,
+                "ninety_nine_state": current_room.ninety_nine_game.state_for(user_id) if current_room.ninety_nine_game else None,
             }
-        await websocket.send_json(snapshot)
+        await ws_manager.send_json(websocket, snapshot, room_id)
         chat_times = deque()
         voice_times = deque()
+        game_action_times = deque()
         while True:
             current_room = room_manager.get_room(room_id)
-            if current_room is None or user_id not in current_room.players or user_id in current_room.banned_players:
+            is_room_member = current_room is not None and (user_id in current_room.players or user_id in current_room.spectators)
+            if current_room is None or not is_room_member or user_id in current_room.banned_players:
                 await websocket.close(code=1008, reason="Room membership ended")
                 ws_manager.disconnect(websocket, room_id=room_id)
                 return
 
-            message = await websocket.receive()
+            message = await asyncio.wait_for(websocket.receive(), timeout=45)
             if message.get("type") == "websocket.disconnect":
                 raise WebSocketDisconnect()
             raw_bytes = message.get("bytes")
@@ -296,6 +373,8 @@ async def ws_room(websocket: WebSocket, room_id: str):
                     voice_members = ws_manager.voice_connections.get(room_id, set())
                     is_voice_member = websocket in voice_members
                 if not is_voice_member:
+                    continue
+                if current_room and (user_id in current_room.voice_banned or user_id in current_room.voice_muted):
                     continue
                 now = time.monotonic()
                 while voice_times and now - voice_times[0] >= 1.0:
@@ -325,11 +404,14 @@ async def ws_room(websocket: WebSocket, room_id: str):
                 response = {"type": "pong"}
                 if isinstance(ping_id, str) and len(ping_id) <= 64:
                     response["ping_id"] = ping_id
-                await websocket.send_json(response)
+                await ws_manager.send_json(websocket, response, room_id)
                 continue
             if data.get("type") == "voice_join" and set(data.keys()) == {"type"}:
+                if current_room and user_id in current_room.voice_banned:
+                    await ws_manager.send_json(websocket, {"type": "voice_banned_notice", "room_id": room_id, "message": "أنت محظور من المحادثة الصوتية في هذه الطاولة."}, room_id)
+                    continue
                 if ws_manager.join_voice(room_id, websocket):
-                    await websocket.send_json({"type": "voice_joined", "room_id": room_id})
+                    await ws_manager.send_json(websocket, {"type": "voice_joined", "room_id": room_id}, room_id)
                 continue
             if data.get("type") == "voice_leave" and set(data.keys()) == {"type"}:
                 ws_manager.leave_voice(room_id, websocket)
@@ -344,10 +426,17 @@ async def ws_room(websocket: WebSocket, room_id: str):
                 action_payload = data.get("payload")
                 if not isinstance(action_payload, dict):
                     continue
+                now = time.monotonic()
+                while game_action_times and now - game_action_times[0] >= 1.0:
+                    game_action_times.popleft()
+                if len(game_action_times) >= 20:
+                    await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": "عدد كبير جدًا من حركات اللعبة."}, room_id)
+                    continue
+                game_action_times.append(now)
                 try:
                     req = RoomActionRequest.model_validate(action_payload)
                 except Exception:
-                    await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": False, "error": "إجراء لعبة غير صالح."})
+                    await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": "إجراء لعبة غير صالح."}, room_id)
                     continue
                 async with current_room._mutation_lock:
                     current_room = room_manager.get_room(room_id)
@@ -358,16 +447,16 @@ async def ws_room(websocket: WebSocket, room_id: str):
                     from server.app.games.registry import get_plugin
                     plugin = get_plugin(current_room.game)
                     if not plugin or not plugin.get_engine(current_room):
-                        await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": False, "error": "اللعبة غير نشطة."})
+                        await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": "اللعبة غير نشطة."}, room_id)
                         continue
                     try:
                         result = await plugin.action_handler(current_room, user_id, req)
-                        await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": True, "state": result})
+                        await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": True, "state": result}, room_id)
                     except ValueError as exc:
-                        await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": False, "error": str(exc)})
+                        await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": str(exc)}, room_id)
                     except Exception:
                         logger.exception("WebSocket game action failed for user %s in room %s", user_id, room_id)
-                        await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": False, "error": "تعذر تنفيذ الحركة."})
+                        await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": "تعذر تنفيذ الحركة."}, room_id)
                 continue
             # The room socket accepts chat only. Game/state events are server-only.
             if set(data.keys()) - {"text"}:
@@ -411,11 +500,38 @@ async def ws_room(websocket: WebSocket, room_id: str):
             # mutation lock while doing synchronous DB writes/commit, allowing
             # chat persistence to stall gameplay actions in the same room.
             ws_manager.broadcast_room(room_id, message)
-            asyncio.create_task(asyncio.to_thread(
-                _persist_chat_activity, room_id, user_id, sender, text, recipients
-            ))
+            try:
+                websocket.app.state.chat_persist_queue.put_nowait(
+                    (room_id, user_id, sender, text, recipients)
+                )
+            except asyncio.QueueFull:
+                logger.warning("Dropping chat activity persistence because the queue is full")
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket, room_id=room_id)
+        _handle_room_disconnect(room_id, user_id)
     except Exception:
         logger.exception("Room WebSocket failed for user %s in room %s", user_id, room_id)
         ws_manager.disconnect(websocket, room_id=room_id)
+        _handle_room_disconnect(room_id, user_id)
+
+def _handle_room_disconnect(room_id: str, user_id: int):
+    """When a player socket drops, start grace period if user is still a room member."""
+    if not room_id or not user_id:
+        return
+    # If the user still has another active connection to this room, do not trigger disconnect grace
+    if ws_manager.room_user_connected(room_id, user_id):
+        return
+    room = room_manager.get_room(room_id)
+    if room and user_id in room.players:
+        player_name = room.player_names.get(user_id, "لاعب")
+        logger.info("[انقطاع] %s فقد الاتصال بالطاولة %s (user_id=%s)", player_name, room_id, user_id)
+        print(f"[انقطاع] {player_name} فقد الاتصال بالطاولة {room_id} (user_id={user_id})")
+        ws_manager.broadcast_room(room_id, {
+            "type": "player_connection_lost",
+            "user_id": user_id,
+            "name": player_name,
+            "room_id": room_id
+        })
+        cancel_disconnect_grace_timer(room_id, user_id)
+        task = asyncio.create_task(_disconnect_grace_timeout(room_id, user_id, player_name))
+        _disconnect_grace_tasks[(str(room_id), int(user_id))] = task

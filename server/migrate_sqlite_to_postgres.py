@@ -1,7 +1,7 @@
-"""One-time, non-destructive migration of a Let's Fly SQLite database to PostgreSQL.
+"""One-time, non-destructive migration of a TableVerse SQLite database to PostgreSQL.
 
 Usage:
-  SOURCE_SQLITE_PATH=/path/to/letsfly_v2.db \
+  SOURCE_SQLITE_PATH=/path/to/tableverse_v2.db \
   DATABASE_URL=postgresql+psycopg://... \
   python server/migrate_sqlite_to_postgres.py
 
@@ -35,7 +35,7 @@ if not destination.startswith("postgresql"):
 
 # Import models with an explicitly non-production environment so importing the
 # application's database module cannot silently reject this migration process.
-os.environ["LETSFLY_ENV"] = "migration"
+os.environ["TABLEVERSE_ENV"] = "migration"
 os.environ["DATABASE_URL"] = destination
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from server.app.db.database import Base  # noqa: E402

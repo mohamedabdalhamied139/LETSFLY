@@ -7,16 +7,16 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 appdata = os.getenv('APPDATA')
 if appdata:
-    APP_DIR = os.path.join(appdata, 'LetsFly')
+    APP_DIR = os.path.join(appdata, 'TableVerse')
 else:
-    APP_DIR = os.path.join(os.path.expanduser('~'), '.letsfly')
+    APP_DIR = os.path.join(os.path.expanduser('~'), '.tableverse')
 
 os.makedirs(APP_DIR, exist_ok=True)
-DB_PATH = os.path.join(APP_DIR, "letsfly_v2.db")
+DB_PATH = os.path.join(APP_DIR, "tableverse_v2.db")
 
 def _database_url():
     configured = os.getenv("DATABASE_URL", "").strip()
-    environment = os.getenv("LETSFLY_ENV", "development").strip().lower()
+    environment = os.getenv("TABLEVERSE_ENV", "development").strip().lower()
     if configured:
         # Render/Postgres providers sometimes expose the legacy postgres:// form.
         if configured.startswith("postgres://"):
@@ -41,8 +41,8 @@ else:
     engine = create_engine(
         DATABASE_URL,
         pool_pre_ping=True,
-        pool_size=int(os.getenv("LETSFLY_DB_POOL_SIZE", "5")),
-        max_overflow=int(os.getenv("LETSFLY_DB_MAX_OVERFLOW", "10")),
+        pool_size=int(os.getenv("TABLEVERSE_DB_POOL_SIZE", "5")),
+        max_overflow=int(os.getenv("TABLEVERSE_DB_MAX_OVERFLOW", "10")),
     )
 
 
@@ -119,6 +119,7 @@ class Friendship(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     friend_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    __table_args__ = (UniqueConstraint("user_id", "friend_id", name="uq_friendship_user_friend"),)
 
 
 class FriendRequest(Base):
@@ -128,6 +129,7 @@ class FriendRequest(Base):
     recipient_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     status = Column(String(20), nullable=False, default="pending", index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    __table_args__ = (UniqueConstraint("sender_id", "recipient_id", "status", name="uq_friend_request_pair_status"),)
 
 
 
@@ -170,17 +172,19 @@ class ChallengeInvitation(Base):
     room_id = Column(String(120), nullable=True, index=True)
     game = Column(String(40), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    __table_args__ = (Index("uq_pending_challenge_invitation", "sender_id", "recipient_id", "room_id", unique=True,
+                            sqlite_where=text("status = 'pending'"), postgresql_where=text("status = 'pending'")),)
 
 
 class MatchRecord(Base):
     __tablename__ = "match_records"
     id = Column(Integer, primary_key=True, index=True)
     game = Column(String(40), nullable=False, index=True)
-    room_id = Column(String(120), nullable=True, unique=True, index=True)
+    room_id = Column(String(120), nullable=True, index=True)
+    match_key = Column(String(64), nullable=True, unique=True, index=True)
     winner_ids = Column(String(1000), nullable=False, default="[]")
     human_player_ids = Column(String(1000), nullable=False, default="[]")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
-    __table_args__ = (UniqueConstraint("room_id", name="uq_match_record_room_id"),)
 
 
 class PlayerRating(Base):
@@ -257,6 +261,11 @@ def _migrate_social_schema():
                 with engine.begin() as conn: conn.execute(text(ddl))
             except OperationalError as exc:
                 if "duplicate column" not in str(exc).lower(): raise
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_pending_challenge_invitation_idx ON challenge_invitations(sender_id, recipient_id, room_id) WHERE status = 'pending'"))
+    except OperationalError:
+        pass
 
 _migrate_social_schema()
 
@@ -266,7 +275,7 @@ def _create_reward_records_table():
     try:
         with engine.begin() as conn:
             conn.execute(text("CREATE TABLE IF NOT EXISTS reward_records (id INTEGER PRIMARY KEY, reward_id VARCHAR(120) UNIQUE NOT NULL, created_at DATETIME)"))
-            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_match_records_room_id ON match_records(room_id) WHERE room_id IS NOT NULL"))
+            conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_match_records_match_key ON match_records(match_key) WHERE match_key IS NOT NULL"))
     except OperationalError: pass
 
 _create_reward_records_table()

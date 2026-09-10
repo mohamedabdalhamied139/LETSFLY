@@ -151,6 +151,18 @@ class ApiClient:
     def ban_player(self, room_id: str, target_user_id: int):
         return self._request("POST", f"/api/rooms/{room_id}/ban", {"target_user_id": int(target_user_id)})
 
+    def transfer_host(self, room_id: str, target_user_id: int):
+        return self._request("POST", f"/api/rooms/{room_id}/transfer_host", {"target_user_id": int(target_user_id)})
+
+    def set_co_host(self, room_id: str, target_user_id: int):
+        return self._request("POST", f"/api/rooms/{room_id}/set_co_host", {"target_user_id": int(target_user_id)})
+
+    def substitute_player(self, room_id: str, target_user_id: int, replacement_user_id: Optional[int] = None, is_bot: bool = False):
+        payload = {"target_user_id": int(target_user_id), "is_bot": bool(is_bot)}
+        if replacement_user_id is not None:
+            payload["replacement_user_id"] = int(replacement_user_id)
+        return self._request("POST", f"/api/rooms/{room_id}/substitute", payload)
+
     def voice_mute_player(self, room_id: str, target_user_id: int):
         return self._request("POST", f"/api/rooms/{room_id}/voice/mute", {"target_user_id": int(target_user_id)})
 

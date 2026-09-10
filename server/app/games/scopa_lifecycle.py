@@ -14,7 +14,7 @@ async def _persist_match(room, winners):
     def save():
         db = SessionLocal()
         try:
-            record_match(db, "SCOPA", room.room_id, room.players, list(winners))
+            record_match(db, "SCOPA", room.room_id, room.players, list(winners), match_key=room.match_key)
             db.commit()
         except Exception:
             db.rollback()
@@ -24,7 +24,7 @@ async def _persist_match(room, winners):
     await asyncio.to_thread(save)
 async def check_and_finalize_scopa_round(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.scopa.lifecycle")
+    logger = logging.getLogger("tableverse.scopa.lifecycle")
     from server.app.hub.room_manager import room_manager
     if room.status == "round_finished":
         return
@@ -92,7 +92,7 @@ async def check_and_finalize_scopa_round(room: Room):
 
 async def _start_next_scopa_round_after_delay(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.scopa.lifecycle")
+    logger = logging.getLogger("tableverse.scopa.lifecycle")
     from server.app.hub.room_manager import room_manager
     from server.app.games.scopa import ScopaGame
     from server.app.games.scopa_bot import run_scopa_bots

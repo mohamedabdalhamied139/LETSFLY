@@ -100,7 +100,7 @@ if TYPE_CHECKING:
 async def run_farkle_bots(room: Room):
     import random
     import logging
-    logger = logging.getLogger("letsfly.farkle.bot")
+    logger = logging.getLogger("tableverse.farkle.bot")
     from server.app.hub.room_manager import room_manager
     from server.app.games.farkle_lifecycle import finalize_farkle_match
     game = room.farkle_game

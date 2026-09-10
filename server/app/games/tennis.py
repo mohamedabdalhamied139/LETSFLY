@@ -78,7 +78,7 @@ class BallState:
         """
         self.target      = target
         self.direction   = direction
-        self.launch_time = time.time()
+        self.launch_time = time.monotonic()
         self.travel_time = travel_time
         self.net_time    = self.launch_time + (self.travel_time * 0.50)
         self.floor_time  = self.launch_time + (self.travel_time * 0.75)
@@ -254,7 +254,7 @@ class TennisGame:
         if action == "serve" and self.timestamp == Timestamp.WAITING_KEY:
             if idx != self.score.server_idx:
                 return {"error": "not_your_serve"}
-            now = time.time()
+            now = time.monotonic()
             if now < getattr(self, "serve_ready_time", 0):
                 return {"error": "waiting_for_applause"}
             lane = max(LANE_LEFT, min(LANE_RIGHT, int(data.get("lane", LANE_CENTER))))
@@ -383,8 +383,8 @@ class TennisGame:
                 result["events"].append("match_won")
             else:
                 self.timestamp = Timestamp.WAITING_KEY
-                self.serve_ready_time = time.time() + 4.5
-                self._bot_serve_time = time.time() + 4.8
+                self.serve_ready_time = time.monotonic() + 4.5
+                self._bot_serve_time = time.monotonic() + 4.8
             
             return [{
                 "type":         "tennis_action_result",
@@ -469,8 +469,8 @@ class TennisGame:
                     result["events"].append("match_won")
                 else:
                     self.timestamp = Timestamp.WAITING_KEY
-                    self.serve_ready_time = time.time() + 4.5
-                    self._bot_serve_time = time.time() + 4.8
+                    self.serve_ready_time = time.monotonic() + 4.5
+                    self._bot_serve_time = time.monotonic() + 4.8
                 
                 return [{
                     "type":         "tennis_action_result",
@@ -512,7 +512,7 @@ class TennisGame:
                     result["events"].append("match_won")
                 else:
                     self.timestamp = Timestamp.WAITING_KEY
-                    self.serve_ready_time = time.time() + 4.5
+                    self.serve_ready_time = time.monotonic() + 4.5
                 
                 return [{
                     "type":         "tennis_action_result",

@@ -173,9 +173,9 @@ class SoundEngine:
             "ROUND_START": ("SCOPA_ROUND_START", "SCOPA_DEAL"),
             "ROUND_STARTED": ("SCOPA_ROUND_START", "SCOPA_DEAL"),
             "DEAL_BATCH": ("SCOPA_DEAL_BATCH", "SCOPA_DEAL"),
-            "CARD_PLAYED": ("SCOPA_CARD_THROW", "SCOPA_PLAY_CARD"),
-            "CARD_CAPTURED": ("SCOPA_EAT_CARDS",),
-            "SCOPA_SWEEP": ("SCOPA_ANNOUNCEMENT",),
+            "CARD_PLAYED": ("SCOPA_CARD_THROW",),
+            "CARD_CAPTURED": ("SCOPA_CARD_THROW", "SCOPA_EAT_CARDS"),
+            "SCOPA_SWEEP": ("SCOPA_CARD_THROW", "SCOPA_EAT_CARDS", "SCOPA_ANNOUNCEMENT"),
         },
         "DOMINO": {
             "GAME_STARTED": ("DOMINO_PRE_ROUND", "DOMINO_ROUND_START"),
@@ -319,6 +319,19 @@ class SoundEngine:
             self.sounds[cue.lower()] = effects
             self._paths[cue] = str(path)
 
+    def preload_game_sounds(self, game_type: str = "SCOPA"):
+        """Pre-decode sound effects for a game so the first trigger has zero disk/decode latency."""
+        self._ensure_initialized()
+        prefix = f"{game_type.upper()}_"
+        for cue, effects in self.sounds.items():
+            if cue.startswith(prefix) and effects:
+                for eff in effects:
+                    try:
+                        # Touch status to force decoder readiness
+                        _ = eff.status()
+                    except Exception:
+                        pass
+
     def event_cues(self, game_type: str, event_type: str, state: dict | None = None) -> tuple[str, ...]:
         """Resolve sounds while preserving every game's existing gameplay cues."""
         game = str(game_type or "").upper()
@@ -342,6 +355,8 @@ class SoundEngine:
             # authorized for this game/event. Common lifecycle cues are global.
             if event in common and server_cue.upper() == common[event][0].upper():
                 return (server_cue,)
+            if len(allowed) > 1:
+                return allowed
             if server_cue in allowed or server_cue.upper() in {c.upper() for c in allowed}:
                 return (server_cue,)
             return allowed
@@ -443,11 +458,7 @@ class SoundEngine:
                         return
                 except Exception:
                     logger.exception("Sound cue playback failed: %s", key)
-            try:
-                effects[0].stop()
-                effects[0].play()
-            except Exception:
-                pass
+            logger.debug("Dropping sound cue %s because all pool instances are busy", key)
         except Exception:
             pass
 

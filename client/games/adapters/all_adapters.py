@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidget, QListWidgetItem, QSizePolicy, QLineEdit
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QListWidget, QListWidgetItem, QSizePolicy
 from PySide6.QtCore import Qt
 from client.localization import tr
 from client.table_framework.adapter import ClientGameAdapter, register_adapter
@@ -25,18 +25,23 @@ def focus_cards(table_view):
 def setup_thief_ui(table_view, playing):
     if playing:
         if not getattr(table_view, "thief_answer_input", None):
-            table_view.thief_answer_input = QLineEdit(table_view)
-            table_view.thief_answer_input.setAccessibleName(tr("إجابة اللص"))
-            table_view.thief_answer_input.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10"))
-            table_view.thief_answer_input.setPlaceholderText(tr("اكتب رقم الطابق"))
-            table_view.thief_answer_input.setMaxLength(2)
-            table_view.thief_answer_input.textChanged.connect(table_view._thief_answer_changed)
-            table_view.thief_answer_input.returnPressed.connect(table_view._submit_thief_input)
+            from client.views.table_view import ThiefFloorList
+            table_view.thief_answer_input = ThiefFloorList(table_view)
+            table_view.thief_answer_input.setAccessibleName(tr("اختيار طابق اللص"))
+            table_view.thief_answer_input.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+            table_view.thief_answer_input.setFocusPolicy(Qt.StrongFocus)
+            for floor in range(1, 11):
+                item = QListWidgetItem(str(floor))
+                item.setData(Qt.UserRole, str(floor))
+                table_view.thief_answer_input.addItem(item)
+            table_view.thief_answer_input.itemActivated.connect(table_view._on_thief_floor_activated)
         table_view.mount_game_ui(table_view.thief_answer_input)
 
 
 def focus_thief(table_view):
     if table_view.is_playing and getattr(table_view, "thief_answer_input", None) and table_view.thief_answer_input.isVisible():
+        if table_view.thief_answer_input.count() and table_view.thief_answer_input.currentRow() < 0:
+            table_view.thief_answer_input.setCurrentRow(0)
         table_view.thief_answer_input.setFocus()
     else:
         table_view.main_table_widget.setFocus()
@@ -181,6 +186,10 @@ def setup_tennis_ui(table_view, playing):
         if getattr(table_view, "tennis_game", None):
             table_view.tennis_game.stop_tracking()
 
+def clear_hand_tennis(table_view):
+    if getattr(table_view, "tennis_game", None):
+        table_view.tennis_game.stop_tracking()
+
 def focus_tennis(table_view):
     if table_view.is_playing:
         if getattr(table_view, "tennis_game", None):
@@ -242,4 +251,4 @@ register_adapter(ClientGameAdapter("DOMINO", "دومينو", None, apply_domino_
 register_adapter(ClientGameAdapter("AMERICAN_DOMINO", "دومينو أمريكي", None, apply_domino_state, setup_domino_ui, None, focus_domino, None, None, get_fw_domino))
 register_adapter(ClientGameAdapter("SNAKES_LADDERS", "السلم والثعبان", None, apply_snakes_state, setup_snakes_ui, None, focus_snakes, None, None, get_fw_snakes))
 register_adapter(ClientGameAdapter("SCOPA", "إسكوبا", None, apply_scopa_state, setup_scopa_ui, None, focus_scopa, None, None, get_fw_scopa))
-register_adapter(ClientGameAdapter("TENNIS", "تنس", None, apply_tennis_state, setup_tennis_ui, None, focus_tennis, None, None, get_fw_tennis))
+register_adapter(ClientGameAdapter("TENNIS", "تنس", None, apply_tennis_state, setup_tennis_ui, None, focus_tennis, clear_hand_tennis, None, get_fw_tennis))

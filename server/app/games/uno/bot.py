@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 async def run_uno_bots(room: Room):
     import random
     import logging
-    logger = logging.getLogger("letsfly.uno.bot")
+    logger = logging.getLogger("tableverse.uno.bot")
     from server.app.hub.room_manager import room_manager, _apply_game_score_adjustments
     from server.app.games.uno.lifecycle import check_and_finalize_uno_round
     game = room.uno_game

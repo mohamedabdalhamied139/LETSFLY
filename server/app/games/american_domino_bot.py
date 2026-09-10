@@ -109,7 +109,7 @@ if TYPE_CHECKING:
 async def run_american_domino_bots(room: Room):
     import random
     import logging
-    logger = logging.getLogger("letsfly.american_domino.bot")
+    logger = logging.getLogger("tableverse.american_domino.bot")
     from server.app.hub.room_manager import room_manager
     from server.app.games.american_domino_lifecycle import check_and_finalize_american_domino_round
     game = room.american_domino_game

@@ -13,7 +13,7 @@ from server.app.hub.room_manager import room_manager
 from core_shared.version import BUILD
 
 router = APIRouter(prefix="/api", tags=["users"])
-logger = logging.getLogger("letsfly.users_api")
+logger = logging.getLogger("tableverse.users_api")
 
 def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)) -> User:
     if not authorization or not authorization.startswith("Bearer "):
@@ -46,7 +46,7 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
 
 @router.get("/health")
 def health():
-    return {"status": "ok", "service": "LetsFly Server", "build": BUILD}
+    return {"status": "ok", "service": "TableVerse Server", "build": BUILD}
 
 @router.get("/wallet")
 def wallet(user: User = Depends(get_current_user)):
@@ -61,10 +61,17 @@ def get_me(user: User = Depends(get_current_user)):
 async def delete_my_account(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     uid = user.id
     try:
+        # Snapshot the registry under its thread lock, then serialize each
+        # room mutation with the same asyncio lock used by game actions. This
+        # prevents account deletion from racing a live move/round transition.
         with room_manager._lock:
-            for r in list(room_manager.rooms.values()):
-                if uid in r.players:
-                    room_manager.remove_player(r, uid)
+            rooms = [r for r in list(room_manager.rooms.values()) if uid in r.players or uid in r.spectators]
+        for r in rooms:
+            async with r._mutation_lock:
+                if uid in r.players or uid in r.spectators:
+                    r.remove_player(uid)
+            if not r.players:
+                room_manager.delete_room(r.room_id)
     except Exception:
         logger.warning("Room cleanup failed while deleting account %s", uid, exc_info=True)
 

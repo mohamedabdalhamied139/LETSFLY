@@ -2,10 +2,11 @@
 import json
 import logging
 import threading
+import time
 from typing import Callable, Optional
 import websocket
 
-logger = logging.getLogger("letsfly.ws_client")
+logger = logging.getLogger("tableverse.ws_client")
 
 
 class WebSocketClient:
@@ -37,7 +38,7 @@ class WebSocketClient:
             target=self._loop,
             args=(generation, on_message, ws_url, self._auth_token),
             daemon=True,
-            name="LetsFly-WebSocket",
+            name="TableVerse-WebSocket",
         )
         self._thread.start()
 
@@ -150,13 +151,13 @@ class WebSocketClient:
                         return
                     self._ws = ws
                     self._connected_event.set()
-                retry_delay = 1
                 self._emit(callback, generation, {"type": "ws_connected"})
-                import time
-                last_ping = time.monotonic()
+                connected_at = last_ping = time.monotonic()
                 while not self._stop.is_set() and self._is_current(generation):
                     try:
                         now = time.monotonic()
+                        if now - connected_at >= 15:
+                            retry_delay = 1
                         if now - last_ping >= 15:
                             try:
                                 ws.send(json.dumps({"type": "ping"}))
@@ -197,12 +198,14 @@ class WebSocketClient:
             except Exception:
                 if not self._stop.is_set() and self._is_current(generation):
                     logger.warning("WebSocket connection failed; retrying in %ss", retry_delay, exc_info=True)
-                    if self._stop.wait(retry_delay):
-                        break
-                    retry_delay = min(retry_delay * 2, 10)
                 else:
                     break
             finally:
+                if ws is not None:
+                    try:
+                        ws.close()
+                    except Exception:
+                        logger.debug("WebSocket close failed", exc_info=True)
                 with self._ping_lock:
                     self._pending_ping_id = None
                     self._pending_ping_at = None
@@ -210,3 +213,9 @@ class WebSocketClient:
                     if self._ws is ws:
                         self._ws = None
                         self._connected_event.clear()
+            if self._stop.is_set() or not self._is_current(generation):
+                break
+            if self._stop.wait(retry_delay):
+                break
+            self._emit(callback, generation, {"type": "ws_connecting"})
+            retry_delay = min(retry_delay * 2, 5)

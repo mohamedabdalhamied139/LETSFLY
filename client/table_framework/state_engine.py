@@ -20,6 +20,9 @@ class ClientStateEngine:
         app.table_view.set_playing_mode(is_active and not is_round_finished)
         view_update_callback(is_active, is_round_finished)
 
+        if is_active and not is_round_finished:
+            sound_engine.preload_game_sounds(game_type)
+
         event_id = int(state.get("event_id", 0) or 0)
         last_event_attr = f"_last_{game_type.lower()}_event_id"
         if game_type == "UNO": last_event_attr = "_last_event_id"
@@ -124,7 +127,7 @@ class ClientStateEngine:
                     spoke_event = True
 
                 elif game_type == "SCOPA":
-                    if et in ("CARD_PLAYED", "CARD_CAPTURED", "SCOPA_SCORED", "SCOPA_SWEEP", "DEAL_BATCH"):
+                    if et in ("CARD_PLAYED", "CARD_CAPTURED", "SCOPA_SCORED", "SCOPA_SWEEP"):
                         announce_game_event(action_text, interrupt=True)
                         spoke_event = True
 
@@ -152,13 +155,14 @@ class ClientStateEngine:
                 setattr(app, last_turn_attr, curr_id_str)
                 setattr(app, f"_last_turn_{game_type.lower()}", curr_id_str)
                 setattr(app, was_my_turn_attr, is_my_turn)
+                suppress_turn_announcement = (game_type == "SCOPA" and et == "DEAL_BATCH")
                 if is_my_turn:
                     if not event_cues:
                         sound_engine.play_event("TURN_START")
-                    if not spoke_event:
+                    if not spoke_event and not suppress_turn_announcement:
                         announce_game_event("دورك", interrupt=False)
                 else:
-                    if not spoke_event:
+                    if not spoke_event and not suppress_turn_announcement:
                         announce_game_event(f"دور {current_name}", interrupt=False)
         elif state.get("event_type") in ("MATCH_WON", "MATCH_FINISHED", "ROUND_FINISHED", "ROUND_END"):
             setattr(app, was_my_turn_attr, False)

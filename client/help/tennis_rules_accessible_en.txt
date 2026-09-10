@@ -3,12 +3,12 @@ Comprehensive Guide and Rules for Real Tennis Table
 Section One: Introduction and Basic Gameplay
 
 Game Concept and Main Objective
-The tennis game on the Let's Fly platform is a realistic 3D sports simulation of international tennis, specifically designed to be fully accessible to the blind and visually impaired, relying on Binaural 3D Audio engineering and an integrated screen reader.
+The tennis game on the TableVerse platform is a realistic 3D sports simulation of international tennis, specifically designed to be fully accessible to the blind and visually impaired, relying on Binaural 3D Audio engineering and an integrated screen reader.
 The match is played in singles mode (player vs player over the network or player vs bot). Each player aims to serve the ball and return the opponent's shots skillfully with the right timing and trajectory to win points, games, and sets.
 
 Introduction to the Foundational Project (Built Upon leap_tennis_win)
 This game is built upon the pioneering open-source project Leap Tennis (known programmatically as leap_tennis_win or Tennis for the Blind), developed and programmed by the developer nzorb in collaboration with the Greek non-profit organization SciFY (Science For You) as part of the Leap Motion 3D Jam competition in 2015, to enable the blind and visually impaired to play sports video games entirely relying on 3D audio.
-The Let's Fly platform has completely rebuilt and developed the game, moving it from the old motion sensing environment to the competitive table system via the keyboard, applying the official international regulations of the International Tennis Federation (ITF).
+The TableVerse platform has completely rebuilt and developed the game, moving it from the old motion sensing environment to the competitive table system via the keyboard, applying the official international regulations of the International Tennis Federation (ITF).
 
 Number of Players and Court Layout
 The tennis match is played between two players in singles mode.

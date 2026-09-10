@@ -9,7 +9,7 @@ async def run_tennis_bots(room: "Room"):
     import time
     import random
     import logging
-    logger = logging.getLogger("letsfly.tennis.bot")
+    logger = logging.getLogger("tableverse.tennis.bot")
     from server.app.hub.room_manager import room_manager
     from server.app.games.tennis_lifecycle import finalize_tennis_match
     """
@@ -40,7 +40,7 @@ async def run_tennis_bots(room: "Room"):
             if not room.tennis_game or room.tennis_game.state == "FINISHED":
                 break
             
-            now    = time.time()
+            now    = time.monotonic()
             game   = room.tennis_game
             events = game.tick(now)
 

@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from core_shared.version import BUILD as EXPECTED_BUILD
 
 def is_remote_server_configured() -> bool:
-    url = os.getenv("LETSFLY_SERVER_URL", "https://letsfly.onrender.com").strip() or "https://letsfly.onrender.com"
+    url = os.getenv("TABLEVERSE_SERVER_URL", "https://letsfly.onrender.com").strip() or "https://letsfly.onrender.com"
     if not url:
         return False
     from urllib.parse import urlparse
@@ -39,23 +39,23 @@ def start_embedded_server_if_needed():
 
     try:
         payload = health_payload()
-        if payload and payload.get("service") == "LetsFly Server":
+        if payload and payload.get("service") == "TableVerse Server":
             if payload.get("build") == expected_build:
                 return
             # Never kill an arbitrary process just because it owns port 8000.
-            # Only stop a process whose command line identifies it as a Let's Fly server.
+            # Only stop a process whose command line identifies it as a TableVerse server.
             if os.name == "nt":
                 script = (
                     "$c=Get-CimInstance Win32_Process | Where-Object { "
                     "($_.ProcessId -in (Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue | "
                     "Select-Object -ExpandProperty OwningProcess)) -and "
-                    "($_.CommandLine -match 'server\\.app\\.main|run_server\\.py|LetsFly') }; "
+                    "($_.CommandLine -match 'server\\.app\\.main|run_server\\.py|TableVerse') }; "
                     "$c | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
                 )
                 subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
             else:
-                raise RuntimeError("يوجد خادم Let's Fly بإصدار مختلف على المنفذ 8000.")
+                raise RuntimeError("يوجد خادم TableVerse بإصدار مختلف على المنفذ 8000.")
         elif payload:
             raise RuntimeError("المنفذ 8000 مستخدم بواسطة خدمة أخرى؛ لن يتم إيقافها تلقائيًا.")
     except urllib.error.HTTPError:
@@ -84,10 +84,10 @@ def start_embedded_server_if_needed():
         except Exception:
             pass
         time.sleep(0.2)
-    raise RuntimeError("تعذر تشغيل خادم Let's Fly على المنفذ 8000.")
+    raise RuntimeError("تعذر تشغيل خادم TableVerse على المنفذ 8000.")
 
 from PySide6.QtWidgets import QApplication
-from client.client_app import LetsFlyApp
+from client.client_app import TableVerseApp
 
 def _setup_excepthook():
     import traceback
@@ -124,10 +124,10 @@ def main():
     start_embedded_server_if_needed()
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
-    app.setApplicationName("Let's Fly")
+    app.setApplicationName("TableVerse")
     import client.localization as loc
     loc.install(app)
-    window = LetsFlyApp()
+    window = TableVerseApp()
     window.show()
     sys.exit(app.exec())
 

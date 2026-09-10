@@ -1,9 +1,10 @@
 """Friends, profiles, messaging, moderation, challenges and gifts."""
 import time, json, threading, logging
+from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func, update, text
+from sqlalchemy import func, update, text, select
 from server.app.db.database import get_db, User, Friendship, FriendRequest, NotificationMute, Block, PrivateMessage, ChallengeInvitation, CoinTransaction, ActivityEvent
 from server.app.api.users import get_current_user
 from server.app.activity import create_event
@@ -12,10 +13,25 @@ from server.app.hub.room_manager import room_manager
 from server.app.social_services import friend_ids, is_blocked, mute_flags, profile_payload, h2h, gift_fee, GAME_LABELS
 
 router = APIRouter(prefix="/api", tags=["social"])
-logger = logging.getLogger("letsfly.social_api")
+logger = logging.getLogger("tableverse.social_api")
 _gift_lock = threading.Lock()
 _challenge_accept_lock = threading.Lock()
 _pm_send_lock = threading.Lock()
+
+@contextmanager
+def _locked_transaction(db, statement):
+    """Acquire dialect-specific locks; callers commit their own mutations."""
+    try:
+        if db.get_bind().dialect.name == "sqlite":
+            # End the read transaction opened by authentication before BEGIN.
+            db.rollback()
+            db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+        else:
+            db.execute(statement.with_for_update()).all()
+        yield
+    except Exception:
+        db.rollback()
+        raise
 
 def _user_row(u): return {"id":u.id,"username":u.username,"display_name":u.display_name}
 
@@ -48,7 +64,7 @@ def _enrich_user(u, online_set, friends_set=None):
 def search_users(q: str = "", user=Depends(get_current_user), db:Session=Depends(get_db)):
     q=str(q or "").strip()
     if not q: return {"users": []}
-    rows=db.query(User).filter(User.username.ilike(f"%{q}%"), User.id!=user.id).order_by(User.username.collate("NOCASE")).limit(50).all()
+    rows=db.query(User).filter(User.username.ilike(f"%{q}%"), User.id!=user.id).order_by(func.lower(User.username)).limit(50).all()
     online=set(ws_manager.online_user_ids()); friends_set=_friend_ids(db,user.id)
     return {"users":[_enrich_user(u, online, friends_set) for u in rows]}
 
@@ -66,7 +82,7 @@ def private_messages(limit:int=50,user=Depends(get_current_user),db:Session=Depe
 
 @router.get("/friends")
 def friends(user=Depends(get_current_user), db:Session=Depends(get_db)):
-    ids=_friend_ids(db,user.id); rows=db.query(User).filter(User.id.in_(ids)).order_by(User.display_name.collate("NOCASE")).all() if ids else []
+    ids=_friend_ids(db,user.id); rows=db.query(User).filter(User.id.in_(ids)).order_by(func.lower(User.display_name)).all() if ids else []
     incoming=db.query(FriendRequest).filter(FriendRequest.recipient_id==user.id,FriendRequest.status=="pending").order_by(FriendRequest.id.desc()).all()
     outgoing=db.query(FriendRequest).filter(FriendRequest.sender_id==user.id,FriendRequest.status=="pending").order_by(FriendRequest.id.desc()).all()
     all_ids={r.sender_id for r in incoming}|{r.recipient_id for r in outgoing}
@@ -340,11 +356,16 @@ def challenge(user_id:int,payload:dict|None=None,user=Depends(get_current_user),
     return {"ok":True,"id":inv.id,"room_id":room.room_id,"game":game,"coins_charged":3}
 
 @router.post("/invitations/{invitation_id}/accept")
-def accept_challenge(invitation_id:int,user=Depends(get_current_user),db:Session=Depends(get_db)):
+async def accept_challenge(invitation_id:int,user=Depends(get_current_user),db:Session=Depends(get_db)):
+    accepting_user_id = user.id
     # Serialize invitation acceptance at the database level so two concurrent
     # accepts cannot both consume the same pending invitation.
-    with _challenge_accept_lock:
-        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+    with _challenge_accept_lock, _locked_transaction(
+        db, select(ChallengeInvitation).where(
+            ChallengeInvitation.id == invitation_id,
+            ChallengeInvitation.recipient_id == user.id,
+        )
+    ):
         inv=db.query(ChallengeInvitation).filter_by(id=invitation_id,recipient_id=user.id,status="pending").first()
         if not inv: raise HTTPException(404,"الدعوة غير موجودة.")
         if room_manager.user_in_any_room(user.id): raise HTTPException(409,"أنت داخل طاولة حاليًا.")
@@ -356,32 +377,52 @@ def accept_challenge(invitation_id:int,user=Depends(get_current_user),db:Session
                 except Exception:
                     logger.warning("Failed to recover challenge room from invitation event %s", invitation_id, exc_info=True)
                     room=None
-        if room is None or room.status != "waiting": raise HTTPException(410,"الطاولة لم تعد متاحة.")
-        if len(room.players)>=10: raise HTTPException(409,"الطاولة مكتملة.")
-        inv.status="accepted"
-        joined = room_manager.add_player_exclusive(room, user.id, user.display_name)
-        if not joined:
-            raise HTTPException(409,"أنت داخل طاولة حاليًا.")
-        db.commit()
+        if room is None: raise HTTPException(410,"الطاولة لم تعد متاحة.")
+        async with room._mutation_lock:
+            if room.status != "waiting" or len(room.players) >= 10:
+                raise HTTPException(410,"الطاولة لم تعد متاحة.")
+            if room_manager.user_in_any_room(user.id):
+                raise HTTPException(409,"أنت داخل طاولة حاليًا.")
+            inv.status="accepted"
+            try:
+                db.commit()
+                joined = room_manager.add_player_exclusive(room, user.id, user.display_name)
+                if not joined:
+                    raise HTTPException(409,"أنت داخل طاولة حاليًا.")
+            except Exception:
+                db.rollback()
+                raise
         ws_manager.broadcast_lobby({"type":"room_updated","room_id":room.room_id})
         return {"ok":True,"room_id":room.room_id}
 
 
 @router.post("/invitations/{invitation_id}/reject")
-def reject_challenge(invitation_id:int,user=Depends(get_current_user),db:Session=Depends(get_db)):
-    inv=db.query(ChallengeInvitation).filter_by(id=invitation_id,recipient_id=user.id,status="pending").first()
-    if not inv: raise HTTPException(404,"الدعوة غير موجودة.")
-    inv.status="rejected"
-    sender = db.query(User).filter(User.id == inv.sender_id).first()
-    if sender:
-        sender.coins += 3
-        db.add(CoinTransaction(user_id=sender.id, amount=3, reason="challenge_refund:rejected"))
-    if inv.room_id:
-        room = room_manager.get_room(inv.room_id)
-        if room and room.status == "waiting":
-            room_manager.delete_room(inv.room_id)
-            ws_manager.broadcast_lobby({"type": "room_deleted", "room_id": inv.room_id})
-    db.commit()
+async def reject_challenge(invitation_id:int,user=Depends(get_current_user),db:Session=Depends(get_db)):
+    deleted_room_id = None
+    with _challenge_accept_lock, _locked_transaction(db, select(ChallengeInvitation).where(ChallengeInvitation.id == invitation_id, ChallengeInvitation.recipient_id == user.id)):
+        inv=db.query(ChallengeInvitation).filter_by(id=invitation_id,recipient_id=user.id,status="pending").first()
+        if not inv: raise HTTPException(404,"الدعوة غير موجودة.")
+        room = room_manager.get_room(inv.room_id) if inv.room_id else None
+        if room:
+            async with room._mutation_lock:
+                inv.status="rejected"
+                sender = db.query(User).filter(User.id == inv.sender_id).first()
+                if sender:
+                    sender.coins += 3
+                    db.add(CoinTransaction(user_id=sender.id, amount=3, reason="challenge_refund:rejected"))
+                db.commit()
+                if room.status == "waiting":
+                    room_manager.delete_room(room.room_id)
+                    deleted_room_id = room.room_id
+        else:
+            inv.status="rejected"
+            sender = db.query(User).filter(User.id == inv.sender_id).first()
+            if sender:
+                sender.coins += 3
+                db.add(CoinTransaction(user_id=sender.id, amount=3, reason="challenge_refund:rejected"))
+            db.commit()
+    if deleted_room_id:
+        ws_manager.broadcast_lobby({"type": "room_deleted", "room_id": deleted_room_id})
     return {"ok":True}
 
 
@@ -397,12 +438,14 @@ def gift(user_id:int,payload:dict,user=Depends(get_current_user),db:Session=Depe
     try: fee=gift_fee(amount)
     except ValueError as e: raise HTTPException(400,str(e))
     now=datetime.now(timezone.utc); day_start=now.replace(hour=0,minute=0,second=0,microsecond=0); month_start=now.replace(day=1,hour=0,minute=0,second=0,microsecond=0)
-    with _gift_lock:
+    with _gift_lock, _locked_transaction(
+        db, select(User).where(User.id.in_([user.id, user_id])).order_by(User.id)
+    ):
         # Serialize the complete wallet-limit check + balance mutation at the
         # database level too. The process-local lock alone is not enough when
         # multiple API workers/processes handle requests concurrently. SQLite
-        # BEGIN IMMEDIATE gives this short wallet transaction a single writer.
-        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
+        # BEGIN IMMEDIATE gives SQLite a single writer; PostgreSQL locks both
+        # wallets in ID order to avoid deadlocks for reciprocal transfers.
         # Only the actual gift debit counts toward the transfer limits.
         # gift_fee:* must never be included in the daily/monthly allowance.
         daily_debit=db.query(func.coalesce(func.sum(CoinTransaction.amount),0)).filter(

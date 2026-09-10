@@ -16,7 +16,7 @@ class GameSettingsView(QDialog):
         self.games.setAccessibleName(tr("الألعاب"))
         layout.addWidget(self.games)
         for game_type, definition in GAME_SETTINGS_REGISTRY.items():
-            item = QListWidgetItem(definition.title)
+            item = QListWidgetItem(tr(definition.title))
             item.setData(Qt.UserRole, game_type)
             self.games.addItem(item)
         self.games.itemActivated.connect(self._open)
@@ -34,8 +34,9 @@ class GameSettingsView(QDialog):
             d = field.to_dict({"target_score": target, "rules": rules})
             fields.append(d)
         fields += [{"key": "start", "label": "حفظ", "kind": "action"}, {"key": "cancel", "label": "إلغاء", "kind": "action"}]
-        menu = SettingsListMenu(self, f"إعدادات {definition.title}", fields)
-        result, values = menu.show_menu(speak_text=f"إعدادات {definition.title}")
+        settings_title = tr("إعدادات {title}", title=tr(definition.title))
+        menu = SettingsListMenu(self, settings_title, fields)
+        result, values = menu.show_menu(speak_text=settings_title)
         if result == "start":
             new_target, new_rules = definition.extract_target_and_rules(values)
             save(game_type, new_target, new_rules)

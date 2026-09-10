@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 async def run_snakes_bots(room: Room):
     import random
     import logging
-    logger = logging.getLogger("letsfly.snakes.bot")
+    logger = logging.getLogger("tableverse.snakes.bot")
     from server.app.hub.room_manager import room_manager
     from server.app.games.snakes_lifecycle import finalize_snakes_match
     game = room.snakes_game

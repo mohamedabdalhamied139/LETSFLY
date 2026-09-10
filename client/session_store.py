@@ -9,7 +9,7 @@ import base64
 import ctypes
 from ctypes import wintypes
 
-APP_DIR = Path(os.getenv("APPDATA") or (Path.home() / ".letsfly")) / "LetsFly"
+APP_DIR = Path(os.getenv("APPDATA") or (Path.home() / ".tableverse")) / "TableVerse"
 SESSION_FILE = APP_DIR / "session.dat"
 
 if os.name == "nt":
@@ -94,9 +94,6 @@ def _load_accounts_data() -> dict:
                 target.unlink(missing_ok=True)
             except OSError:
                 pass
-    u, p = _load_legacy_credentials()
-    if u and p:
-        return {"active": u, "accounts": [{"username": u, "password": p, "display_name": u}]}
     return {"active": None, "accounts": []}
 
 def _save_accounts_data(data: dict) -> None:
@@ -110,31 +107,27 @@ def _save_accounts_data(data: dict) -> None:
 
 def save_account_profile(username: str, password: str, display_name: str = "", active: bool = True) -> None:
     username = str(username or "").strip().lower()
-    password = str(password or "")
     display_name = str(display_name or "").strip() or username
-    if not username or not password:
+    if not username:
         return
     data = _load_accounts_data()
     accounts = data.get("accounts", [])
     found = False
     for acc in accounts:
         if acc.get("username", "").strip().lower() == username:
-            acc["password"] = password
             acc["display_name"] = display_name
             found = True
             break
     if not found:
         accounts.append({
             "username": username,
-            "password": password,
             "display_name": display_name
         })
     data["accounts"] = accounts
     if active or not data.get("active"):
         data["active"] = username
     _save_accounts_data(data)
-    if active or data.get("active") == username:
-        _save_legacy_credentials(username, password)
+    _save_legacy_credentials("", "")
 
 def load_all_account_profiles() -> list:
     data = _load_accounts_data()
@@ -144,7 +137,7 @@ def load_all_account_profiles() -> list:
         u = acc.get("username", "")
         profiles.append({
             "username": u,
-            "password": acc.get("password", ""),
+            "password": "",
             "display_name": acc.get("display_name", u),
             "is_active": bool(active_u and u.strip().lower() == str(active_u).strip().lower())
         })
@@ -169,7 +162,7 @@ def set_active_account_profile(username: str) -> None:
         if acc.get("username", "").strip().lower() == username:
             data["active"] = acc["username"]
             _save_accounts_data(data)
-            _save_legacy_credentials(acc["username"], acc.get("password", ""))
+            _save_legacy_credentials("", "")
             return
 
 def remove_account_profile(username: str) -> None:
@@ -205,7 +198,7 @@ def save_credentials(username: str, password: str) -> None:
 def _save_legacy_credentials(username: str, password: str) -> None:
     APP_DIR.mkdir(parents=True, exist_ok=True)
     import json
-    data = json.dumps({"u": username, "p": password})
+    data = json.dumps({"u": "", "p": ""})
     blob = _dpapi(data.encode("utf-8"), False)
     target = _creds_file()
     tmp = target.with_suffix(".tmp")
@@ -235,18 +228,13 @@ def load_credentials() -> tuple:
             raw = base64.b64decode(creds_target.read_bytes())
             import json
             data = json.loads(_dpapi(raw, True).decode("utf-8"))
-            u = data.get("u", "")
-            p = data.get("p", "")
-            if u and p:
-                return u, p
+            target.unlink(missing_ok=True)
         except Exception:
             clear_credentials()
             return "", ""
 
     active = get_active_account_profile()
-    if active and active.get("username") and active.get("password"):
-        return active.get("username"), active.get("password")
-    return _load_legacy_credentials()
+    return "", ""
 
 def clear_credentials() -> None:
     try:

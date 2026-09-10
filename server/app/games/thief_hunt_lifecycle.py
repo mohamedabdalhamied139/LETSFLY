@@ -13,7 +13,7 @@ async def _persist_match(room, winners):
     def save():
         db = SessionLocal()
         try:
-            record_match(db, "THIEF_HUNT", room.room_id, room.players, list(winners))
+            record_match(db, "THIEF_HUNT", room.room_id, room.players, list(winners), match_key=room.match_key)
             db.commit()
         except Exception:
             db.rollback()
@@ -23,7 +23,7 @@ async def _persist_match(room, winners):
     await asyncio.to_thread(save)
 async def finalize_thief_match(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.thief_hunt.lifecycle")
+    logger = logging.getLogger("tableverse.thief_hunt.lifecycle")
     from server.app.hub.room_manager import room_manager
     """Finalize a completed Thief Hunt match and return the room to waiting."""
     game = room.thief_game

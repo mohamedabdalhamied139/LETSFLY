@@ -12,11 +12,11 @@ if TYPE_CHECKING:
 def _persist_snakes_match(room, winner_id, coin_rewards):
     db = SessionLocal()
     try:
-        match_record = record_match(db, "SNAKES_LADDERS", room.room_id, room.players, [winner_id])
+        match_record = record_match(db, "SNAKES_LADDERS", room.room_id, room.players, [winner_id], match_key=room.match_key)
         match_id = match_record.id if match_record else 0
         for uid, amount in list(coin_rewards.items()):
             if isinstance(uid, int) and uid > 0 and amount > 0:
-                reward_id = f"snakes_mystery_box:{room.room_id}:{uid}"
+                reward_id = f"snakes_mystery_box:{room.match_key}:{uid}"
                 from server.app.db.database import RewardRecord
                 existing = db.query(RewardRecord).filter_by(reward_id=reward_id).first()
                 if not existing:
@@ -34,7 +34,7 @@ def _persist_snakes_match(room, winner_id, coin_rewards):
         db.close()
 async def finalize_snakes_match(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.snakes.lifecycle")
+    logger = logging.getLogger("tableverse.snakes.lifecycle")
     from server.app.hub.room_manager import room_manager
     game = room.snakes_game
     if not game or game.winner_id is None:
@@ -65,6 +65,9 @@ async def finalize_snakes_match(room: Room):
     room.status = "waiting"
     room.round_started_at = None
     room.rules = {}
+    room.target_score = None
+    room.scores = {uid: 0 for uid in room.players}
+    room.match_key = None
     ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
     ws_manager.broadcast_room(room.room_id, {
         "type": "game_finished", "room_id": room.room_id, "game": "SNAKES_LADDERS"

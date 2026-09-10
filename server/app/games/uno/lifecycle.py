@@ -24,7 +24,7 @@ async def _persist_match(room, winners):
     await asyncio.to_thread(save)
 async def check_and_finalize_uno_round(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.uno.lifecycle")
+    logger = logging.getLogger("tableverse.uno.lifecycle")
     from server.app.hub.room_manager import room_manager, _apply_game_score_adjustments
     from server.app.games.uno.game import UnoGame
     # Prevent duplicate finalization/broadcasts from the action path and bot path.
@@ -104,7 +104,7 @@ async def check_and_finalize_uno_round(room: Room):
 
 async def _start_next_round_after_delay(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.uno.lifecycle")
+    logger = logging.getLogger("tableverse.uno.lifecycle")
     from server.app.hub.room_manager import room_manager
     from server.app.games.uno.game import UnoGame
     from server.app.games.uno.bot import run_uno_bots

@@ -3,6 +3,7 @@
 The selectable variants are based on the rules document supplied with the project.
 """
 import random
+import time
 from typing import List, Dict, Optional, Set, Tuple
 from core_shared.constants import COLORS, DARK_COLORS, ALL_COLORS, COLOR_NAMES_AR, UNO_PENALTY_CARDS, CARD_SCORES
 from core_shared.uno_rules import is_card_playable, WILD_TYPES
@@ -42,6 +43,7 @@ class UnoGame:
         self.pending_draw_type = ""
         self.buzzer_pending: Set[int] = set()
         self.buzzer_order: List[int] = []
+        self.buzzer_deadline: Optional[float] = None
         self.pending_exchange_user: Optional[int] = None
         self.pending_bluff: Optional[dict] = None
         # Score penalties earned during a round (for example elimination).
@@ -243,6 +245,7 @@ class UnoGame:
         self.pending_draw_type = ""
         self.buzzer_pending.clear()
         self.buzzer_order.clear()
+        self.buzzer_deadline = None
         self.pending_exchange_user = None
         self.pending_bluff = None
         self.pending_score_adjustments.clear()
@@ -268,13 +271,13 @@ class UnoGame:
             if self.rules.get("responses"):
                 self.pending_draw_count = 2
                 self.pending_draw_type = "draw_two"
-                self._advance()
             else:
                 self.current_player.hand.extend([self._draw_card(), self._draw_card()])
                 self._advance()
         self._set_event(f"الجولة {self.round_number}", "ROUND_START", "UNO_DEAL")
 
     def state_for(self, viewer_id: int) -> dict:
+        self._expire_buzzer()
         try:
             viewer = self._find_player(viewer_id)
             hand_cards = [c.to_dict(include_id=True) for c in viewer.hand]
@@ -319,11 +322,22 @@ class UnoGame:
         self._set_event(f"{slowest.name} كان الأبطأ وسحب كارتين", "BUZZER_PENALTY", "CARD_DRAW_TWO")
         self.buzzer_pending.clear()
         self.buzzer_order.clear()
+        self.buzzer_deadline = None
         if not self._check_zero_card_winner():
             # The buzzer card has consumed the current turn; after the global
             # response window is resolved, continue with the next active player.
             if self.active and self.players:
                 self._advance()
+
+    def _expire_buzzer(self):
+        if not self.buzzer_pending or self.buzzer_deadline is None:
+            return
+        if time.monotonic() < self.buzzer_deadline:
+            return
+        missing = [p.user_id for p in self.active_players
+                   if p.user_id in self.buzzer_pending and p.user_id not in self.buzzer_order]
+        self.buzzer_order.extend(missing)
+        self._finish_buzzer()
 
     def _check_zero_card_winner(self):
         if not self.active:
@@ -420,6 +434,7 @@ class UnoGame:
         return drawn
 
     def action(self, user_id: int, action_type: str, card_id: str = "", chosen_color: str = ""):
+        self._expire_buzzer()
         if not self.active:
             raise RuntimeError("The game has ended or not started.")
         player = self._find_player(user_id)
@@ -506,6 +521,7 @@ class UnoGame:
         # same card is on top, or when Super Interceptions is enabled and the
         # number/symbol matches.
         top = self.discard[-1]
+        interception_index = None
         if player.user_id != self.current_player.user_id:
             # Only an actual play may use an interception. Never change the
             # authoritative turn merely because a player attempted another action.
@@ -519,7 +535,7 @@ class UnoGame:
                 super_match = candidate.card_type == top.card_type and (candidate.value == top.value if candidate.card_type == "number" else True)
                 if not ((self.rules.get("interceptions") and exact) or (self.rules.get("super_interceptions") and super_match)):
                     raise ValueError("كارت الاعتراض غير مطابق.")
-                self.turn_index = self.players.index(player)
+                interception_index = self.players.index(player)
             else:
                 raise ValueError("ليس دورك للعب.")
 
@@ -613,6 +629,8 @@ class UnoGame:
             color_changing = card.is_wild or card.card_type == "buzzer"
             if color_changing and chosen_color not in (COLORS + DARK_COLORS):
                 raise ValueError("يجب اختيار لون بعد لعب كارت بري.")
+            if interception_index is not None:
+                self.turn_index = interception_index
 
             previous_color = self.current_color
             player.hand.remove(card)
@@ -641,6 +659,7 @@ class UnoGame:
             if card.card_type == "buzzer":
                 self.buzzer_pending = {p.user_id for p in self.active_players}
                 self.buzzer_order = []
+                self.buzzer_deadline = time.monotonic() + 5.0
                 self._set_event(f"{player.name} لعب الجرس", "BUZZER_STARTED", "place_special")
                 return
 

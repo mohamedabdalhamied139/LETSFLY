@@ -1,4 +1,4 @@
-"""Persistent general settings store for Let's Fly v2.0."""
+"""Persistent general settings store for TableVerse v2.0."""
 import json
 import os
 import threading
@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-APP_DIR = Path(os.getenv("APPDATA") or (Path.home() / ".letsfly")) / "LetsFly"
+APP_DIR = Path(os.getenv("APPDATA") or (Path.home() / ".tableverse")) / "TableVerse"
 SETTINGS_FILE = APP_DIR / "settings.json"
 
 DEFAULT_SETTINGS = {

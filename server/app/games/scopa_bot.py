@@ -1,4 +1,4 @@
-"""Scopa AI Bot for Let's Fly."""
+"""Scopa AI Bot for TableVerse."""
 from __future__ import annotations
 from typing import Dict, Any, Optional
 from server.app.games.scopa import ScopaGame
@@ -121,7 +121,7 @@ if TYPE_CHECKING:
 async def run_scopa_bots(room: Room):
     import random
     import logging
-    logger = logging.getLogger("letsfly.scopa.bot")
+    logger = logging.getLogger("tableverse.scopa.bot")
     from server.app.hub.room_manager import room_manager
     from server.app.games.scopa_lifecycle import check_and_finalize_scopa_round
     game = room.scopa_game

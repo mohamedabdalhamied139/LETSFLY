@@ -131,7 +131,7 @@ if TYPE_CHECKING:
 async def run_domino_bots(room: Room):
     import random
     import logging
-    logger = logging.getLogger("letsfly.domino.bot")
+    logger = logging.getLogger("tableverse.domino.bot")
     from server.app.hub.room_manager import room_manager
     from server.app.games.domino_lifecycle import check_and_finalize_domino_round
     game = room.domino_game

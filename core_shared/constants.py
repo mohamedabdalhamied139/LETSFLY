@@ -1,4 +1,4 @@
-"""Shared constants for Let's Fly v2."""
+"""Shared constants for TableVerse v2."""
 COLORS = ("red", "yellow", "green", "blue")
 DARK_COLORS = ("orange", "pink", "purple", "teal")
 ALL_COLORS = COLORS + DARK_COLORS

@@ -172,7 +172,7 @@ class ScopaGame:
 
         self.current_turn_index = (self.dealer_index + 1) % num_players
 
-        self._set_event("توزيعة جديدة.", "DEAL_BATCH", "SCOPA_DEAL")
+        self._set_event("", "DEAL_BATCH", "SCOPA_DEAL")
 
     def current_player_id(self) -> int:
         return self.players[self.current_turn_index][0]
@@ -191,25 +191,35 @@ class ScopaGame:
         is_escoba = bool(self.rules.get("escoba_15") or self.game_mode == "escoba_15")
         if is_escoba:
             target = 15 - card_value
-            result = []
-            for r in range(1, len(self.table_cards) + 1):
-                for combo in combinations(self.table_cards, r):
-                    if sum(c["value"] for c in combo) == target:
-                        result.append(list(combo))
-            return self._remove_duplicate_combos(result)
+            return self._target_combinations(target, 1)
 
         # Classic Scopa
         exact_matches = [c for c in self.table_cards if c["value"] == card_value]
         if exact_matches:
             return [[c] for c in exact_matches]
 
-        result = []
-        for r in range(2, len(self.table_cards) + 1):
-            for combo in combinations(self.table_cards, r):
-                if sum(c["value"] for c in combo) == card_value:
-                    result.append(list(combo))
+        return self._target_combinations(card_value, 2)
 
-        return self._remove_duplicate_combos(result)
+    def _target_combinations(self, target: int, minimum_size: int) -> List[List[Dict[str, Any]]]:
+        """Enumerate positive-value captures without exploring sums above target."""
+        cards = sorted(self.table_cards, key=lambda card: card["value"])
+        found: List[List[Dict[str, Any]]] = []
+
+        def visit(start: int, total: int, chosen: List[Dict[str, Any]]):
+            if total == target:
+                if len(chosen) >= minimum_size:
+                    found.append(list(chosen))
+                return
+            for index in range(start, len(cards)):
+                next_total = total + cards[index]["value"]
+                if next_total > target:
+                    break
+                chosen.append(cards[index])
+                visit(index + 1, next_total, chosen)
+                chosen.pop()
+
+        visit(0, 0, [])
+        return self._remove_duplicate_combos(found)
 
     def _remove_duplicate_combos(self, combos: List[List[Dict[str, Any]]]) -> List[List[Dict[str, Any]]]:
         unique = []
@@ -447,16 +457,16 @@ class ScopaGame:
         if len(teams_max_diamonds) == 1:
             round_end_points[teams_max_diamonds[0]] += 1
             lbl = self._team_label(teams_max_diamonds[0])
-            details.append(f"{lbl} الأكثر من أوراق الديناري ({max_diamonds} ورقة) {win_lose_phrase}")
+            details.append(f"{lbl} الأكثر من أوراق Diamonds ({max_diamonds} ورقة) {win_lose_phrase}")
         else:
-            details.append("تعادل في أوراق الديناري")
+            details.append("تعادل في أوراق Diamonds")
 
         # 3. 7 of Diamonds (Sette Bello)
         for tid, st in team_stats.items():
             if st["sette_bello"]:
                 round_end_points[tid] += 1
                 lbl = self._team_label(tid)
-                details.append(f"{lbl} صاحب 7 من ديناري {win_lose_phrase}")
+                details.append(f"{lbl} صاحب 7 of Diamonds {win_lose_phrase}")
 
         # 4. Primiera
         if len(teams_max_prim) == 1:

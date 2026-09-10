@@ -13,7 +13,7 @@ async def _persist_match(room, winners):
     def save():
         db = SessionLocal()
         try:
-            record_match(db, "FARKLE", room.room_id, room.players, list(winners))
+            record_match(db, "FARKLE", room.room_id, room.players, list(winners), match_key=room.match_key)
             db.commit()
         except Exception:
             db.rollback()
@@ -23,7 +23,7 @@ async def _persist_match(room, winners):
     await asyncio.to_thread(save)
 async def finalize_farkle_match(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.farkle.lifecycle")
+    logger = logging.getLogger("tableverse.farkle.lifecycle")
     from server.app.hub.room_manager import room_manager
     game = room.farkle_game
     if not game or game.active or game.winner_id is None:

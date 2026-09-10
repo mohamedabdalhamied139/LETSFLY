@@ -1,4 +1,4 @@
-"""Authoritative Farkle game engine for Let's Fly.
+"""Authoritative Farkle game engine for TableVerse.
 
 Rules are based strictly on the supplied Farkle rules:
 - six dice

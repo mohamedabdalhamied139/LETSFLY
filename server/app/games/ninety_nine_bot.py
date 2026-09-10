@@ -149,7 +149,7 @@ if TYPE_CHECKING:
 async def run_ninety_nine_bots(room: "Room"):
     import random
     import logging
-    logger = logging.getLogger("letsfly.ninety_nine.bot")
+    logger = logging.getLogger("tableverse.ninety_nine.bot")
     from server.app.hub.room_manager import room_manager
     from server.app.games.ninety_nine_lifecycle import _start_next_ninety_nine_round_after_delay
     game = room.ninety_nine_game

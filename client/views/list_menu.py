@@ -1,4 +1,4 @@
-"""Shared keyboard-first popup list menus for Let's Fly.
+"""Shared keyboard-first popup list menus for TableVerse.
 
 This module deliberately uses a Qt.Popup + QListWidget instead of QDialog.
 All table confirmations and game-setting choices are presented as the same
@@ -37,7 +37,7 @@ class _ListMenuWidget(QListWidget):
 
 
 class ListMenu(QDialog):
-    """Accessible keyboard-first confirmation dialog matching standard Let's Fly dialogs."""
+    """Accessible keyboard-first confirmation dialog matching standard TableVerse dialogs."""
 
     def __init__(self, parent=None, title="", items=None, current=0):
         super().__init__(parent)
@@ -188,8 +188,8 @@ class SettingsListMenu(QDialog):
 
     def __init__(self, parent=None, title="إعدادات اللعبة", fields=None):
         super().__init__(parent)
-        self.setWindowTitle(title)
-        self.setAccessibleName(title)
+        self.setWindowTitle(tr(title))
+        self.setAccessibleName(tr(title))
         self.setObjectName("letsFlySettingsList")
         self.setStyleSheet("""
             QDialog#letsFlySettingsList {

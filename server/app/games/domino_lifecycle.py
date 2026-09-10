@@ -14,7 +14,7 @@ async def _persist_match(room, winners):
     def save():
         db = SessionLocal()
         try:
-            record_match(db, "DOMINO", room.room_id, room.players, list(winners))
+            record_match(db, "DOMINO", room.room_id, room.players, list(winners), match_key=room.match_key)
             db.commit()
         except Exception:
             db.rollback()
@@ -24,7 +24,7 @@ async def _persist_match(room, winners):
     await asyncio.to_thread(save)
 async def check_and_finalize_domino_round(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.domino.lifecycle")
+    logger = logging.getLogger("tableverse.domino.lifecycle")
     from server.app.hub.room_manager import room_manager
     if room.status == "round_finished":
         return
@@ -36,10 +36,10 @@ async def check_and_finalize_domino_round(room: Room):
     points = game.round_points_won or 0
     target_score = int(room.target_score or 100)
 
-    match_over = game.winner_id is not None or any(s >= target_score for s in game.scores.values())
+    match_over = game.winner_id is not None
     if match_over:
         room.status = "match_finished"
-        final_winner_id = game.winner_id or min(game.scores.items(), key=lambda x: x[1])[0]
+        final_winner_id = game.winner_id
         final_winner_name = room.player_names.get(final_winner_id, "الفائز")
         ws_manager.broadcast_room(room.room_id, {
             "type": "domino_match_finished",
@@ -85,7 +85,7 @@ async def check_and_finalize_domino_round(room: Room):
 
 async def _start_next_domino_round_after_delay(room: Room):
     import logging
-    logger = logging.getLogger("letsfly.domino.lifecycle")
+    logger = logging.getLogger("tableverse.domino.lifecycle")
     from server.app.hub.room_manager import room_manager
     from server.app.games.domino import DominoGame
     from server.app.games.domino_bot import run_domino_bots

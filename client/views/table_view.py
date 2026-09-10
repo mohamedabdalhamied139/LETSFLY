@@ -1652,34 +1652,82 @@ class TableView(QWidget):
         )
         previous_turn_id = getattr(self, "_last_scopa_turn_id", None)
         turn_changed = previous_turn_id is not None and str(previous_turn_id) != str(curr_turn_id)
-        self.scopa_card_list.blockSignals(True)
-        self.scopa_card_list.clear()
-
         app = self.window()
         my_id = (app.user or {}).get("id") if app and hasattr(app, "user") and app.user else None
         is_my_turn = (str(curr_turn_id) == str(my_id))
         self._last_scopa_turn_id = curr_turn_id
 
+        # Determine if gameplay had or should have focus before modifying items.
+        had_gameplay_focus = (
+            had_scopa_focus
+            or getattr(self, "_scopa_gameplay_focus", False)
+            or self._focus_target == "gameplay"
+            or (self.is_playing and not (
+                (hasattr(self, "chat_input") and self.chat_input.hasFocus())
+                or (hasattr(self, "activity_log") and (self.activity_log.hasFocus() or (hasattr(self.activity_log, "viewport") and self.activity_log.viewport().hasFocus())))
+            ))
+        )
+
+        self.scopa_card_list.blockSignals(True)
+
+        # Update items in-place or adjust count without calling clear(),
+        # so Qt does not forcibly kick focus out to the chat widget.
+        desired_items_data = []
         for idx, card in enumerate(hand):
             from core_shared.uno_rules import card_display_ar
             c_text = card_display_ar(card)
-            item = QListWidgetItem(c_text)
-            item.setData(Qt.UserRole, {
-                "type": "card",
-                "card_index": idx,
-                "card": card,
-                "label": c_text
+            desired_items_data.append({
+                "text": c_text,
+                "data": {
+                    "type": "card",
+                    "card_index": idx,
+                    "card": card,
+                    "label": c_text
+                },
+                "is_waiting": False
             })
-            self.scopa_card_list.addItem(item)
 
         if not hand and is_active:
-            # When hand is empty between deals, do NOT leave the list empty;
-            # otherwise Qt shifts focus to the chat input!
-            wait_text = tr("في انتظار التوزيعة الجديدة...")
-            wait_item = QListWidgetItem(wait_text)
-            wait_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            wait_item.setData(Qt.UserRole, {"type": "waiting"})
-            self.scopa_card_list.addItem(wait_item)
+            # When hand is empty between deals, keep one silent blank item
+            desired_items_data.append({
+                "text": "",
+                "data": {"type": "waiting"},
+                "is_waiting": True
+            })
+
+        # Synchronize scopa_card_list items with desired_items_data
+        target_count = len(desired_items_data)
+        # Remove excess items from the end
+        while self.scopa_card_list.count() > target_count:
+            self.scopa_card_list.takeItem(self.scopa_card_list.count() - 1)
+
+        # Update existing or add new items
+        for idx, item_spec in enumerate(desired_items_data):
+            if idx < self.scopa_card_list.count():
+                item = self.scopa_card_list.item(idx)
+            else:
+                item = QListWidgetItem()
+                self.scopa_card_list.addItem(item)
+
+            item.setText(item_spec["text"])
+            item.setData(Qt.UserRole, item_spec["data"])
+            item.setToolTip("")
+            item.setStatusTip("")
+            item.setWhatsThis("")
+            accessible_text_role = getattr(Qt.ItemDataRole, "AccessibleTextRole", None)
+            accessible_description_role = getattr(Qt.ItemDataRole, "AccessibleDescriptionRole", None)
+            if item_spec["is_waiting"]:
+                item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                if accessible_text_role is not None:
+                    item.setData(accessible_text_role, "")
+                if accessible_description_role is not None:
+                    item.setData(accessible_description_role, "")
+            else:
+                item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+                if accessible_text_role is not None:
+                    item.setData(accessible_text_role, item_spec["text"])
+                if accessible_description_role is not None:
+                    item.setData(accessible_description_role, item_spec["text"])
 
         self.scopa_card_list.blockSignals(False)
 
@@ -1687,19 +1735,13 @@ class TableView(QWidget):
             target_row = min(current_row, self.scopa_card_list.count() - 1)
             self.scopa_card_list.setCurrentRow(target_row)
             if self.is_playing and not self._is_modal_active():
-                # Rebuilding the QListWidget with clear() can make Qt move focus
-                # to the next tab target (the chat input). Preserve focus when
-                # Scopa's hand was the focused gameplay control before the
-                # rebuild, including while a bot is taking its turn. When the
-                # user was deliberately in chat/log, leave that focus alone.
-                preserve_gameplay_focus = had_scopa_focus or (self._focus_target == "gameplay") or getattr(self, "_scopa_gameplay_focus", False)
-                take_gameplay_focus = (
-                    preserve_gameplay_focus
-                    or is_my_turn
-                    or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus())
+                user_in_chat_or_log = bool(
+                    (hasattr(self, "chat_input") and self.chat_input.hasFocus())
+                    or (hasattr(self, "activity_log") and (self.activity_log.hasFocus() or (hasattr(self.activity_log, "viewport") and self.activity_log.viewport().hasFocus())))
                 )
-                if take_gameplay_focus:
+                if had_gameplay_focus or not user_in_chat_or_log:
                     self._scopa_gameplay_focus = True
+                    self._focus_target = "gameplay"
                     for delay in (0, 30, 80, 150):
                         QTimer.singleShot(delay, lambda w=self.scopa_card_list: safe_set_focus(w))
 
@@ -1711,8 +1753,9 @@ class TableView(QWidget):
             return
         card_index = data.get("card_index")
         if card_index is not None:
-            from client.audio.sound_engine import sound_engine
-            sound_engine.play_event("SCOPA_CARD_THROW")
+            self._scopa_gameplay_focus = True
+            self._focus_target = "gameplay"
+            safe_set_focus(self.scopa_card_list)
             self.scopaActionSubmitted.emit("play", str(card_index), "")
 
     def _clear_main_table_item_text(self):

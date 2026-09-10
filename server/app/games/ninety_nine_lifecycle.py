@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from server.app.hub.room_manager import Room
 async def _start_next_ninety_nine_round_after_delay(room: "Room"):
     import logging
-    logger = logging.getLogger("letsfly.ninety_nine.lifecycle")
+    logger = logging.getLogger("tableverse.ninety_nine.lifecycle")
     from server.app.hub.room_manager import room_manager
     from server.app.games.ninety_nine import NinetyNineGame
     from server.app.games.ninety_nine_bot import run_ninety_nine_bots
