@@ -388,6 +388,7 @@ class TableView(QWidget):
 
         # 4. Chat Input
         self.chat_input = QLineEdit()
+        self.chat_input.setFocusPolicy(Qt.ClickFocus)
         self.chat_input.setPlaceholderText(tr("الدردشة..."))
         self.chat_input.setAccessibleName(tr("الدردشة"))
         self.chat_input.setAccessibleDescription("")
@@ -1688,9 +1689,11 @@ class TableView(QWidget):
             })
 
         if not hand and is_active:
-            # When hand is empty between deals, keep one silent blank item
+            hands_count = state.get("hands_count", {})
+            other_cards_remain = any(cnt > 0 for uid, cnt in hands_count.items() if str(uid) != str(my_id))
+            wait_text = tr("بانتظار لعب باقي اللاعبين...") if other_cards_remain else tr("بانتظار التوزيعة الجديدة...")
             desired_items_data.append({
-                "text": "",
+                "text": wait_text,
                 "data": {"type": "waiting"},
                 "is_waiting": True
             })
@@ -1716,18 +1719,11 @@ class TableView(QWidget):
             item.setWhatsThis("")
             accessible_text_role = getattr(Qt.ItemDataRole, "AccessibleTextRole", None)
             accessible_description_role = getattr(Qt.ItemDataRole, "AccessibleDescriptionRole", None)
-            if item_spec["is_waiting"]:
-                item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-                if accessible_text_role is not None:
-                    item.setData(accessible_text_role, "")
-                if accessible_description_role is not None:
-                    item.setData(accessible_description_role, "")
-            else:
-                item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-                if accessible_text_role is not None:
-                    item.setData(accessible_text_role, item_spec["text"])
-                if accessible_description_role is not None:
-                    item.setData(accessible_description_role, item_spec["text"])
+            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+            if accessible_text_role is not None:
+                item.setData(accessible_text_role, item_spec["text"])
+            if accessible_description_role is not None:
+                item.setData(accessible_description_role, item_spec["text"])
 
         self.scopa_card_list.blockSignals(False)
 
