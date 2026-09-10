@@ -170,9 +170,9 @@ class SoundEngine:
         },
         "SCOPA": {
             "GAME_STARTED": ("SCOPA_DEAL",),
-            "ROUND_START": ("SCOPA_ROUND_START", "SCOPA_DEAL"),
-            "ROUND_STARTED": ("SCOPA_ROUND_START", "SCOPA_DEAL"),
-            "DEAL_BATCH": ("SCOPA_DEAL_BATCH", "SCOPA_DEAL"),
+            "ROUND_START": ("SCOPA_DEAL",),
+            "ROUND_STARTED": ("SCOPA_DEAL",),
+            "DEAL_BATCH": ("SCOPA_DEAL",),
             "CARD_PLAYED": ("SCOPA_CARD_THROW",),
             "CARD_CAPTURED": ("SCOPA_CARD_THROW", "SCOPA_EAT_CARDS"),
             "SCOPA_SWEEP": ("SCOPA_CARD_THROW", "SCOPA_EAT_CARDS", "SCOPA_ANNOUNCEMENT"),

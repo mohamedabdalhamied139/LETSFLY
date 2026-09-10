@@ -46,7 +46,7 @@ class ClientStateEngine:
         cue = state.get("sound_cue", "")
         event_cues = sound_engine.event_cues(game_type, et, state)
         spoke_event = False
-        if action_text and event_id > last_id:
+        if event_id > last_id:
             setattr(app, last_event_attr, event_id)
             et = state.get("event_type", "")
             room_id = str((app.current_room or {}).get("id") or "")
@@ -55,7 +55,7 @@ class ClientStateEngine:
             if seen is None:
                 seen = set()
                 app._seen_game_activity_events = seen
-            if logical_key not in seen:
+            if action_text and logical_key not in seen:
                 app.table_view.add_log(
                     action_text, category="GAMEPLAY", game_event_id=event_id,
                     event_type=et, room_id=room_id
