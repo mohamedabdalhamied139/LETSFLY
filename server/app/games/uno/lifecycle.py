@@ -65,6 +65,19 @@ async def check_and_finalize_uno_round(room: Room):
         room.target_score = None
         room.rules = {}
         room.scores = {uid: 0 for uid in room.players}
+        moved = room.apply_pending_spectators()
+        if moved:
+            for uid in moved:
+                ws_manager.broadcast_room(room.room_id, {
+                    "type": "spectator_changed",
+                    "user_id": uid,
+                    "name": room.player_names.get(uid, "لاعب"),
+                    "is_spectator": True,
+                    "spectators": list(room.spectators),
+                    "players": list(room.players),
+                    "player_names": [room.player_names[p] for p in room.players if p in room.player_names],
+                    "players_dict": {str(p): room.player_names.get(p, "لاعب") for p in set(room.players) | set(room.spectators)},
+                })
         ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
         ws_manager.broadcast_room(room.room_id, {
             "type": "game_finished", "room_id": room.room_id, "game": "UNO"

@@ -81,8 +81,8 @@ class TablePlayerActionsDialog(QDialog):
             else:
                 actions.append(("تعيين نائب كابتن (Shift+O)", "set_co_host"))
 
-        # 3. Substitute (Host or Co-Host can substitute another player with a bot)
-        if (is_host or is_co_host) and not is_me and not is_bot and not is_target_host:
+        # 3. Substitute (Host or Co-Host can substitute another player or bot)
+        if (is_host or is_co_host) and not is_me and not is_target_host:
             actions.append(("استبدال (Ctrl+R)", "substitute"))
 
         # 4. Kick and Ban (Host or Co-Host, cannot kick/ban host or another co-host if user is co-host)
@@ -224,10 +224,11 @@ class TableSubstituteChoiceDialog(QDialog):
                 return host_name
             return f"لاعب {uid}" if uid > 0 else f"بوت {abs(uid)}"
 
-        # 1. Option: Replace with a bot
-        bot_item = QListWidgetItem(tr("استبدال ببوت"))
-        bot_item.setData(Qt.UserRole, {"is_bot": True, "id": None, "display_name": "بوت"})
-        self.list.addItem(bot_item)
+        # 1. Option: Replace with a bot (only if target is a human player)
+        if target_id > 0:
+            bot_item = QListWidgetItem(tr("استبدال ببوت"))
+            bot_item.setData(Qt.UserRole, {"is_bot": True, "id": None, "display_name": "بوت"})
+            self.list.addItem(bot_item)
 
         # 2. Options: Replace with other human members present at the table (players or spectators)
         all_candidate_ids = []

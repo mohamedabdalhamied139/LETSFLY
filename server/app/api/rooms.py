@@ -138,7 +138,20 @@ def _refund_coins(db: Session, user: User, amount: int, reason: str) -> int:
 
 @router.get("")
 async def list_rooms(user: User = Depends(get_current_user)):
-    return await room_manager.list_rooms_consistent(user.id)
+    all_rooms = await room_manager.list_rooms_consistent(user.id)
+    # Hide private rooms from users who are not already host, player, or spectator in that room
+    visible_rooms = []
+    for r in all_rooms:
+        rules = r.get("rules") or {}
+        is_private = bool(rules.get("private", False))
+        if not is_private:
+            visible_rooms.append(r)
+        else:
+            players = r.get("players") or []
+            spectators = r.get("spectators") or []
+            if user.id in players or user.id in spectators or user.id == r.get("host_id"):
+                visible_rooms.append(r)
+    return visible_rooms
 
 async def _check_room_create_rate_limit(user_id: int) -> None:
     now = time.monotonic()
@@ -309,8 +322,24 @@ async def join_room(room_id: str, as_spectator: bool = False, user: User = Depen
         })
         return room.public_dict(user.id)
 
-    if room.status != "waiting":
-        raise HTTPException(400, "لا يمكن الانضمام إلى هذه الطاولة الآن.")
+    # If room is currently in game, allow user to enter smoothly as spectator
+    if room.status != "waiting" or as_spectator:
+        joined = room_manager.add_spectator_exclusive(room, user.id, user.display_name)
+        if not joined:
+            raise HTTPException(409, "أنت داخل طاولة أخرى حاليًا.")
+        ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
+        ws_manager.broadcast_room(room.room_id, {
+            "type": "spectator_changed",
+            "user_id": user.id,
+            "name": user.display_name,
+            "is_spectator": True,
+            "spectators": list(room.spectators),
+            "players": list(room.players),
+            "player_names": [room.player_names[uid] for uid in room.players if uid in room.player_names],
+            "players_dict": {str(uid): room.player_names.get(uid, "لاعب") for uid in set(room.players) | set(room.spectators)},
+        })
+        return room.public_dict(user.id)
+
     if len(room.players) >= 10:
         raise HTTPException(409, "تغيرت حالة الطاولة. حاول مرة أخرى.")
     joined = room_manager.add_player_exclusive(room, user.id, user.display_name)
@@ -839,24 +868,40 @@ async def toggle_spectator(room_id: str, req: Optional[TargetUserRequest] = None
     target_id = (req.target_user_id if req and req.target_user_id is not None else user.id)
     if target_id != user.id and user.id != room.host_id:
         raise HTTPException(403, "تحويل لاعب آخر لمتفرج متاح للقائد فقط.")
-    if room.status != "waiting":
-        raise HTTPException(400, "لا يمكن تغيير وضع المتفرج أثناء اللعب.")
-
     async with room._mutation_lock:
         _require_room_member(room, user)
         if target_id not in room.players and target_id not in room.spectators:
             raise HTTPException(404, "اللاعب غير موجود في الطاولة.")
         if target_id != user.id and user.id != room.host_id:
             raise HTTPException(403, "تحويل لاعب آخر لمتفرج متاح للقائد فقط.")
+
+        # If match is actively playing, set pending spectator flag so the player finishes the current match
+        if room.status in ("playing", "round_finished", "match_finished"):
+            if target_id in room.players:
+                if target_id in room.pending_spectators:
+                    room.pending_spectators.remove(target_id)
+                    is_pending = False
+                else:
+                    room.pending_spectators.add(target_id)
+                    is_pending = True
+                ws_manager.broadcast_room(room_id, {
+                    "type": "pending_spectator_changed",
+                    "user_id": target_id,
+                    "is_pending_spectator": is_pending,
+                })
+                return {
+                    "ok": True,
+                    "is_spectator": False,
+                    "is_pending_spectator": is_pending,
+                    "room": room.public_dict(user.id)
+                }
+
         if target_id in room.spectators:
             room.spectators.remove(target_id)
             if target_id not in room.players:
                 room.players.append(target_id)
             is_spectator = False
         else:
-            if target_id == room.host_id and len(room.players) <= 1:
-                # Allow host to be spectator as well if they wish
-                pass
             room.spectators.append(target_id)
             if target_id in room.players:
                 room.players.remove(target_id)
@@ -946,8 +991,8 @@ async def substitute_player(room_id: str, req: TargetUserRequest, user: User = D
     if not is_authorized:
         raise HTTPException(403, "الاستبدال متاح للقائد أو نائب القائد فقط.")
     target_id = req.target_user_id
-    if not target_id or target_id <= 0:
-        raise HTTPException(400, "يجب تحديد لاعب للاستبدال.")
+    if not target_id:
+        raise HTTPException(400, "يجب تحديد لاعب أو بوت للاستبدال.")
     if target_id == room.host_id:
         raise HTTPException(400, "لا يمكن استبدال قائد الطاولة.")
     if target_id not in room.players and target_id not in room.spectators:
@@ -968,15 +1013,23 @@ async def substitute_player(room_id: str, req: TargetUserRequest, user: User = D
         rep_name = room.player_names.get(rep_id, "لاعب")
 
         async with room._mutation_lock:
-            # If replacement is a spectator: promote replacement to player, demote target to spectator
+            # If replacement is a spectator: promote replacement to player
             if rep_id in room.spectators:
                 room.spectators.remove(rep_id)
                 if rep_id not in room.players:
-                    room.players.append(rep_id)
-                if target_id in room.players:
-                    room.players.remove(target_id)
-                if target_id not in room.spectators:
-                    room.spectators.append(target_id)
+                    if target_id in room.players:
+                        idx = room.players.index(target_id)
+                        room.players[idx] = rep_id
+                    else:
+                        room.players.append(rep_id)
+                if target_id < 0:
+                    # Target is a bot, remove bot entirely from room
+                    room.remove_player(target_id)
+                else:
+                    if target_id in room.players:
+                        room.players.remove(target_id)
+                    if target_id not in room.spectators:
+                        room.spectators.append(target_id)
             elif rep_id in room.players and target_id in room.players:
                 # Both are players: swap positions in room.players
                 idx1 = room.players.index(target_id)
@@ -1045,5 +1098,26 @@ async def substitute_player(room_id: str, req: TargetUserRequest, user: User = D
         })
     return {"ok": True, "target_user_id": target_id, "bot_name": bot_name, "is_bot": True}
 
+@router.post("/{room_id}/privacy")
+async def toggle_room_privacy(room_id: str, user: User = Depends(get_current_user)):
+    room = room_manager.get_room(room_id)
+    if not room:
+        raise HTTPException(404, "الطاولة غير موجودة.")
+    if user.id != room.host_id:
+        raise HTTPException(403, "تغيير خصوصية الطاولة متاح لقائد الطاولة فقط.")
 
+    async with room._mutation_lock:
+        if room.rules is None:
+            room.rules = {}
+        current_private = bool(room.rules.get("private", False))
+        new_private = not current_private
+        room.rules["private"] = new_private
+
+    ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room_id, "is_private": new_private})
+    ws_manager.broadcast_room(room_id, {
+        "type": "room_privacy_changed",
+        "room_id": room_id,
+        "is_private": new_private,
+    })
+    return {"ok": True, "is_private": new_private}
 

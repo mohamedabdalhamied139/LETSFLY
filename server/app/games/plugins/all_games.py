@@ -118,6 +118,19 @@ def generic_stop(room, plugin):
         if hasattr(engine, "stop"): engine.stop()
         if hasattr(engine, "state") and isinstance(engine.state, str): engine.state = "FINISHED"
     plugin.set_engine(room, None)
+    moved = room.apply_pending_spectators()
+    if moved:
+        for uid in moved:
+            ws_manager.broadcast_room(room.room_id, {
+                "type": "spectator_changed",
+                "user_id": uid,
+                "name": room.player_names.get(uid, "لاعب"),
+                "is_spectator": True,
+                "spectators": list(room.spectators),
+                "players": list(room.players),
+                "player_names": [room.player_names[p] for p in room.players if p in room.player_names],
+                "players_dict": {str(p): room.player_names.get(p, "لاعب") for p in set(room.players) | set(room.spectators)},
+            })
 
 def generic_bot_replace(room, user_id, bot_id, bot_name, plugin):
     game = plugin.get_engine(room)

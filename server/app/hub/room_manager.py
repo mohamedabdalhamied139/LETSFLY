@@ -48,6 +48,7 @@ class Room:
         self.voice_muted: set[int] = set()
         self.co_host_id: Optional[int] = None
         self.spectators: List[int] = []
+        self.pending_spectators: set[int] = set()
         self.status = "waiting"  # "waiting", "playing", "match_finished"
         self.uno_game: Optional[UnoGame] = None
         self.thief_game: Optional[ThiefHuntGame] = None
@@ -130,6 +131,17 @@ class Room:
         self.add_player(bot_id, bot_name)
         return bot_name
 
+    def apply_pending_spectators(self) -> List[int]:
+        moved = []
+        for uid in list(self.pending_spectators):
+            if uid in self.players:
+                self.players.remove(uid)
+                if uid not in self.spectators:
+                    self.spectators.append(uid)
+                moved.append(uid)
+        self.pending_spectators.clear()
+        return moved
+
     def remove_bot(self) -> Optional[str]:
         bot_ids = [uid for uid in self.players if uid < 0]
         if not bot_ids:
@@ -174,6 +186,8 @@ class Room:
         game_label = plugin.display_name if plugin else self.game
         return {
             "id": self.room_id,
+            "is_pending_spectator": viewer_id in self.pending_spectators if viewer_id is not None else False,
+            "pending_spectators": list(self.pending_spectators),
             "room_id": self.room_id,
             "game": self.game,
             "status": self.status,

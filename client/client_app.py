@@ -192,6 +192,7 @@ class TableVerseApp(QMainWindow):
             ("F3", "on_f3_ping"),
             ("Ctrl+F", "on_ctrl_friends"),
             ("Ctrl+W", "on_ctrl_online_users"),
+            ("Ctrl+H", "on_toggle_room_privacy"),
         ]
         for key, method in entries:
             shortcut = QShortcut(QKeySequence(key), self)
@@ -210,7 +211,7 @@ class TableVerseApp(QMainWindow):
         if method == "on_toggle_spectator_shortcut":
             self.on_toggle_spectator_shortcut()
             return
-        if method in ("on_toggle_voice_chat", "on_toggle_voice_mute"):
+        if method in ("on_toggle_voice_chat", "on_toggle_voice_mute", "on_toggle_room_privacy"):
             if self.is_in_room():
                 getattr(self, method)()
             return
@@ -2139,11 +2140,40 @@ class TableVerseApp(QMainWindow):
                 lambda e: reader.speak(tr("تعذر حظر اللاعب من الصوت: {error}", error=tr(str(e))), interrupt=True)
             )
 
+    def on_toggle_room_privacy(self):
+        """Ctrl+H shortcut to toggle room privacy (public/private)."""
+        if not self.is_in_room() or not self.current_room:
+            return
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        if not is_host:
+            reader.speak(tr("تغيير خصوصية الطاولة متاح لقائد الطاولة فقط."), interrupt=True)
+            return
+        rid = str(self.current_room.get("id") or "")
+        def done(r):
+            is_priv = bool(r.get("is_private"))
+            if self.current_room:
+                if self.current_room.get("rules") is None:
+                    self.current_room["rules"] = {}
+                self.current_room["rules"]["private"] = is_priv
+            msg = "تم تغيير الطاولة إلى خاصة." if is_priv else "تم تغيير الطاولة إلى عامة."
+            self.table_view.add_log(tr(msg), category="FRIENDS")
+            reader.speak(tr(msg), interrupt=True)
+        def fail(e):
+            reader.speak(tr("تعذر تغيير خصوصية الطاولة: {error}", error=tr(str(e))), interrupt=True)
+        self._run_async(lambda: self.api.toggle_room_privacy(rid), done, fail)
+
     def on_toggle_spectator_shortcut(self):
         """F4 shortcut to toggle spectator mode in room, or toggle default spectator mode across the game."""
         if self.is_in_room() and self.current_room:
             rid = str(self.current_room.get("id") or "")
             def done(r):
+                if r.get("is_pending_spectator") is not None:
+                    is_pend = bool(r.get("is_pending_spectator"))
+                    if self.current_room:
+                        self.current_room["is_pending_spectator"] = is_pend
+                    msg = "ستتحول إلى وضع المتفرج بعد نهاية اللعبة الحالية." if is_pend else "تم إلغاء وضع المتفرج، ستستمر كلاعب في اللعبة القادمة."
+                    reader.speak(tr(msg), interrupt=True)
+                    return
                 is_spec = bool(r.get("is_spectator"))
                 if isinstance(r.get("room"), dict):
                     self.current_room = r["room"]
@@ -2472,6 +2502,18 @@ class TableVerseApp(QMainWindow):
                         self.current_room["player_names"] = event["player_names"]
                     if "players_dict" in event:
                         self.current_room["players_dict"] = event["players_dict"]
+            elif et == "pending_spectator_changed":
+                uid = int(event.get("user_id") or 0)
+                is_pend = bool(event.get("is_pending_spectator"))
+                my_id = int((self.user or {}).get("id") or 0)
+                if uid == my_id and self.current_room:
+                    self.current_room["is_pending_spectator"] = is_pend
+            elif et == "room_privacy_changed":
+                is_priv = bool(event.get("is_private"))
+                if self.current_room:
+                    if self.current_room.get("rules") is None:
+                        self.current_room["rules"] = {}
+                    self.current_room["rules"]["private"] = is_priv
             elif et == "spectator_changed":
                 name = event.get('name', 'لاعب')
                 is_spec = bool(event.get('is_spectator'))
@@ -3489,6 +3531,14 @@ class TableVerseApp(QMainWindow):
             start_act.triggered.connect(self._menu_start_game)
         players_act = menu.addAction(tr("قائمة اللاعبين"))
         spectator_act = menu.addAction(tr("وضع المتفرج"))
+        
+        # Privacy toggle in a balanced, logical middle position
+        is_priv = bool((self.current_room.get("rules") or {}).get("private", False))
+        priv_title = tr("اجعل الطاولة عامة") if is_priv else tr("اجعل الطاولة خاصة")
+        privacy_act = menu.addAction(priv_title)
+        privacy_act.setEnabled(is_host)
+        privacy_act.triggered.connect(self.on_toggle_room_privacy)
+
         menu.addSeparator()
         bot_act = menu.addAction(tr("إضافة بوت"))
         bot_act.setEnabled(is_host and status == "waiting")
