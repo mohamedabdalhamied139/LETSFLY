@@ -108,6 +108,14 @@ class JoinRoomsView(QWidget):
         if self.rooms_list.count():
             self.rooms_list.setCurrentRow(0)
 
+    def remove_room_by_id(self, room_id: str):
+        if not room_id or not self._last_rooms:
+            return
+        str_rid = str(room_id)
+        new_rooms = [r for r in self._last_rooms if str(r.get("id")) != str_rid]
+        if len(new_rooms) != len(self._last_rooms):
+            self.update_rooms(new_rooms)
+
     def _on_activated(self, item: QListWidgetItem):
         rid = item.data(Qt.UserRole)
         if rid:

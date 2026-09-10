@@ -1,6 +1,7 @@
 from server.app.games.registry import ServerGamePlugin, register_plugin
 from fastapi import HTTPException
 import asyncio
+from uuid import uuid4
 
 # Imports for games
 from server.app.games.uno.game import UnoGame
@@ -38,7 +39,7 @@ from server.app.activity import create_event
 def _record_match(room, game_name, winners):
     db = SessionLocal()
     try:
-        record_match(db, game_name, room.room_id, room.players, list(winners))
+        record_match(db, game_name, room.room_id, room.players, list(winners), match_key=room.match_key)
         db.commit()
     except Exception:
         db.rollback()
@@ -56,7 +57,7 @@ def _prepare_gameplay_event(room, actor_id, engine, fallback="حدث في الل
     if getattr(room, "_last_activity_marker", None) == marker:
         return None
     room._last_activity_marker = marker
-    recipients = [uid for uid in (set(room.players) | set(room.spectators)) if int(uid) > 0]
+    recipients = [uid for uid in room.players if int(uid) > 0]
     if not recipients:
         return None
     return {
@@ -117,13 +118,25 @@ def generic_stop(room, plugin):
         if hasattr(engine, "stop"): engine.stop()
         if hasattr(engine, "state") and isinstance(engine.state, str): engine.state = "FINISHED"
     plugin.set_engine(room, None)
+    moved = room.apply_pending_spectators()
+    if moved:
+        for uid in moved:
+            ws_manager.broadcast_room(room.room_id, {
+                "type": "spectator_changed",
+                "user_id": uid,
+                "name": room.player_names.get(uid, "لاعب"),
+                "is_spectator": True,
+                "spectators": list(room.spectators),
+                "players": list(room.players),
+                "player_names": [room.player_names[p] for p in room.players if p in room.player_names],
+                "players_dict": {str(p): room.player_names.get(p, "لاعب") for p in set(room.players) | set(room.spectators)},
+            })
 
 def generic_bot_replace(room, user_id, bot_id, bot_name, plugin):
     game = plugin.get_engine(room)
     if not game: return
-    # Replacement IDs must never collide with an existing bot/player ID.
-    while bot_id in room.players or bot_id in getattr(game, "player_ids", []):
-        bot_id -= 1
+    if bot_id in getattr(game, "player_ids", ()) and bot_id != user_id:
+        raise ValueError("Replacement id already exists in the game")
     if hasattr(game, "player_ids") and user_id in game.player_ids:
         idx = game.player_ids.index(user_id)
         game.player_ids[idx] = bot_id
@@ -137,6 +150,19 @@ def generic_bot_replace(room, user_id, bot_id, bot_name, plugin):
             elif hasattr(p, "user_id") and p.user_id == user_id:
                 p.user_id = bot_id
                 p.name = bot_name
+    if room.game == "TENNIS" and hasattr(game, "players") and len(game.players) == 2:
+        bot_index = next((i for i, player in enumerate(game.players)
+                          if str(player.get("id")) == str(bot_id)), None)
+        if bot_index == 0:
+            game.players[0], game.players[1] = game.players[1], game.players[0]
+            if hasattr(game, "player_pos"):
+                game.player_pos[0], game.player_pos[1] = game.player_pos[1], game.player_pos[0]
+            if hasattr(game, "score"):
+                for score_map in (game.score.points, game.score.games, game.score.sets, game.score.tiebreak_points):
+                    score_map[0], score_map[1] = score_map[1], score_map[0]
+                game.score.server_idx = 1 - game.score.server_idx
+                if game.score.in_tiebreak:
+                    game.score.tiebreak_server_start = 1 - game.score.tiebreak_server_start
     if hasattr(game, "player_names") and user_id in game.player_names:
         game.player_names[bot_id] = bot_name
         game.player_names.pop(user_id, None)
@@ -146,6 +172,24 @@ def generic_bot_replace(room, user_id, bot_id, bot_name, plugin):
             obj = getattr(game, attr)
             if isinstance(obj, dict) and user_id in obj:
                 obj[bot_id] = obj.pop(user_id)
+    for attr in ("drawn_card", "pending_score_adjustments"):
+        obj = getattr(game, attr, None)
+        if isinstance(obj, dict) and user_id in obj:
+            obj[bot_id] = obj.pop(user_id)
+    for attr in ("pending_uno", "buzzer_pending"):
+        obj = getattr(game, attr, None)
+        if isinstance(obj, set) and user_id in obj:
+            obj.remove(user_id)
+            obj.add(bot_id)
+    if hasattr(game, "buzzer_order"):
+        game.buzzer_order = [bot_id if uid == user_id else uid for uid in game.buzzer_order]
+    if getattr(game, "pending_exchange_user", None) == user_id:
+        game.pending_exchange_user = bot_id
+    pending = getattr(game, "pending_bluff", None)
+    if isinstance(pending, dict):
+        for key in ("target_id", "bluffer_id"):
+            if pending.get(key) == user_id:
+                pending[key] = bot_id
                 
     if getattr(game, "last_capture_id", None) == user_id: game.last_capture_id = bot_id
     if getattr(game, "last_player_id", None) == user_id: game.last_player_id = bot_id
@@ -163,6 +207,114 @@ def generic_bot_replace(room, user_id, bot_id, bot_name, plugin):
         room.cancel_bot_task()
         room._bot_task = asyncio.create_task(plugin.bot_runner(room))
 
+def generic_bot_add_midgame(room, bot_id: int, bot_name: str, plugin):
+    """Integrate a newly added bot into an actively running match without resetting the game."""
+    game = plugin.get_engine(room)
+    if not game:
+        return
+    # 1. Update player list/identities
+    if hasattr(game, "player_ids") and bot_id not in game.player_ids:
+        game.player_ids.append(bot_id)
+    if hasattr(game, "players"):
+        exists = False
+        for p in game.players:
+            pid = int(p[0] if isinstance(p, tuple) else p.get("id") if isinstance(p, dict) else p.user_id)
+            if pid == bot_id:
+                exists = True
+                break
+        if not exists:
+            if isinstance(game.players, list) and game.players and isinstance(game.players[0], tuple):
+                game.players.append((bot_id, bot_name))
+            elif isinstance(game.players, list) and game.players and isinstance(game.players[0], dict):
+                game.players.append({"id": str(bot_id), "name": bot_name})
+            elif hasattr(game, "players") and hasattr(game, "_find_player"): # UnoGame
+                from server.app.games.uno.game import Player as UnoPlayer
+                new_p = UnoPlayer(bot_id, bot_name)
+                # Deal starting cards (7 cards) from deck
+                for _ in range(7):
+                    c = game._draw_card()
+                    if c:
+                        new_p.hand.append(c)
+                game.players.append(new_p)
+
+    if hasattr(game, "player_names"):
+        game.player_names[bot_id] = bot_name
+
+    # 2. Initialize game state structures
+    if hasattr(game, "scores") and isinstance(game.scores, dict) and bot_id not in game.scores:
+        game.scores[bot_id] = 0
+    if hasattr(game, "tokens") and isinstance(game.tokens, dict) and bot_id not in game.tokens:
+        game.tokens[bot_id] = getattr(game, "starting_tokens", 11)
+    if hasattr(game, "positions") and isinstance(game.positions, dict) and bot_id not in game.positions:
+        game.positions[bot_id] = 0
+    if hasattr(game, "turn_start_positions") and isinstance(game.turn_start_positions, dict) and bot_id not in game.turn_start_positions:
+        game.turn_start_positions[bot_id] = 0
+    if hasattr(game, "hands") and isinstance(game.hands, dict) and bot_id not in game.hands:
+        game.hands[bot_id] = []
+        if room.game in ("DOMINO", "AMERICAN_DOMINO") and hasattr(game, "boneyard"):
+            count = min(getattr(game, "hand_size", 7), len(game.boneyard))
+            for _ in range(count):
+                if game.boneyard:
+                    game.hands[bot_id].append(game.boneyard.pop())
+
+    # 3. Ensure bot runner is active
+    if plugin.bot_runner:
+        if room._bot_task is None or room._bot_task.done():
+            room._bot_task = asyncio.create_task(plugin.bot_runner(room))
+
+def generic_bot_remove_midgame(room, bot_id: int, plugin):
+    """Safely remove a bot from an actively running match."""
+    game = plugin.get_engine(room)
+    if not game:
+        return
+    # If the game has a custom remove_player method, use it
+    if hasattr(game, "remove_player"):
+        try:
+            game.remove_player(bot_id)
+        except Exception:
+            pass
+    else:
+        if hasattr(game, "player_ids") and bot_id in game.player_ids:
+            game.player_ids.remove(bot_id)
+        if hasattr(game, "players"):
+            game.players = [
+                p for p in game.players
+                if int(p[0] if isinstance(p, tuple) else p.get("id") if isinstance(p, dict) else p.user_id) != bot_id
+            ]
+        if hasattr(game, "player_names"):
+            game.player_names.pop(bot_id, None)
+        for attr in ("scores", "hands", "tokens", "positions", "turn_start_positions", "frozen_players", "shielded_players"):
+            obj = getattr(game, attr, None)
+            if isinstance(obj, dict):
+                obj.pop(bot_id, None)
+
+        if hasattr(game, "current_turn_index") and hasattr(game, "players") and game.players:
+            game.current_turn_index = game.current_turn_index % len(game.players)
+
+    # Wake bot runner if turn shifted to another bot
+    if plugin.bot_runner:
+        if room._bot_task is None or room._bot_task.done():
+            room._bot_task = asyncio.create_task(plugin.bot_runner(room))
+
+def generic_player_swap(room, outgoing_id, replacement_id, replacement_name, plugin):
+    game = plugin.get_engine(room)
+    if not game:
+        return
+    if hasattr(game, "player_ids"):
+        if replacement_id not in game.player_ids:
+            return generic_bot_replace(room, outgoing_id, replacement_id, replacement_name, plugin)
+        first, second = game.player_ids.index(outgoing_id), game.player_ids.index(replacement_id)
+        game.player_ids[first], game.player_ids[second] = game.player_ids[second], game.player_ids[first]
+        return
+    if hasattr(game, "players"):
+        def ident(player):
+            return int(player[0] if isinstance(player, tuple) else player.get("id") if isinstance(player, dict) else player.user_id)
+        ids = [ident(player) for player in game.players]
+        if replacement_id not in ids:
+            return generic_bot_replace(room, outgoing_id, replacement_id, replacement_name, plugin)
+        first, second = ids.index(outgoing_id), ids.index(replacement_id)
+        game.players[first], game.players[second] = game.players[second], game.players[first]
+
 # UNO
 async def uno_start(room, target, rules, players_tuples):
     if rules.get("uno_flip") and rules.get("no_mercy"): raise HTTPException(400, "Cannot mix UNO Flip and UNO No Mercy.")
@@ -172,6 +324,7 @@ async def uno_start(room, target, rules, players_tuples):
     room.rules = rules
     room.uno_game = game
     room.status = "playing"
+    room.match_key = uuid4().hex
     if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_uno_bots(room))
 
 async def uno_action(room, user_id, req):
@@ -199,6 +352,7 @@ async def thief_start(room, target, rules, players_tuples):
     room.rules = rules
     room.thief_game = game
     room.status = "playing"
+    room.match_key = uuid4().hex
     if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_thief_bots(room))
 
 async def thief_action(room, user_id, req):
@@ -227,6 +381,7 @@ async def farkle_start(room, target, rules, players_tuples):
     room.farkle_game = game
     room.scores = dict(game.scores)
     room.status = "playing"
+    room.match_key = uuid4().hex
     if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_farkle_bots(room))
 
 async def farkle_action(room, user_id, req):
@@ -260,12 +415,15 @@ async def domino_start(room, target, rules, players_tuples):
     room.domino_game = game
     room.scores = dict(game.scores)
     room.status = "playing"
+    room.match_key = uuid4().hex
     if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_domino_bots(room))
 
 async def domino_action(room, user_id, req):
     side = getattr(req, "side", "") or (req.data.get("side") if getattr(req, "data", None) else None)
     if req.action == "play":
-        tile_idx = int(req.card_id) if str(req.card_id).isdigit() else 0
+        if not str(req.card_id).isdigit():
+            raise ValueError("فهرس قطعة الدومينو غير صالح.")
+        tile_idx = int(req.card_id)
         state = room.domino_game.play_tile(user_id, tile_idx, side)
     elif req.action == "draw":
         state = room.domino_game.draw_tile(user_id)
@@ -274,6 +432,7 @@ async def domino_action(room, user_id, req):
     else:
         raise ValueError("إجراء الدومينو غير معروف.")
     _queue_gameplay_event(room, user_id, room.domino_game)
+    room.scores = dict(room.domino_game.scores)
     if not room.domino_game.active:
         ws_manager.broadcast_room(room.room_id, {"type": "game_state_changed", "room_id": room.room_id})
         await check_and_finalize_domino_round(room)
@@ -294,12 +453,15 @@ async def am_domino_start(room, target, rules, players_tuples):
     room.american_domino_game = game
     room.scores = dict(game.scores)
     room.status = "playing"
+    room.match_key = uuid4().hex
     if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_american_domino_bots(room))
 
 async def am_domino_action(room, user_id, req):
     side = getattr(req, "side", "") or (req.data.get("side") if getattr(req, "data", None) else None)
     if req.action == "play":
-        tile_idx = int(req.card_id) if str(req.card_id).isdigit() else 0
+        if not str(req.card_id).isdigit():
+            raise ValueError("فهرس قطعة الدومينو غير صالح.")
+        tile_idx = int(req.card_id)
         state = room.american_domino_game.play_tile(user_id, tile_idx, side)
     elif req.action == "draw":
         state = room.american_domino_game.draw_tile(user_id)
@@ -325,8 +487,10 @@ async def snakes_start(room, target, rules, players_tuples):
     game = SnakesAndLaddersGame(players_tuples, rules=rules)
     game.start_match()
     room.rules = rules
+    room.target_score = 100
     room.snakes_game = game
     room.status = "playing"
+    room.match_key = uuid4().hex
     if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_snakes_bots(room))
 
 async def snakes_action(room, user_id, req):
@@ -364,11 +528,14 @@ async def scopa_start(room, target, rules, players_tuples):
     room.scopa_game = game
     room.scores = dict(game.scores)
     room.status = "playing"
+    room.match_key = uuid4().hex
     if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_scopa_bots(room))
 
 async def scopa_action(room, user_id, req):
     if req.action == "play":
-        card_idx = int(req.card_id) if str(req.card_id).isdigit() else 0
+        if not str(req.card_id).isdigit():
+            raise ValueError("فهرس كارت إسكوبا غير صالح.")
+        card_idx = int(req.card_id)
         choice = (req.data.get("choice_idx") if getattr(req, "data", None) else None)
         if choice is not None and str(choice).isdigit():
             choice = int(choice)
@@ -376,6 +543,7 @@ async def scopa_action(room, user_id, req):
     else:
         raise ValueError("إجراء إسكوبا غير معروف.")
     _queue_gameplay_event(room, user_id, room.scopa_game)
+    room.scores = dict(room.scopa_game.team_scores if room.scopa_game.is_team_game else room.scopa_game.scores)
     if not room.scopa_game.active:
         ws_manager.broadcast_room(room.room_id, {"type": "game_state_changed", "room_id": room.room_id})
         await check_and_finalize_scopa_round(room)
@@ -399,6 +567,7 @@ async def tennis_start(room, target, rules, players_tuples):
     room.tennis_game = game
     room.scores = {uid: 0 for uid in room.players}
     room.status = "playing"
+    room.match_key = uuid4().hex
     if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_tennis_bots(room))
     # Note: tennis historically broadcast state immediately on start. We'll do it in rooms.py
 
@@ -439,6 +608,7 @@ async def ninety_nine_start(room, target, rules, players_tuples):
     room.ninety_nine_game = game
     room.scores = dict(game.tokens)
     room.status = "playing"
+    room.match_key = uuid4().hex
     if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_ninety_nine_bots(room))
 
 async def ninety_nine_action(room, user_id, req):

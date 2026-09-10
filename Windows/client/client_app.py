@@ -192,6 +192,7 @@ class TableVerseApp(QMainWindow):
             ("F3", "on_f3_ping"),
             ("Ctrl+F", "on_ctrl_friends"),
             ("Ctrl+W", "on_ctrl_online_users"),
+            ("Ctrl+H", "on_toggle_room_privacy"),
         ]
         for key, method in entries:
             shortcut = QShortcut(QKeySequence(key), self)
@@ -210,7 +211,7 @@ class TableVerseApp(QMainWindow):
         if method == "on_toggle_spectator_shortcut":
             self.on_toggle_spectator_shortcut()
             return
-        if method in ("on_toggle_voice_chat", "on_toggle_voice_mute"):
+        if method in ("on_toggle_voice_chat", "on_toggle_voice_mute", "on_toggle_room_privacy"):
             if self.is_in_room():
                 getattr(self, method)()
             return
@@ -1345,7 +1346,8 @@ class TableVerseApp(QMainWindow):
             # for the first round; later rounds use the shared round-start cue.
             if current_round == 1:
                 sound_engine.play_event("THIEF_GAME_START")
-            reader.speak(tr(f"الجولة {current_round}"), interrupt=True)
+            if self.thief_state.get("event_type") != "ESCAPE_START":
+                reader.speak(tr(f"الجولة {current_round}"), interrupt=False)
         eid = int(self.thief_state.get("event_id", 0) or 0)
         et = self.thief_state.get("event_type", "")
         key = f"{eid}:{et}"
@@ -1359,6 +1361,8 @@ class TableVerseApp(QMainWindow):
                 floor = self.thief_state.get("start_floor")
                 dirs = self.thief_state.get("directions", [])
                 narration_parts = []
+                if current_round:
+                    narration_parts.append(f"الجولة {current_round}")
                 if floor:
                     narration_parts.append(f"اللص في الطابق {floor}")
                 if dirs:
@@ -1368,7 +1372,7 @@ class TableVerseApp(QMainWindow):
                     # Send the narration as one NVDA utterance. This avoids a
                     # second queued speech command whose duration was previously
                     # omitted from the local transition estimate.
-                    reader.speak(tr(narration), interrupt=True)
+                    reader.speak(tr(narration), interrupt=False)
                 # NVDA Controller has no speech-completion callback. Keep the
                 # answer field hidden and the table focused while the queued
                 # narration is spoken, then open the field immediately after
@@ -1439,6 +1443,8 @@ class TableVerseApp(QMainWindow):
             return False
         request_id = uuid.uuid4().hex
         self._ws_action_pending[request_id] = (on_success, on_error, self._room_generation, str(room_id))
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(10_000, lambda rid=request_id: self._expire_ws_action(rid))
         payload = {
             "action": str(action),
             "card_id": str(card_id or ""),
@@ -1450,6 +1456,13 @@ class TableVerseApp(QMainWindow):
             self._ws_action_pending.pop(request_id, None)
             return False
         return True
+
+    def _expire_ws_action(self, request_id: str):
+        pending = self._ws_action_pending.pop(request_id, None)
+        if pending:
+            _success, on_error, _generation, _room_id = pending
+            if on_error:
+                on_error("انتهت مهلة تنفيذ الحركة. حاول مرة أخرى.")
 
     def _handle_thief_action(self, action, value):
         if not self.current_room or self.current_room.get("game") != "THIEF_HUNT":
@@ -1906,7 +1919,8 @@ class TableVerseApp(QMainWindow):
     def on_add_bot(self):
         if not self.current_room:
             return
-        if not self.current_room.get("is_host"):
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        if not is_host:
             reader.speak(tr("إضافة بوت متاح لمضيف الطاولة فقط."), interrupt=True)
             return
         rid = self.current_room.get("id")
@@ -1920,7 +1934,8 @@ class TableVerseApp(QMainWindow):
     def on_remove_bot(self):
         if not self.current_room:
             return
-        if not self.current_room.get("is_host"):
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        if not is_host:
             reader.speak(tr("إزالة بوت متاح لمضيف الطاولة فقط."), interrupt=True)
             return
         bot_ids = [uid for uid in self.current_room.get("players", []) if uid < 0]
@@ -1993,8 +2008,8 @@ class TableVerseApp(QMainWindow):
         if not self.current_room or not isinstance(target_user, dict):
             return
         my_id = int((self.user or {}).get("id") or 0)
-        is_host = bool(self.current_room.get("is_host"))
-        is_co_host = bool(self.current_room.get("is_co_host"))
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        is_co_host = str(self.current_room.get("co_host_id")) == str((self.user or {}).get("id"))
         target_id = int(target_user.get("id") or 0)
         voice_muted_list = self.current_room.get("voice_muted") or []
         is_target_muted = target_id in voice_muted_list
@@ -2008,6 +2023,7 @@ class TableVerseApp(QMainWindow):
         if not self.current_room or not isinstance(target_user, dict):
             return
         rid = str(self.current_room.get("id") or "")
+        my_id = int((self.user or {}).get("id") or 0)
         target_id = int(target_user.get("id") or 0)
         target_name = str(target_user.get("display_name") or "لاعب")
 
@@ -2125,11 +2141,40 @@ class TableVerseApp(QMainWindow):
                 lambda e: reader.speak(tr("تعذر حظر اللاعب من الصوت: {error}", error=tr(str(e))), interrupt=True)
             )
 
+    def on_toggle_room_privacy(self):
+        """Ctrl+H shortcut to toggle room privacy (public/private)."""
+        if not self.is_in_room() or not self.current_room:
+            return
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        if not is_host:
+            reader.speak(tr("تغيير خصوصية الطاولة متاح لقائد الطاولة فقط."), interrupt=True)
+            return
+        rid = str(self.current_room.get("id") or "")
+        def done(r):
+            is_priv = bool(r.get("is_private"))
+            if self.current_room:
+                if self.current_room.get("rules") is None:
+                    self.current_room["rules"] = {}
+                self.current_room["rules"]["private"] = is_priv
+            msg = "تم تغيير الطاولة إلى خاصة." if is_priv else "تم تغيير الطاولة إلى عامة."
+            self.table_view.add_log(tr(msg), category="FRIENDS")
+            reader.speak(tr(msg), interrupt=True)
+        def fail(e):
+            reader.speak(tr("تعذر تغيير خصوصية الطاولة: {error}", error=tr(str(e))), interrupt=True)
+        self._run_async(lambda: self.api.toggle_room_privacy(rid), done, fail)
+
     def on_toggle_spectator_shortcut(self):
         """F4 shortcut to toggle spectator mode in room, or toggle default spectator mode across the game."""
         if self.is_in_room() and self.current_room:
             rid = str(self.current_room.get("id") or "")
             def done(r):
+                if r.get("is_pending_spectator") is not None:
+                    is_pend = bool(r.get("is_pending_spectator"))
+                    if self.current_room:
+                        self.current_room["is_pending_spectator"] = is_pend
+                    msg = "ستتحول إلى وضع المتفرج بعد نهاية اللعبة الحالية." if is_pend else "تم إلغاء وضع المتفرج، ستستمر كلاعب في اللعبة القادمة."
+                    reader.speak(tr(msg), interrupt=True)
+                    return
                 is_spec = bool(r.get("is_spectator"))
                 if isinstance(r.get("room"), dict):
                     self.current_room = r["room"]
@@ -2183,7 +2228,7 @@ class TableVerseApp(QMainWindow):
         self._room_ws_url = self.api.get_ws_url(f"/ws/room/{room_id}")
         self.ws.start(self._emit_ws_event, self._room_ws_url, (self.api.token or ""))
 
-    def _recover_room_snapshot(self, room, uno_state=None, thief_state=None, farkle_state=None, domino_state=None, american_domino_state=None, snakes_state=None, scopa_state=None, tennis_state=None):
+    def _recover_room_snapshot(self, room, uno_state=None, thief_state=None, farkle_state=None, domino_state=None, american_domino_state=None, snakes_state=None, scopa_state=None, tennis_state=None, ninety_nine_state=None):
         if not room or not self.current_room or room.get("id") != self.current_room.get("id"):
             return
         self.current_room = room
@@ -2217,6 +2262,8 @@ class TableVerseApp(QMainWindow):
             self._apply_scopa_state(scopa_state)
         if tennis_state is not None:
             self._apply_tennis_state(tennis_state)
+        if ninety_nine_state is not None:
+            self._apply_ninety_nine_state(ninety_nine_state)
 
         focus = self._reconnect_focus
         self._reconnect_focus = None
@@ -2357,6 +2404,26 @@ class TableVerseApp(QMainWindow):
                 if panel is not None:
                     panel.add_event(event)
             return
+
+        if et == "room_deleted":
+            d_rid = event.get("room_id")
+            if d_rid and hasattr(self, "join_rooms_view"):
+                self.join_rooms_view.remove_room_by_id(str(d_rid))
+            return
+
+        if et == "room_updated":
+            # If the room became private and we are not a member of it, remove immediately from available tables
+            u_rid = event.get("room_id")
+            if event.get("is_private") and u_rid and hasattr(self, "join_rooms_view"):
+                my_id = int((self.user or {}).get("id") or 0)
+                in_curr = self.current_room and str(self.current_room.get("id")) == str(u_rid)
+                if not in_curr:
+                    self.join_rooms_view.remove_room_by_id(str(u_rid))
+            elif hasattr(self, "stack") and self.stack.currentIndex() == 3 and not getattr(self, "_refresh_in_flight", False):
+                # When viewing available rooms, refresh list
+                self._run_async(self.api.list_rooms, lambda rooms: self.join_rooms_view.update_rooms(rooms))
+            return
+
         if not self.current_room:
             return
 
@@ -2377,6 +2444,7 @@ class TableVerseApp(QMainWindow):
                     event.get("snakes_state"),
                     event.get("scopa_state"),
                     event.get("tennis_state"),
+                    event.get("ninety_nine_state"),
                 )
             return
 
@@ -2455,6 +2523,18 @@ class TableVerseApp(QMainWindow):
                         self.current_room["player_names"] = event["player_names"]
                     if "players_dict" in event:
                         self.current_room["players_dict"] = event["players_dict"]
+            elif et == "pending_spectator_changed":
+                uid = int(event.get("user_id") or 0)
+                is_pend = bool(event.get("is_pending_spectator"))
+                my_id = int((self.user or {}).get("id") or 0)
+                if uid == my_id and self.current_room:
+                    self.current_room["is_pending_spectator"] = is_pend
+            elif et == "room_privacy_changed":
+                is_priv = bool(event.get("is_private"))
+                if self.current_room:
+                    if self.current_room.get("rules") is None:
+                        self.current_room["rules"] = {}
+                    self.current_room["rules"]["private"] = is_priv
             elif et == "spectator_changed":
                 name = event.get('name', 'لاعب')
                 is_spec = bool(event.get('is_spectator'))
@@ -2583,6 +2663,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "tennis_match_finished":
+            self._announce_terminal_result(event)
             self.tennis_state = None
             self.table_view.set_game_type("TENNIS")
             self.table_view.set_playing_mode(False)
@@ -2591,6 +2672,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et in ("domino_match_finished", "american_domino_match_finished"):
+            self._announce_terminal_result(event)
             self.domino_state = None
             gtype = self.current_room.get("game", "DOMINO")
             self.table_view.set_game_type(gtype)
@@ -2600,6 +2682,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "farkle_match_finished":
+            self._announce_terminal_result(event)
             self.farkle_state = event.get("state") or {}
             self.table_view.set_game_type("FARKLE")
             self.table_view.set_playing_mode(False)
@@ -2609,6 +2692,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "scopa_match_finished":
+            self._announce_terminal_result(event)
             self.scopa_state = None
             self.table_view.set_game_type("SCOPA")
             self.table_view.set_playing_mode(False)
@@ -2617,6 +2701,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "snakes_match_finished":
+            self._announce_terminal_result(event)
             self.snakes_state = None
             self.table_view.set_game_type("SNAKES_LADDERS")
             self.table_view.set_playing_mode(False)
@@ -2625,6 +2710,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "thief_match_finished":
+            self._announce_terminal_result(event)
             self.thief_state = None
             self.uno_state = None
             self.farkle_state = None
@@ -2649,6 +2735,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "match_finished":
+            self._announce_terminal_result(event)
             self.uno_state = None
             self.thief_state = None
             self._was_my_turn = False
@@ -2690,6 +2777,12 @@ class TableVerseApp(QMainWindow):
                 # replaced by one shared broadcast payload.
                 self._poll_table_state()
             return
+
+    def _announce_terminal_result(self, event: dict):
+        winner_id = event.get("winner_id") or event.get("match_winner_id")
+        won = winner_id is not None and str(winner_id) == str((self.user or {}).get("id"))
+        sound_engine.play_event("MATCH_WIN" if won else "MATCH_LOSS")
+        reader.speak(tr("فزت بالمباراة." if won else "انتهت المباراة."), interrupt=False)
     def _on_language_changed(self, _value=None):
         """Apply language changes immediately to all existing UI without restart."""
         try:
@@ -2786,6 +2879,7 @@ class TableVerseApp(QMainWindow):
 
     def _leave_table_after_failed_reconnect(self):
         self.voice.leave_room()
+        self.ws.stop()
         self.current_room = None
         self.poll_timer.stop()
         self.setWindowTitle(tr("TableVerse"))
@@ -3445,8 +3539,8 @@ class TableVerseApp(QMainWindow):
     def _show_room_context_menu(self):
         menu = QMenu(self)
         menu.setAccessibleName(tr("قائمة خيارات الطاولة"))
-        is_host = bool(self.current_room.get("is_host"))
-        is_co_host = bool(self.current_room.get("is_co_host"))
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        is_co_host = str(self.current_room.get("co_host_id")) == str((self.user or {}).get("id"))
         status = self.current_room.get("status")
         if status == "playing":
             start_act = menu.addAction(tr("إيقاف اللعبة"))
@@ -3458,11 +3552,19 @@ class TableVerseApp(QMainWindow):
             start_act.triggered.connect(self._menu_start_game)
         players_act = menu.addAction(tr("قائمة اللاعبين"))
         spectator_act = menu.addAction(tr("وضع المتفرج"))
+        
+        # Privacy toggle in a balanced, logical middle position
+        is_priv = bool((self.current_room.get("rules") or {}).get("private", False))
+        priv_title = tr("اجعل الطاولة عامة") if is_priv else tr("اجعل الطاولة خاصة")
+        privacy_act = menu.addAction(priv_title)
+        privacy_act.setEnabled(is_host)
+        privacy_act.triggered.connect(self.on_toggle_room_privacy)
+
         menu.addSeparator()
         bot_act = menu.addAction(tr("إضافة بوت"))
-        bot_act.setEnabled(is_host and status == "waiting")
+        bot_act.setEnabled(is_host and status in ("waiting", "playing"))
         remove_bot_act = menu.addAction(tr("إزالة بوت"))
-        remove_bot_act.setEnabled(is_host and status == "waiting")
+        remove_bot_act.setEnabled(is_host and status in ("waiting", "playing"))
         menu.addSeparator()
         leave_act = menu.addAction(tr("مغادرة الطاولة"))
 
@@ -3568,8 +3670,8 @@ class TableVerseApp(QMainWindow):
             return
         if not self.current_room or self.current_room.get("status") != "waiting":
             return
-        is_host = bool(self.current_room.get("is_host"))
-        is_co_host = bool(self.current_room.get("is_co_host"))
+        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+        is_co_host = str(self.current_room.get("co_host_id")) == str((self.user or {}).get("id"))
         if not (is_host or is_co_host):
             reader.speak(tr("بدء اللعبة متاح للقائد أو نائب القائد فقط."), interrupt=True)
             return
