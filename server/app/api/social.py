@@ -63,7 +63,7 @@ def _enrich_user(u, online_set, friends_set=None):
 @router.get("/users/search")
 def search_users(q: str = "", user=Depends(get_current_user), db:Session=Depends(get_db)):
     q=str(q or "").strip()
-    if not q: return {"users": []}
+    if len(q) < 2: return {"users": []}
     rows=db.query(User).filter(User.username.ilike(f"%{q}%"), User.id!=user.id).order_by(func.lower(User.username)).limit(50).all()
     online=set(ws_manager.online_user_ids()); friends_set=_friend_ids(db,user.id)
     return {"users":[_enrich_user(u, online, friends_set) for u in rows]}

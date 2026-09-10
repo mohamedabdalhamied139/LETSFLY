@@ -98,6 +98,12 @@ def _record_global_ip_failure(request: Request) -> None:
 
 
 def _client_host(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        # The first IP in the chain is the original client IP
+        client_ip = forwarded.split(",")[0].strip()
+        if client_ip:
+            return client_ip
     return request.client.host if request.client else "unknown"
 
 def _registration_rate_limited(host: str) -> bool:
