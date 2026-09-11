@@ -83,6 +83,7 @@ class ScopaGame:
         self.event_type: str = ""
         self.sound_cue: str = ""
         self.final_play_event_type: str = ""
+        self.final_play_action: str = ""
         self.round_summary: str = ""
         self.pending_deal_batch: bool = False
 
@@ -117,6 +118,7 @@ class ScopaGame:
         self.pending_choice = None
         self.round_summary = ""
         self.final_play_event_type = ""
+        self.final_play_action = ""
         self.pending_deal_batch = False
 
         # Build 40-card deck
@@ -365,8 +367,10 @@ class ScopaGame:
         # summary before the client receives a snapshot.
         if self.event_type in ("CARD_PLAYED", "CARD_CAPTURED", "SCOPA_SWEEP"):
             self.final_play_event_type = self.event_type
+            self.final_play_action = self.last_action
         else:
             self.final_play_event_type = ""
+            self.final_play_action = ""
         table_clear_note = ""
         # Remaining table cards go to last capture player
         if self.table_cards and self.last_capture_id:
@@ -606,6 +610,7 @@ class ScopaGame:
             "event_type": self.event_type,
             "sound_cue": self.sound_cue,
             "final_play_event_type": self.final_play_event_type,
+            "final_play_action": self.final_play_action,
             "players": [
                 {"id": uid, "user_id": uid, "name": name, "score": self.scores.get(uid, 0)}
                 for uid, name in self.players

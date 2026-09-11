@@ -551,7 +551,7 @@ async def scopa_action(room, user_id, req):
     })
     if getattr(room.scopa_game, "pending_deal_batch", False):
         room.scopa_game.pending_deal_batch = False
-        await asyncio.sleep(1.2)
+        await asyncio.sleep(2.2)
         if room.scopa_game and room.scopa_game.active:
             room.scopa_game._deal_next_batch()
             ws_manager.broadcast_room(room.room_id, {

@@ -1727,7 +1727,7 @@ class TableView(QWidget):
         if self.scopa_card_list.count() > 0:
             target_row = min(current_row, self.scopa_card_list.count() - 1)
             self.scopa_card_list.setCurrentRow(target_row)
-            if self.is_playing and not self._is_modal_active():
+            if self.is_playing and not self._is_modal_active() and hand:
                 user_in_chat_or_log = bool(
                     (hasattr(self, "chat_input") and self.chat_input.hasFocus())
                     or (hasattr(self, "activity_log") and (self.activity_log.hasFocus() or (hasattr(self.activity_log, "viewport") and self.activity_log.viewport().hasFocus())))
@@ -1735,7 +1735,9 @@ class TableView(QWidget):
                 if had_gameplay_focus or not user_in_chat_or_log:
                     self._scopa_gameplay_focus = True
                     self._focus_target = "gameplay"
-                    for delay in (0, 30, 80, 150):
+                    # If this update was due to a deal batch or turn change, give sounds and speech time to play before focusing
+                    focus_delays = (250, 400) if (state.get("event_type") == "DEAL_BATCH" or turn_changed) else (0, 30)
+                    for delay in focus_delays:
                         QTimer.singleShot(delay, lambda w=self.scopa_card_list: safe_set_focus(w))
 
     def _on_scopa_card_activated(self, item: QListWidgetItem):
