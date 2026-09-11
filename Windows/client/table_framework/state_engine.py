@@ -146,7 +146,7 @@ class ClientStateEngine:
 
                 elif game_type == "SCOPA":
                     if et in ("CARD_PLAYED", "CARD_CAPTURED", "SCOPA_SCORED", "SCOPA_SWEEP"):
-                        announce_game_event(action_text, interrupt=False)
+                        announce_game_event(action_text, interrupt=True)
                         spoke_event = True
 
                 elif game_type not in ("THIEF_HUNT", "SNAKES_LADDERS"):
@@ -173,7 +173,7 @@ class ClientStateEngine:
                 setattr(app, last_turn_attr, curr_id_str)
                 setattr(app, f"_last_turn_{game_type.lower()}", curr_id_str)
                 setattr(app, was_my_turn_attr, is_my_turn)
-                suppress_turn_announcement = (game_type == "SCOPA" and (et == "DEAL_BATCH" or bool(state.get("pending_deal_batch")) or not is_my_turn))
+                suppress_turn_announcement = (game_type == "SCOPA" and et == "DEAL_BATCH")
                 if is_my_turn:
                     if not event_cues:
                         sound_engine.play_event("TURN_START")

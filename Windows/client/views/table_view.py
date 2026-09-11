@@ -1735,12 +1735,10 @@ class TableView(QWidget):
                 if had_gameplay_focus or not user_in_chat_or_log:
                     self._scopa_gameplay_focus = True
                     self._focus_target = "gameplay"
-                    # Only steal focus to the card list when it is genuinely our turn to play.
-                    # This prevents NVDA from announcing 'List' over play/capture sounds and announcements.
-                    if is_my_turn:
-                        focus_delays = (500, 750) if (state.get("event_type") == "DEAL_BATCH" or turn_changed) else (0, 30)
-                        for delay in focus_delays:
-                            QTimer.singleShot(delay, lambda w=self.scopa_card_list: safe_set_focus(w))
+                    # If this update was due to a deal batch or turn change, give sounds and speech time to play before focusing
+                    focus_delays = (250, 400) if (state.get("event_type") == "DEAL_BATCH" or turn_changed) else (0, 30)
+                    for delay in focus_delays:
+                        QTimer.singleShot(delay, lambda w=self.scopa_card_list: safe_set_focus(w))
 
     def _on_scopa_card_activated(self, item: QListWidgetItem):
         data = item.data(Qt.UserRole)
