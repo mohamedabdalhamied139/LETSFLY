@@ -162,7 +162,8 @@ def focus_scopa(table_view):
         if getattr(table_view, "scopa_card_list", None):
             if table_view.scopa_card_list.count() > 0 and table_view.scopa_card_list.currentRow() < 0:
                 table_view.scopa_card_list.setCurrentRow(0)
-            table_view.scopa_card_list.setFocus()
+            if not table_view.scopa_card_list.hasFocus():
+                table_view.scopa_card_list.setFocus()
         else:
             table_view.main_table_widget.setFocus()
     else:

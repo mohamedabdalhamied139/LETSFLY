@@ -26,7 +26,7 @@ from server.app.games.american_domino_lifecycle import check_and_finalize_americ
 from server.app.games.snakes_bot import run_snakes_bots
 from server.app.games.snakes_lifecycle import finalize_snakes_match
 from server.app.games.scopa_bot import run_scopa_bots
-from server.app.games.scopa_lifecycle import check_and_finalize_scopa_round
+from server.app.games.scopa_lifecycle import check_and_finalize_scopa_round, broadcast_scopa_state
 from server.app.games.tennis_bot import run_tennis_bots
 from server.app.games.tennis_lifecycle import finalize_tennis_match
 from server.app.games.ninety_nine_bot import run_ninety_nine_bots
@@ -545,29 +545,31 @@ async def scopa_action(room, user_id, req):
     game = room.scopa_game
     _queue_gameplay_event(room, user_id, game)
     room.scores = dict(game.team_scores if game.is_team_game else game.scores)
-    ws_manager.broadcast_room(room.room_id, {
-        "type": "scopa_state_changed",
-        "room_id": room.room_id,
-        "state": game.public_state()
-    })
+    broadcast_scopa_state(room, game)
     if getattr(game, "pending_deal_batch", False):
         game.pending_deal_batch = False
-        await asyncio.sleep(1.2)
+        await asyncio.sleep(2.2)
         if room.scopa_game and room.scopa_game.active:
             room.scopa_game._deal_next_batch()
-            ws_manager.broadcast_room(room.room_id, {
-                "type": "scopa_state_changed",
-                "room_id": room.room_id,
-                "state": room.scopa_game.public_state()
-            })
+            broadcast_scopa_state(room, room.scopa_game)
+
+    if getattr(game, "pending_round_finalize", False):
+        game.pending_round_finalize = False
+        await asyncio.sleep(2.5)
+        if room.scopa_game and room.scopa_game.active:
+            room.scopa_game._finalize_round()
+            final_state = game.public_state(user_id)
+            await check_and_finalize_scopa_round(room)
+            return final_state
+        return game.public_state(user_id)
 
     # The match finalizer is allowed to detach ``room.scopa_game``.  Keep the
     # acting player's final snapshot before that happens so the final card is
     # acknowledged instead of being turned into an AttributeError.
-    viewer_state = game.public_state(user_id)
     if not game.active:
+        final_state = game.public_state(user_id)
         await check_and_finalize_scopa_round(room)
-        return viewer_state
+        return final_state
     else:
         if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_scopa_bots(room))
         return room.scopa_game.public_state(user_id)

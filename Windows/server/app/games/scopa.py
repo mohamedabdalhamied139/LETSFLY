@@ -86,6 +86,8 @@ class ScopaGame:
         self.final_play_action: str = ""
         self.round_summary: str = ""
         self.pending_deal_batch: bool = False
+        self.pending_round_finalize: bool = False
+        self.final_play_event_id: Optional[int] = None
 
     @property
     def match_finished(self) -> bool:
@@ -119,7 +121,9 @@ class ScopaGame:
         self.round_summary = ""
         self.final_play_event_type = ""
         self.final_play_action = ""
+        self.final_play_event_id = None
         self.pending_deal_batch = False
+        self.pending_round_finalize = False
 
         # Build 40-card deck
         self.deck = []
@@ -133,6 +137,12 @@ class ScopaGame:
         self.captured_cards = {p[0]: [] for p in self.players}
         self.scopa_count = {p[0]: 0 for p in self.players}
         self.last_capture_id = None
+        self.final_play_event_type = ""
+        self.final_play_action = ""
+        self.final_play_event_id = None
+        self.round_summary = ""
+        self.pending_deal_batch = False
+        self.pending_round_finalize = False
 
         self.dealer_index = (self.dealer_index + 1) % len(self.players)
         self.current_turn_index = (self.dealer_index + 1) % len(self.players)
@@ -354,7 +364,7 @@ class ScopaGame:
             if self.deck:
                 self.pending_deal_batch = True
             else:
-                self._finalize_round()
+                self.pending_round_finalize = True
             return
 
         self.current_turn_index = (self.current_turn_index + 1) % len(self.players)
@@ -362,15 +372,18 @@ class ScopaGame:
             self.current_turn_index = (self.current_turn_index + 1) % len(self.players)
 
     def _finalize_round(self):
+        self.pending_round_finalize = False
         # The last play ends the deal synchronously. Preserve its semantic
         # event because _calculate_round_scores will replace it with the round
         # summary before the client receives a snapshot.
         if self.event_type in ("CARD_PLAYED", "CARD_CAPTURED", "SCOPA_SWEEP"):
             self.final_play_event_type = self.event_type
             self.final_play_action = self.last_action
+            self.final_play_event_id = self.event_id
         else:
             self.final_play_event_type = ""
             self.final_play_action = ""
+            self.final_play_event_id = None
         table_clear_note = ""
         # Remaining table cards go to last capture player
         if self.table_cards and self.last_capture_id:
@@ -611,6 +624,8 @@ class ScopaGame:
             "sound_cue": self.sound_cue,
             "final_play_event_type": self.final_play_event_type,
             "final_play_action": self.final_play_action,
+            "final_play_event_id": getattr(self, "final_play_event_id", None),
+            "pending_round_finalize": self.pending_round_finalize,
             "players": [
                 {"id": uid, "user_id": uid, "name": name, "score": self.scores.get(uid, 0)}
                 for uid, name in self.players

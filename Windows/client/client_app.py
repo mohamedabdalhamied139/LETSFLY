@@ -1687,7 +1687,19 @@ class TableVerseApp(QMainWindow):
             self.table_view.main_table_widget.setFocus()
 
     def _apply_scopa_state(self, state: dict):
-        self.scopa_state = state or {}
+        state = dict(state or {})
+        my_id = (self.user or {}).get("id")
+        if my_id is not None and state:
+            hands_count = state.get("hands_count") or {}
+            expected_count = int(hands_count.get(str(my_id), 0) or 0)
+            incoming_hand = state.get("my_hand")
+            if expected_count > 0 and not incoming_hand:
+                prev_hand = list((self.scopa_state or {}).get("my_hand") or [])
+                if len(prev_hand) == expected_count:
+                    state["my_hand"] = prev_hand
+                else:
+                    self._poll_table_state()
+        self.scopa_state = state
         from client.table_framework.state_engine import ClientStateEngine
         def update_view(active, round_finished):
             self.table_view.update_scopa_state(self.scopa_state)
@@ -2764,7 +2776,7 @@ class TableVerseApp(QMainWindow):
 
         if et == "scopa_match_finished":
             if self._announce_scopa_final_play(event):
-                QTimer.singleShot(900, lambda e=dict(event): self._finish_scopa_match(e))
+                QTimer.singleShot(2500, lambda e=dict(event): self._finish_scopa_match(e))
             else:
                 self._finish_scopa_match(event)
             return
@@ -2793,7 +2805,25 @@ class TableVerseApp(QMainWindow):
             # The final card is part of the completed deal, not a new screen.
             # Keep the existing Scopa list mounted until the server starts the
             # next batch, then only update its items in place.
-            self._announce_scopa_final_play(event)
+            announced = self._announce_scopa_final_play(event)
+            round_summary = event.get("round_summary")
+            if round_summary:
+                ev_id = str(event.get("event_id") or "")
+                key = (str((self.current_room or {}).get("id") or ""), ev_id, "ROUND_FINISHED", round_summary)
+                seen_plays = getattr(self, "_seen_scopa_final_plays", None)
+                if seen_plays is None:
+                    seen_plays = set()
+                    try:
+                        self._seen_scopa_final_plays = seen_plays
+                    except AttributeError:
+                        pass
+                if key not in seen_plays:
+                    seen_plays.add(key)
+                    if announced:
+                        QTimer.singleShot(600, lambda: sound_engine.play_event("ROUND_END"))
+                    else:
+                        sound_engine.play_event("ROUND_END")
+                    reader.speak(round_summary, interrupt=False)
             if self.current_room:
                 if isinstance(event.get("scores"), dict):
                     self.current_room["scores"] = event.get("scores")
@@ -2826,6 +2856,8 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "game_finished":
+            if event.get("game") == "SCOPA":
+                return
             self.uno_state = None
             self.thief_state = None
             self._was_my_turn = False
@@ -2860,9 +2892,18 @@ class TableVerseApp(QMainWindow):
             return
 
     def _announce_terminal_result(self, event: dict):
-        winner_id = event.get("winner_id") or event.get("match_winner_id")
-        won = winner_id is not None and str(winner_id) == str((self.user or {}).get("id"))
-        sound_engine.play_event("MATCH_WIN" if won else "MATCH_LOSS")
+        my_id = (self.user or {}).get("id")
+        winning_ids = event.get("winning_ids")
+        if isinstance(winning_ids, (list, tuple, set)) and my_id is not None:
+            won = any(str(w) == str(my_id) for w in winning_ids)
+        elif event.get("winning_team") is not None and my_id is not None and isinstance(event.get("teams"), dict):
+            won = (event.get("teams").get(str(my_id)) == event.get("winning_team"))
+        else:
+            winner_id = event.get("winner_id") or event.get("match_winner_id")
+            won = winner_id is not None and my_id is not None and str(winner_id) == str(my_id)
+        if not getattr(self, "_match_result_sound_played", False):
+            sound_engine.play_event("MATCH_WIN" if won else "MATCH_LOSS")
+            self._match_result_sound_played = True
         reader.speak(tr("فزت بالمباراة." if won else "انتهت المباراة."), interrupt=False)
 
     def _finish_scopa_match(self, event: dict):
@@ -2879,7 +2920,8 @@ class TableVerseApp(QMainWindow):
         event_type = str(event.get("final_play_event_type") or "").strip()
         if not action or not event_type:
             return False
-        key = (str((self.current_room or {}).get("id") or ""), str(event.get("event_id") or ""), event_type, action)
+        ev_id = str(event.get("final_play_event_id") or event.get("event_id") or "")
+        key = (str((self.current_room or {}).get("id") or ""), ev_id, event_type, action)
         if key in self._seen_scopa_final_plays:
             return False
         self._seen_scopa_final_plays.add(key)
@@ -2891,7 +2933,7 @@ class TableVerseApp(QMainWindow):
         # the capture cue while the throw cue is still acquiring a channel.
         for delay, cue in enumerate(sound_engine.event_cues("SCOPA", event_type, event)):
             QTimer.singleShot(delay * 180, lambda name=cue: sound_engine.play_event(name))
-        reader.speak(tr(action), interrupt=True)
+        reader.speak(tr(action), interrupt=False)
         return True
     def _on_language_changed(self, _value=None):
         """Apply language changes immediately to all existing UI without restart."""

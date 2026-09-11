@@ -229,10 +229,44 @@ class ScopaCardList(QListWidget):
         except TypeError:
             pass
 
+    def focusOutEvent(self, event):
+        super().focusOutEvent(event)
+        parent_table = self.parent()
+        while parent_table and not hasattr(parent_table, "game_type"):
+            parent_table = parent_table.parent()
+        if parent_table and getattr(parent_table, "game_type", None) == "SCOPA" and getattr(parent_table, "is_playing", False):
+            state = getattr(parent_table, "_scopa_state", None) or {}
+            app = parent_table.window()
+            my_id = (app.user or {}).get("id") if app and hasattr(app, "user") and app.user else None
+            curr_id = state.get("current_turn_id")
+            is_my_turn = bool(my_id is not None and curr_id is not None and str(curr_id) == str(my_id))
+            allowed_reasons = (
+                Qt.FocusReason.TabFocusReason,
+                Qt.FocusReason.BacktabFocusReason,
+                Qt.FocusReason.MouseFocusReason,
+                Qt.FocusReason.PopupFocusReason,
+            )
+            should_hold_focus = (is_my_turn or getattr(parent_table, "_scopa_gameplay_focus", False))
+            if should_hold_focus and event.reason() not in allowed_reasons:
+                if self.count() > 0 and not getattr(parent_table, "_is_modal_active", lambda: False)():
+                    QTimer.singleShot(0, lambda w=self: safe_set_focus(w))
+            elif event.reason() in allowed_reasons:
+                parent_table._scopa_gameplay_focus = False
+
     def currentItemChanged(self, current, previous):
         super().currentItemChanged(current, previous)
 
     def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Space):
+            item = self.currentItem()
+            if item:
+                parent_table = self.parent()
+                while parent_table and not hasattr(parent_table, "_on_scopa_card_activated"):
+                    parent_table = parent_table.parent()
+                if parent_table:
+                    parent_table._on_scopa_card_activated(item)
+                    event.accept()
+                    return
         if event.key() in (Qt.Key_Left, Qt.Key_Right):
             event.accept()
             return
@@ -1619,8 +1653,9 @@ class TableView(QWidget):
             return
         self._scopa_state = state
         is_active = bool(state.get("active"))
-        if not self.is_playing:
+        if not self.is_playing and not is_active:
             self._last_scopa_rendered_sig = None
+            self._last_scopa_hand_sig = None
             self.scopa_card_list.clear()
             self.scopa_container.hide()
             self.main_table_widget.show()
@@ -1629,10 +1664,12 @@ class TableView(QWidget):
             # Preserve the same list widget until the next deal arrives.  The
             # final-card state is narration-only and must not clear/focus a
             # new widget while NVDA is speaking it.
-            if state.get("final_play_action"):
+            is_match_over = bool(state.get("winner_id") is not None or state.get("winning_team") is not None)
+            if state.get("final_play_action") and not is_match_over:
                 self.scopa_container.setVisible(True)
                 return
             self._last_scopa_rendered_sig = None
+            self._last_scopa_hand_sig = None
             self.scopa_card_list.clear()
             self.scopa_container.hide()
             self.main_table_widget.show()
@@ -1649,41 +1686,38 @@ class TableView(QWidget):
         curr_turn_id = state.get("current_turn_id")
         curr_name = state.get("current_turn_name", "اللاعب")
 
-        new_sig = (
-            tuple((c.get("id"), c.get("value"), c.get("suit")) for c in hand),
-            curr_turn_id,
-        )
-        if getattr(self, "_last_scopa_rendered_sig", None) == new_sig:
+        hand_sig = tuple((c.get("id"), c.get("value"), c.get("suit")) for c in hand)
+        last_hand_sig = getattr(self, "_last_scopa_hand_sig", None)
+        hand_changed = (last_hand_sig != hand_sig)
+        self._last_scopa_hand_sig = hand_sig
+
+        previous_turn_id = getattr(self, "_last_scopa_turn_id", None)
+        turn_changed = previous_turn_id is not None and str(previous_turn_id) != str(curr_turn_id)
+        app = self.window()
+        my_id = (app.user or {}).get("id") if app and hasattr(app, "user") and app.user else None
+        is_my_turn = bool(my_id is not None and curr_turn_id is not None and str(curr_turn_id) == str(my_id))
+        self._last_scopa_turn_id = curr_turn_id
+
+        # If hand has not changed (e.g. opponent played a card), do not re-populate
+        # the list and do not call setCurrentRow to prevent NVDA from announcing قائمة / List.
+        if not hand_changed:
+            if turn_changed and is_my_turn and self.is_playing and not self._is_modal_active():
+                user_in_chat_or_log = bool(
+                    (hasattr(self, "chat_input") and self.chat_input.hasFocus())
+                    or (hasattr(self, "activity_log") and (self.activity_log.hasFocus() or (hasattr(self.activity_log, "viewport") and self.activity_log.viewport().hasFocus())))
+                )
+                if not user_in_chat_or_log and not self.scopa_card_list.hasFocus():
+                    self._scopa_gameplay_focus = True
+                    self._focus_target = "gameplay"
+                    safe_set_focus(self.scopa_card_list)
             return
-        self._last_scopa_rendered_sig = new_sig
 
         current_row = max(0, self.scopa_card_list.currentRow())
         had_scopa_focus = (
             self.scopa_card_list.hasFocus()
             or (hasattr(self.scopa_card_list, "viewport") and self.scopa_card_list.viewport().hasFocus())
         )
-        previous_turn_id = getattr(self, "_last_scopa_turn_id", None)
-        turn_changed = previous_turn_id is not None and str(previous_turn_id) != str(curr_turn_id)
-        app = self.window()
-        my_id = (app.user or {}).get("id") if app and hasattr(app, "user") and app.user else None
-        is_my_turn = (str(curr_turn_id) == str(my_id))
-        self._last_scopa_turn_id = curr_turn_id
 
-        # Determine if gameplay had or should have focus before modifying items.
-        had_gameplay_focus = (
-            had_scopa_focus
-            or getattr(self, "_scopa_gameplay_focus", False)
-            or self._focus_target == "gameplay"
-            or (self.is_playing and not (
-                (hasattr(self, "chat_input") and self.chat_input.hasFocus())
-                or (hasattr(self, "activity_log") and (self.activity_log.hasFocus() or (hasattr(self.activity_log, "viewport") and self.activity_log.viewport().hasFocus())))
-            ))
-        )
-
-        self.scopa_card_list.blockSignals(True)
-
-        # Update items in-place or adjust count without calling clear(),
-        # so Qt does not forcibly kick focus out to the chat widget.
         desired_items_data = []
         for idx, card in enumerate(hand):
             from core_shared.uno_rules import card_display_ar
@@ -1699,27 +1733,21 @@ class TableView(QWidget):
                 "is_waiting": False
             })
 
-        if not hand and is_active:
+        if not hand and state.get("active"):
             desired_items_data.append({
                 "text": "",
                 "data": {"type": "waiting"},
                 "is_waiting": True
             })
 
-        # Synchronize scopa_card_list items with desired_items_data
         target_count = len(desired_items_data)
-        # Remove excess items from the end
-        while self.scopa_card_list.count() > target_count:
-            self.scopa_card_list.takeItem(self.scopa_card_list.count() - 1)
 
-        # Update existing or add new items
-        for idx, item_spec in enumerate(desired_items_data):
-            if idx < self.scopa_card_list.count():
-                item = self.scopa_card_list.item(idx)
-            else:
-                item = QListWidgetItem()
-                self.scopa_card_list.addItem(item)
+        self.scopa_card_list.blockSignals(True)
 
+        # 1. Update existing items in place
+        for idx in range(min(self.scopa_card_list.count(), target_count)):
+            item = self.scopa_card_list.item(idx)
+            item_spec = desired_items_data[idx]
             item.setText(item_spec["text"])
             item.setData(Qt.UserRole, item_spec["data"])
             item.setToolTip("")
@@ -1733,23 +1761,55 @@ class TableView(QWidget):
             if accessible_description_role is not None:
                 item.setData(accessible_description_role, item_spec["text"] if not item_spec["is_waiting"] else "")
 
+        # 2. Before removing excess items, clamp selection to a remaining item so Qt doesn't kick focus out to chat
+        if target_count > 0 and self.scopa_card_list.count() > target_count:
+            if self.scopa_card_list.currentRow() >= target_count:
+                self.scopa_card_list.setCurrentRow(target_count - 1)
+
+        # 3. Remove excess items from the end
+        while self.scopa_card_list.count() > target_count:
+            self.scopa_card_list.takeItem(self.scopa_card_list.count() - 1)
+
+        # 4. Add new items if needed
+        for idx in range(self.scopa_card_list.count(), target_count):
+            item_spec = desired_items_data[idx]
+            item = QListWidgetItem()
+            item.setText(item_spec["text"])
+            item.setData(Qt.UserRole, item_spec["data"])
+            item.setToolTip("")
+            item.setStatusTip("")
+            item.setWhatsThis("")
+            accessible_text_role = getattr(Qt.ItemDataRole, "AccessibleTextRole", None)
+            accessible_description_role = getattr(Qt.ItemDataRole, "AccessibleDescriptionRole", None)
+            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
+            if accessible_text_role is not None:
+                item.setData(accessible_text_role, item_spec["text"] if not item_spec["is_waiting"] else "")
+            if accessible_description_role is not None:
+                item.setData(accessible_description_role, item_spec["text"] if not item_spec["is_waiting"] else "")
+            self.scopa_card_list.addItem(item)
+
         self.scopa_card_list.blockSignals(False)
 
         if self.scopa_card_list.count() > 0:
-            target_row = min(current_row, self.scopa_card_list.count() - 1)
-            self.scopa_card_list.setCurrentRow(target_row)
+            target_row = max(0, min(current_row, self.scopa_card_list.count() - 1))
+            if self.scopa_card_list.currentRow() != target_row:
+                self.scopa_card_list.setCurrentRow(target_row)
+
             if self.is_playing and not self._is_modal_active():
                 user_in_chat_or_log = bool(
                     (hasattr(self, "chat_input") and self.chat_input.hasFocus())
                     or (hasattr(self, "activity_log") and (self.activity_log.hasFocus() or (hasattr(self.activity_log, "viewport") and self.activity_log.viewport().hasFocus())))
                 )
-                should_restore_focus = had_scopa_focus or (
-                    (turn_changed or previous_turn_id is None) and is_my_turn
-                )
-                if should_restore_focus and not user_in_chat_or_log:
+                if had_scopa_focus:
                     self._scopa_gameplay_focus = True
                     self._focus_target = "gameplay"
-                    QTimer.singleShot(0, lambda w=self.scopa_card_list: safe_set_focus(w))
+                    if not self.scopa_card_list.hasFocus():
+                        safe_set_focus(self.scopa_card_list)
+                elif ((turn_changed or previous_turn_id is None) and is_my_turn) and not user_in_chat_or_log:
+                    self._scopa_gameplay_focus = True
+                    self._focus_target = "gameplay"
+                    if not self.scopa_card_list.hasFocus():
+                        safe_set_focus(self.scopa_card_list)
 
     def _on_scopa_card_activated(self, item: QListWidgetItem):
         data = item.data(Qt.UserRole)
@@ -1761,7 +1821,8 @@ class TableView(QWidget):
         if card_index is not None:
             self._scopa_gameplay_focus = True
             self._focus_target = "gameplay"
-            safe_set_focus(self.scopa_card_list)
+            if not self.scopa_card_list.hasFocus():
+                safe_set_focus(self.scopa_card_list)
             self.scopaActionSubmitted.emit("play", str(card_index), "")
 
     def _clear_main_table_item_text(self):

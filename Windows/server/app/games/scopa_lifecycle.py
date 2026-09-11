@@ -22,6 +22,37 @@ async def _persist_match(room, winners):
         finally:
             db.close()
     await asyncio.to_thread(save)
+
+
+def broadcast_scopa_state(room: Room, game: ScopaGame | None = None, extra: dict | None = None):
+    if game is None:
+        game = getattr(room, "scopa_game", None)
+    if not game:
+        return
+    extra = extra or {}
+    notified_users = set()
+    for uid in getattr(room, "players", []):
+        if uid > 0:
+            payload = {
+                "type": "scopa_state_changed",
+                "room_id": room.room_id,
+                "state": game.public_state(uid),
+            }
+            payload.update(extra)
+            ws_manager.broadcast_user(uid, payload)
+            notified_users.add(uid)
+    for sid in getattr(room, "spectators", []):
+        if sid not in notified_users and sid > 0:
+            payload = {
+                "type": "scopa_state_changed",
+                "room_id": room.room_id,
+                "state": game.public_state(None),
+            }
+            payload.update(extra)
+            ws_manager.broadcast_user(sid, payload)
+            notified_users.add(sid)
+
+
 async def check_and_finalize_scopa_round(room: Room):
     import logging
     logger = logging.getLogger("tableverse.scopa.lifecycle")
@@ -44,11 +75,14 @@ async def check_and_finalize_scopa_round(room: Room):
                 "room_id": room.room_id,
                 "winner_label": winner_label,
                 "winning_team": game.winning_team,
+                "winning_ids": winning_ids,
+                "teams": {str(uid): tid for uid, tid in game.teams.items()},
                 "scores": {str(k): v for k, v in game.team_scores.items()},
                 "target_score": target_score,
                 "event_id": game.event_id,
                 "final_play_event_type": game.final_play_event_type,
                 "final_play_action": game.final_play_action,
+                "final_play_event_id": getattr(game, "final_play_event_id", game.event_id),
             })
         else:
             final_winner_id = game.winner_id
@@ -64,6 +98,7 @@ async def check_and_finalize_scopa_round(room: Room):
                 "event_id": game.event_id,
                 "final_play_event_type": game.final_play_event_type,
                 "final_play_action": game.final_play_action,
+                "final_play_event_id": getattr(game, "final_play_event_id", game.event_id),
             })
 
         if room._bot_task and not room._bot_task.done():
@@ -95,9 +130,11 @@ async def check_and_finalize_scopa_round(room: Room):
         "event_id": game.event_id,
         "final_play_event_type": game.final_play_event_type,
         "final_play_action": game.final_play_action,
+        "final_play_event_id": getattr(game, "final_play_event_id", game.event_id),
     })
-    if room._round_transition_task is None or room._round_transition_task.done():
+    if getattr(room, "_round_transition_task", None) is None or room._round_transition_task.done():
         room._round_transition_task = asyncio.create_task(_start_next_scopa_round_after_delay(room))
+
 
 async def _start_next_scopa_round_after_delay(room: Room):
     import logging
@@ -117,17 +154,12 @@ async def _start_next_scopa_round_after_delay(room: Room):
             room.status = "playing"
             room.round_started_at = datetime.now(timezone.utc).isoformat()
         ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
-        ws_manager.broadcast_room(room.room_id, {
-            "type": "scopa_state_changed",
-            "room_id": room.room_id,
-            "round_started": True
-        })
+        broadcast_scopa_state(room, room.scopa_game, extra={"round_started": True})
         if room._bot_task is None or room._bot_task.done():
             room._bot_task = asyncio.create_task(run_scopa_bots(room))
     except asyncio.CancelledError:
         raise
     finally:
         current = asyncio.current_task()
-        if room._round_transition_task is current:
+        if getattr(room, "_round_transition_task", None) is current:
             room._round_transition_task = None
-
