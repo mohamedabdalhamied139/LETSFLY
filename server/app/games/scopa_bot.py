@@ -123,7 +123,7 @@ async def run_scopa_bots(room: Room):
     import logging
     logger = logging.getLogger("tableverse.scopa.bot")
     from server.app.hub.room_manager import room_manager
-    from server.app.games.scopa_lifecycle import check_and_finalize_scopa_round
+    from server.app.games.scopa_lifecycle import check_and_finalize_scopa_round, broadcast_scopa_state
     game = room.scopa_game
     if not game or not game.active:
         return
@@ -144,12 +144,20 @@ async def run_scopa_bots(room: Room):
                     break
                 game.play_card(curr_id, action["card_index"], action.get("capture_choice"))
                 room.scores = dict(game.team_scores if game.is_team_game else game.scores)
-                state = game.public_state()
-                ws_manager.broadcast_room(room.room_id, {
-                    "type": "scopa_state_changed",
-                    "room_id": room.room_id,
-                    "state": state
-                })
+                broadcast_scopa_state(room, game)
+                if getattr(game, "pending_deal_batch", False):
+                    game.pending_deal_batch = False
+                    await asyncio.sleep(2.2)
+                    if room.scopa_game and room.scopa_game.active:
+                        room.scopa_game._deal_next_batch()
+                        broadcast_scopa_state(room, room.scopa_game)
+                if getattr(game, "pending_round_finalize", False):
+                    game.pending_round_finalize = False
+                    await asyncio.sleep(2.5)
+                    if room.scopa_game and room.scopa_game.active:
+                        room.scopa_game._finalize_round()
+                        await check_and_finalize_scopa_round(room)
+                        break
                 if not game.active:
                     await check_and_finalize_scopa_round(room)
                     break

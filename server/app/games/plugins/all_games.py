@@ -26,7 +26,7 @@ from server.app.games.american_domino_lifecycle import check_and_finalize_americ
 from server.app.games.snakes_bot import run_snakes_bots
 from server.app.games.snakes_lifecycle import finalize_snakes_match
 from server.app.games.scopa_bot import run_scopa_bots
-from server.app.games.scopa_lifecycle import check_and_finalize_scopa_round
+from server.app.games.scopa_lifecycle import check_and_finalize_scopa_round, broadcast_scopa_state
 from server.app.games.tennis_bot import run_tennis_bots
 from server.app.games.tennis_lifecycle import finalize_tennis_match
 from server.app.games.ninety_nine_bot import run_ninety_nine_bots
@@ -206,6 +206,95 @@ def generic_bot_replace(room, user_id, bot_id, bot_name, plugin):
     if plugin.bot_runner:
         room.cancel_bot_task()
         room._bot_task = asyncio.create_task(plugin.bot_runner(room))
+
+def generic_bot_add_midgame(room, bot_id: int, bot_name: str, plugin):
+    """Integrate a newly added bot into an actively running match without resetting the game."""
+    game = plugin.get_engine(room)
+    if not game:
+        return
+    # 1. Update player list/identities
+    if hasattr(game, "player_ids") and bot_id not in game.player_ids:
+        game.player_ids.append(bot_id)
+    if hasattr(game, "players"):
+        exists = False
+        for p in game.players:
+            pid = int(p[0] if isinstance(p, tuple) else p.get("id") if isinstance(p, dict) else p.user_id)
+            if pid == bot_id:
+                exists = True
+                break
+        if not exists:
+            if isinstance(game.players, list) and game.players and isinstance(game.players[0], tuple):
+                game.players.append((bot_id, bot_name))
+            elif isinstance(game.players, list) and game.players and isinstance(game.players[0], dict):
+                game.players.append({"id": str(bot_id), "name": bot_name})
+            elif hasattr(game, "players") and hasattr(game, "_find_player"): # UnoGame
+                from server.app.games.uno.game import Player as UnoPlayer
+                new_p = UnoPlayer(bot_id, bot_name)
+                # Deal starting cards (7 cards) from deck
+                for _ in range(7):
+                    c = game._draw_card()
+                    if c:
+                        new_p.hand.append(c)
+                game.players.append(new_p)
+
+    if hasattr(game, "player_names"):
+        game.player_names[bot_id] = bot_name
+
+    # 2. Initialize game state structures
+    if hasattr(game, "scores") and isinstance(game.scores, dict) and bot_id not in game.scores:
+        game.scores[bot_id] = 0
+    if hasattr(game, "tokens") and isinstance(game.tokens, dict) and bot_id not in game.tokens:
+        game.tokens[bot_id] = getattr(game, "starting_tokens", 11)
+    if hasattr(game, "positions") and isinstance(game.positions, dict) and bot_id not in game.positions:
+        game.positions[bot_id] = 0
+    if hasattr(game, "turn_start_positions") and isinstance(game.turn_start_positions, dict) and bot_id not in game.turn_start_positions:
+        game.turn_start_positions[bot_id] = 0
+    if hasattr(game, "hands") and isinstance(game.hands, dict) and bot_id not in game.hands:
+        game.hands[bot_id] = []
+        if room.game in ("DOMINO", "AMERICAN_DOMINO") and hasattr(game, "boneyard"):
+            count = min(getattr(game, "hand_size", 7), len(game.boneyard))
+            for _ in range(count):
+                if game.boneyard:
+                    game.hands[bot_id].append(game.boneyard.pop())
+
+    # 3. Ensure bot runner is active
+    if plugin.bot_runner:
+        if room._bot_task is None or room._bot_task.done():
+            room._bot_task = asyncio.create_task(plugin.bot_runner(room))
+
+def generic_bot_remove_midgame(room, bot_id: int, plugin):
+    """Safely remove a bot from an actively running match."""
+    game = plugin.get_engine(room)
+    if not game:
+        return
+    # If the game has a custom remove_player method, use it
+    if hasattr(game, "remove_player"):
+        try:
+            game.remove_player(bot_id)
+        except Exception:
+            pass
+    else:
+        if hasattr(game, "player_ids") and bot_id in game.player_ids:
+            game.player_ids.remove(bot_id)
+        if hasattr(game, "players"):
+            game.players = [
+                p for p in game.players
+                if int(p[0] if isinstance(p, tuple) else p.get("id") if isinstance(p, dict) else p.user_id) != bot_id
+            ]
+        if hasattr(game, "player_names"):
+            game.player_names.pop(bot_id, None)
+        for attr in ("scores", "hands", "tokens", "positions", "turn_start_positions", "frozen_players", "shielded_players"):
+            obj = getattr(game, attr, None)
+            if isinstance(obj, dict):
+                obj.pop(bot_id, None)
+
+        if hasattr(game, "current_turn_index") and hasattr(game, "players") and game.players:
+            game.current_turn_index = game.current_turn_index % len(game.players)
+
+    # Wake bot runner if turn shifted to another bot
+    if plugin.bot_runner:
+        if room._bot_task is None or room._bot_task.done():
+            room._bot_task = asyncio.create_task(plugin.bot_runner(room))
 
 def generic_player_swap(room, outgoing_id, replacement_id, replacement_name, plugin):
     game = plugin.get_engine(room)
@@ -453,16 +542,37 @@ async def scopa_action(room, user_id, req):
         state = room.scopa_game.play_card(user_id, card_idx, choice)
     else:
         raise ValueError("إجراء إسكوبا غير معروف.")
-    _queue_gameplay_event(room, user_id, room.scopa_game)
-    room.scores = dict(room.scopa_game.team_scores if room.scopa_game.is_team_game else room.scopa_game.scores)
-    if not room.scopa_game.active:
-        ws_manager.broadcast_room(room.room_id, {"type": "game_state_changed", "room_id": room.room_id})
+    game = room.scopa_game
+    _queue_gameplay_event(room, user_id, game)
+    room.scores = dict(game.team_scores if game.is_team_game else game.scores)
+    broadcast_scopa_state(room, game)
+    if getattr(game, "pending_deal_batch", False):
+        game.pending_deal_batch = False
+        await asyncio.sleep(2.2)
+        if room.scopa_game and room.scopa_game.active:
+            room.scopa_game._deal_next_batch()
+            broadcast_scopa_state(room, room.scopa_game)
+
+    if getattr(game, "pending_round_finalize", False):
+        game.pending_round_finalize = False
+        await asyncio.sleep(2.5)
+        if room.scopa_game and room.scopa_game.active:
+            room.scopa_game._finalize_round()
+            final_state = game.public_state(user_id)
+            await check_and_finalize_scopa_round(room)
+            return final_state
+        return game.public_state(user_id)
+
+    # The match finalizer is allowed to detach ``room.scopa_game``.  Keep the
+    # acting player's final snapshot before that happens so the final card is
+    # acknowledged instead of being turned into an AttributeError.
+    if not game.active:
+        final_state = game.public_state(user_id)
         await check_and_finalize_scopa_round(room)
-        return state
+        return final_state
     else:
-        ws_manager.broadcast_room(room.room_id, {"type": "game_state_changed", "room_id": room.room_id})
         if room._bot_task is None or room._bot_task.done(): room._bot_task = asyncio.create_task(run_scopa_bots(room))
-        return state
+        return room.scopa_game.public_state(user_id)
 
 register_plugin(ServerGamePlugin("SCOPA", "إسكوبا", "scopa_game", scopa_start, run_scopa_bots, lambda eng, uid: eng.public_state(uid), scopa_action, generic_bot_replace, generic_stop))
 
