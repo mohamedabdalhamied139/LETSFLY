@@ -143,13 +143,20 @@ class TableVerseApp(QMainWindow):
         self.online_timer.setInterval(15000)
         self.online_timer.timeout.connect(self._refresh_online_count)
 
-        # 2-minute Grace Period Timer for Reconnection
+        # The reconnect lease is intentionally bounded so the user can decide
+        # whether to retry or close the application.
         self._reconnect_timeout_timer = QTimer(self)
         self._reconnect_timeout_timer.setSingleShot(True)
-        self._reconnect_timeout_timer.setInterval(120000)  # 120 seconds = 2 minutes
+        self._reconnect_timeout_timer.setInterval(20000)
         self._reconnect_timeout_timer.timeout.connect(self._on_reconnect_deadline_expired)
         self._is_reconnecting = False
         self._last_connecting_announced_at = 0.0
+        self._reconnect_prompt_open = False
+        self._session_restore_in_progress = False
+        self._session_restore_attempt = 0
+        self._login_reconnect_in_progress = False
+        self._login_reconnect_attempt = 0
+        self._pending_login_credentials = None
 
         # Install Physical Hardware Virtual-Key Filter
         self.key_filter = HardwareKeyFilter(self)
@@ -535,26 +542,50 @@ class TableVerseApp(QMainWindow):
         reader.speak(tr(f"تنبيه: {text}"), interrupt=True)
 
     # ---------- Auth Handlers ----------
+    def _is_network_error(self, error):
+        text = str(error or "").lower()
+        return any(marker in text for marker in ("فشل الاتصال", "connection", "connect", "timeout", "timed out", "network"))
+
+    def _complete_login(self, res, username):
+        self._login_reconnect_in_progress = False
+        self._is_reconnecting = False
+        self._reconnect_timeout_timer.stop()
+        sound_engine.stop_looping("CONNECTING")
+        sound_engine.play_event("CONNECTED")
+        self.api.token = res.get("access_token")
+        self.user = res.get("user", {})
+        dname = self.user.get("display_name", username)
+        from client.settings_store import load_settings
+        from client.session_store import save_account_profile
+        if load_settings().get("general", {}).get("keep_credentials", True):
+            save_token(self.api.token)
+            save_account_profile(username, self._pending_login_credentials[1], dname, active=True)
+        else:
+            clear_token()
+            clear_credentials()
+        self.home_view.set_user_greeting(dname)
+        self._start_session_clean(dname)
+
     def _handle_login(self, u, p):
-        sound_engine.play_looping("CONNECTING")
+        self._login_reconnect_attempt += 1
+        attempt = self._login_reconnect_attempt
+        self._pending_login_credentials = (u, p)
+        self._login_reconnect_in_progress = True
+        self._begin_reconnect(announce_loss=False)
         def done(res):
-            sound_engine.stop_looping("CONNECTING")
-            sound_engine.play_event("CONNECTED")
-            self.api.token = res.get("access_token")
-            self.user = res.get("user", {})
-            dname = self.user.get("display_name", u)
-            from client.settings_store import load_settings
-            from client.session_store import save_account_profile
-            if load_settings().get("general", {}).get("keep_credentials", True):
-                save_token(self.api.token)
-                save_account_profile(u, p, dname, active=True)
-            else:
-                clear_token()
-                clear_credentials()
-            self.home_view.set_user_greeting(dname)
-            self._start_session_clean(dname)
+            if attempt == self._login_reconnect_attempt and self._login_reconnect_in_progress:
+                self._complete_login(res, u)
         def fail(err):
+            if attempt != self._login_reconnect_attempt or not self._login_reconnect_in_progress:
+                return
+            if self._is_network_error(err):
+                return
+            self._login_reconnect_in_progress = False
+            self._is_reconnecting = False
+            self._reconnect_timeout_timer.stop()
             sound_engine.stop_looping("CONNECTING")
+            self.stack.setCurrentIndex(0)
+            self.auth_view.login_btn.setFocus()
             self._show_error(err)
         self._run_async(lambda: self.api.login(u, p), done, fail)
 
@@ -641,28 +672,7 @@ class TableVerseApp(QMainWindow):
             # Try token-based auto login first
             token = load_token()
             if token:
-                sound_engine.play_looping("CONNECTING")
-                self.api.token = token
-                def done(res):
-                    sound_engine.stop_looping("CONNECTING")
-                    sound_engine.play_event("CONNECTED")
-                    self.user = res or {}
-                    dname = self.user.get("display_name", self.user.get("username", ""))
-                    self.home_view.set_user_greeting(dname)
-                    self._start_session_clean(dname, returning=True)
-                def failed(_):
-                    sound_engine.stop_looping("CONNECTING")
-                    clear_token(); self.api.token = None
-                    # Token expired, fall back to pre-fill
-                    if saved_u and saved_p:
-                        self.auth_view.username_input.setText(saved_u)
-                        self.auth_view.password_input.setText(saved_p)
-                        reader.speak(tr("انتهت الجلسة. بياناتك محفوظة، اضغط تسجيل الدخول."))
-                        QTimer.singleShot(100, lambda: self.auth_view.login_btn.setFocus())
-                    else:
-                        reader.speak(tr("انتهت جلسة تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى."))
-                        QTimer.singleShot(100, lambda: self.auth_view.username_input.setFocus())
-                self._run_async(self.api.me, done, failed)
+                self._start_saved_session_restore()
                 return
 
         # No auto_login or no token — pre-fill and wait for user
@@ -2240,6 +2250,61 @@ class TableVerseApp(QMainWindow):
         self._room_ws_url = self.api.get_ws_url(f"/ws/room/{room_id}")
         self.ws.start(self._emit_ws_event, self._room_ws_url, (self.api.token or ""))
 
+    def _show_reconnect_placeholder(self):
+        """Hide all login/game inputs while reconnecting."""
+        self.poll_timer.stop()
+        self.table_view.set_game_type(str((self.current_room or {}).get("game") or "").upper())
+        self.table_view.set_playing_mode(False)
+        self.table_view.clear_hand_for_round_transition()
+        self.stack.setCurrentIndex(4)
+
+    def _begin_reconnect(self, announce_loss=True):
+        if not self._is_reconnecting:
+            self._is_reconnecting = True
+            if announce_loss:
+                sound_engine.play_event("CONNECTION_LOST")
+                reader.speak(tr("connection lost"), interrupt=True)
+        self._show_reconnect_placeholder()
+        sound_engine.play_looping("CONNECTING")
+        self._reconnect_timeout_timer.start(20000)
+
+    def _start_saved_session_restore(self):
+        token = load_token()
+        if not token:
+            return
+        self._session_restore_attempt += 1
+        attempt = self._session_restore_attempt
+        self._session_restore_in_progress = True
+        self.api.token = token
+        self._begin_reconnect(announce_loss=False)
+        def done(res):
+            if attempt != self._session_restore_attempt or not self._session_restore_in_progress:
+                return
+            self._session_restore_in_progress = False
+            self._is_reconnecting = False
+            self._reconnect_timeout_timer.stop()
+            sound_engine.stop_looping("CONNECTING")
+            sound_engine.play_event("CONNECTED")
+            self.user = res or {}
+            dname = self.user.get("display_name", self.user.get("username", ""))
+            self.home_view.set_user_greeting(dname)
+            self._start_session_clean(dname, returning=True)
+        def failed(error):
+            if attempt != self._session_restore_attempt or not self._session_restore_in_progress:
+                return
+            if self._is_network_error(error):
+                return
+            self._session_restore_in_progress = False
+            self._is_reconnecting = False
+            self._reconnect_timeout_timer.stop()
+            sound_engine.stop_looping("CONNECTING")
+            clear_token()
+            self.api.token = None
+            self.stack.setCurrentIndex(0)
+            self.auth_view.login_btn.setFocus()
+            reader.speak(tr("انتهت جلسة تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى."), interrupt=True)
+        self._run_async(self.api.me, done, failed)
+
     def _recover_room_snapshot(self, room, uno_state=None, thief_state=None, farkle_state=None, domino_state=None, american_domino_state=None, snakes_state=None, scopa_state=None, tennis_state=None, ninety_nine_state=None):
         if not room or not self.current_room or room.get("id") != self.current_room.get("id"):
             return
@@ -2312,10 +2377,6 @@ class TableVerseApp(QMainWindow):
 
         if et == "ws_connecting":
             sound_engine.play_looping("CONNECTING")
-            now = time.monotonic()
-            if now - getattr(self, "_last_connecting_announced_at", 0.0) >= 10.0:
-                self._last_connecting_announced_at = now
-                reader.speak(tr("connecting"), interrupt=False)
             return
 
         if et == "ws_connected":
@@ -2325,6 +2386,7 @@ class TableVerseApp(QMainWindow):
             # gameplay control empty after a round starts.
             was_reconnecting = getattr(self, "_is_reconnecting", False)
             self._is_reconnecting = False
+            self._reconnect_prompt_open = False
             self._reconnect_timeout_timer.stop()
             sound_engine.stop_looping("CONNECTING")
             if was_reconnecting or not self.current_room:
@@ -2339,18 +2401,7 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "ws_disconnected":
-            if not getattr(self, "_is_reconnecting", False):
-                self._is_reconnecting = True
-                self._last_connecting_announced_at = time.monotonic()
-                sound_engine.play_event("CONNECTION_LOST")
-                reader.speak(tr("connection lost"), interrupt=True)
-                sound_engine.play_looping("CONNECTING")
-                self._reconnect_timeout_timer.start(120000)
-            else:
-                sound_engine.play_looping("CONNECTING")
-
-            if self.current_room:
-                self.poll_timer.start()
+            self._begin_reconnect()
             if self.current_room and self.voice.in_voice_chat:
                 self._voice_restore_after_reconnect = True
                 self.voice.suspend_for_reconnect()
@@ -2869,6 +2920,7 @@ class TableVerseApp(QMainWindow):
         self._voice_restore_after_reconnect = bool(self.voice.in_voice_chat)
         self.voice.suspend_for_reconnect()
         self.ws.stop()
+        self._begin_reconnect()
         if room_id:
             self._start_room_ws(room_id)
             generation = self._room_generation
@@ -2879,11 +2931,7 @@ class TableVerseApp(QMainWindow):
                 self._poll_table_state()
                 reader.speak(tr("تمت إعادة الاتصال بالطاولة."), interrupt=True)
             def fail(err):
-                text = str(err)
-                if "HTTP 404" in text or "not found" in text.lower() or "غير موجود" in text:
-                    self._leave_table_after_failed_reconnect()
-                else:
-                    reader.speak(tr(f"تعذرت إعادة الاتصال: {text}"), interrupt=True)
+                return
             self._run_async(lambda: self.api.get_room(room_id), done, fail)
         else:
             self._start_lobby_ws()
@@ -2900,12 +2948,32 @@ class TableVerseApp(QMainWindow):
         reader.speak(tr("الطاولة لم تعد متاحة. تم الرجوع لقائمة الطاولات."), interrupt=True)
 
     def _on_reconnect_deadline_expired(self):
+        if not self._is_reconnecting or self._reconnect_prompt_open:
+            return
         self._is_reconnecting = False
+        was_session_restore = self._session_restore_in_progress
+        was_login = self._login_reconnect_in_progress
+        credentials = self._pending_login_credentials
+        self._session_restore_in_progress = False
+        self._login_reconnect_in_progress = False
+        self._session_restore_attempt += 1
+        self._login_reconnect_attempt += 1
         sound_engine.stop_looping("CONNECTING")
-        if self.current_room:
-            self._leave_table_after_failed_reconnect()
+        self.ws.stop()
+        self._reconnect_prompt_open = True
+        menu = ListMenu(self, "تعذر إعادة الاتصال", [("إعادة المحاولة", "retry"), ("خروج", "exit")])
+        choice = menu.show_menu(speak_text="تعذر إعادة الاتصال. اختر إعادة المحاولة أو خروج.")
+        self._reconnect_prompt_open = False
+        if choice == "retry":
+            if was_login and credentials:
+                self._handle_login(*credentials)
+            elif was_session_restore:
+                self._start_saved_session_restore()
+            else:
+                self.on_manual_reconnect()
         else:
-            reader.speak(tr("تم قطع الاتصال."), interrupt=True)
+            self._force_close = True
+            self.close()
 
     def on_snakes_roll_shortcut(self):
         if not self.current_room or not self.snakes_state or not self.snakes_state.get("active"):
