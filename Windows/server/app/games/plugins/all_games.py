@@ -551,14 +551,22 @@ async def scopa_action(room, user_id, req):
     })
     if getattr(room.scopa_game, "pending_deal_batch", False):
         room.scopa_game.pending_deal_batch = False
-        await asyncio.sleep(2.2)
-        if room.scopa_game and room.scopa_game.active:
-            room.scopa_game._deal_next_batch()
-            ws_manager.broadcast_room(room.room_id, {
-                "type": "scopa_state_changed",
-                "room_id": room.room_id,
-                "state": room.scopa_game.public_state()
-            })
+        async def _delayed_deal_batch(r):
+            try:
+                await asyncio.sleep(2.2)
+                async with r._mutation_lock:
+                    if r.scopa_game and r.scopa_game.active:
+                        r.scopa_game._deal_next_batch()
+                        ws_manager.broadcast_room(r.room_id, {
+                            "type": "scopa_state_changed",
+                            "room_id": r.room_id,
+                            "state": r.scopa_game.public_state()
+                        })
+                        if r._bot_task is None or r._bot_task.done():
+                            r._bot_task = asyncio.create_task(run_scopa_bots(r))
+            except Exception:
+                pass
+        asyncio.create_task(_delayed_deal_batch(room))
 
     if not room.scopa_game.active:
         await check_and_finalize_scopa_round(room)
