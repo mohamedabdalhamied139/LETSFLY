@@ -632,6 +632,10 @@ class TableVerseApp(QMainWindow):
 
         # keep_credentials is on — always pre-fill
         saved_u, saved_p = load_credentials()
+        if saved_u:
+            self.auth_view.username_input.setText(saved_u)
+        if saved_p:
+            self.auth_view.password_input.setText(saved_p)
 
         if auto:
             # Try token-based auto login first
@@ -817,6 +821,14 @@ class TableVerseApp(QMainWindow):
             self.ws.stop()
             self.api.close()
             self.online_timer.stop()
+            from client.settings_store import load_settings
+            from client.session_store import load_credentials
+            if load_settings().get("general", {}).get("keep_credentials", True):
+                saved_u, saved_p = load_credentials()
+                if saved_u:
+                    self.auth_view.username_input.setText(saved_u)
+                if saved_p:
+                    self.auth_view.password_input.setText(saved_p)
             self.stack.setCurrentIndex(0)
             self.auth_view.username_input.setFocus()
             reader.speak(tr("تم تسجيل الخروج."))
