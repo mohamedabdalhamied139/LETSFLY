@@ -112,15 +112,7 @@ class ClientStateEngine:
             elif et in ("ROUND_FINISHED", "ROUND_END", "ROUND_WON"):
                 if not event_cues:
                     sound_engine.play_event("ROUND_END")
-                if game_type == "SCOPA":
-                    final_action = state.get("final_play_action", "")
-                    if final_action:
-                        announce_game_event(final_action, interrupt=True)
-                        announce_game_event(action_text, interrupt=False)
-                    else:
-                        announce_game_event(action_text, interrupt=True)
-                else:
-                    announce_game_event(action_text, interrupt=True)
+                announce_game_event(action_text, interrupt=True)
                 spoke_event = True
             elif et in ("ROUND_START", "ROUND_STARTED", "GAME_STARTED"):
                 if hasattr(app, "table_view") and app.table_view:

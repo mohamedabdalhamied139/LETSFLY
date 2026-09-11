@@ -152,7 +152,7 @@ async def run_scopa_bots(room: Room):
                 })
                 if getattr(game, "pending_deal_batch", False):
                     game.pending_deal_batch = False
-                    await asyncio.sleep(2.2)
+                    await asyncio.sleep(1.2)
                     if game.active:
                         game._deal_next_batch()
                         ws_manager.broadcast_room(room.room_id, {
