@@ -2294,6 +2294,14 @@ class TableVerseApp(QMainWindow):
                 return
             if self._is_network_error(error):
                 return
+            saved_u, saved_p = load_credentials()
+            if saved_u and saved_p:
+                # An expired JWT must not defeat the user's explicit automatic
+                # login setting. Re-authenticate with the DPAPI-protected
+                # saved account before declaring the session unavailable.
+                self._session_restore_in_progress = False
+                self._handle_login(saved_u, saved_p)
+                return
             self._session_restore_in_progress = False
             self._is_reconnecting = False
             self._reconnect_timeout_timer.stop()
@@ -2304,6 +2312,22 @@ class TableVerseApp(QMainWindow):
             self.auth_view.login_btn.setFocus()
             reader.speak(tr("انتهت جلسة تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى."), interrupt=True)
         self._run_async(self.api.me, done, failed)
+
+    def _announce_scopa_final_play(self, event_type, action_text, event_id=None):
+        """Play and speak the final Scopa card once, even after UI teardown."""
+        event_type = str(event_type or "").upper()
+        action_text = str(action_text or "").strip()
+        if not event_type or not action_text:
+            return False
+        room_id = str((self.current_room or {}).get("id") or "")
+        key = (room_id, str(event_id or ""), event_type)
+        if getattr(self, "_last_scopa_final_play_key", None) == key:
+            return False
+        self._last_scopa_final_play_key = key
+        for cue in sound_engine.event_cues("SCOPA", event_type, {}):
+            sound_engine.play_event(cue)
+        reader.speak(tr(action_text), interrupt=True)
+        return True
 
     def _recover_room_snapshot(self, room, uno_state=None, thief_state=None, farkle_state=None, domino_state=None, american_domino_state=None, snakes_state=None, scopa_state=None, tennis_state=None, ninety_nine_state=None):
         if not room or not self.current_room or room.get("id") != self.current_room.get("id"):
@@ -2755,7 +2779,15 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "scopa_match_finished":
-            self._announce_terminal_result(event)
+            final_play_announced = self._announce_scopa_final_play(
+                event.get("final_play_event_type"),
+                event.get("final_play_action"),
+                event.get("final_play_event_id"),
+            )
+            if final_play_announced:
+                QTimer.singleShot(1200, lambda e=dict(event): self._announce_terminal_result(e))
+            else:
+                self._announce_terminal_result(event)
             self.scopa_state = None
             self.table_view.set_game_type("SCOPA")
             self.table_view.set_playing_mode(False)
@@ -2784,6 +2816,12 @@ class TableVerseApp(QMainWindow):
             return
 
         if et in ("round_finished", "ninety_nine_round_finished", "domino_round_finished", "american_domino_round_finished", "scopa_round_finished"):
+            if et == "scopa_round_finished":
+                self._announce_scopa_final_play(
+                    event.get("final_play_event_type"),
+                    event.get("final_play_action"),
+                    event.get("final_play_event_id"),
+                )
             self.uno_state = None
             self.domino_state = None
             self.scopa_state = None

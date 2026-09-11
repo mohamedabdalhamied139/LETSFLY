@@ -77,15 +77,19 @@ class ClientStateEngine:
             # otherwise use the shared per-game semantic mapping.
             event_cues = sound_engine.event_cues(game_type, et, state)
             # Scopa finalizes the round in the same server action as its last
-            # card. The round event otherwise replaces CARD_PLAYED/CAPTURED
-            # before this snapshot is delivered, silently dropping that cue.
+            # card. Deliver that action separately from the round summary.
+            final_scopa_play_announced = False
+            has_final_scopa_play = False
             if game_type == "SCOPA":
                 final_play_event = state.get("final_play_event_type", "")
                 if final_play_event:
-                    final_play_cues = sound_engine.event_cues(
-                        game_type, final_play_event, state
+                    has_final_scopa_play = True
+                    final_scopa_play_announced = bool(app._announce_scopa_final_play(
+                        final_play_event,
+                        state.get("final_play_action", ""),
+                        state.get("event_id"),
                     )
-                    event_cues = tuple(final_play_cues) + tuple(event_cues)
+                    )
             if game_type == "SNAKES_LADDERS":
                 raw_cues = state.get("sound_cues") or ()
                 valid_sequence = tuple(c for c in raw_cues if sound_engine.has_cue(c))
@@ -112,7 +116,10 @@ class ClientStateEngine:
             elif et in ("ROUND_FINISHED", "ROUND_END", "ROUND_WON"):
                 if not event_cues:
                     sound_engine.play_event("ROUND_END")
-                announce_game_event(action_text, interrupt=True)
+                if has_final_scopa_play:
+                    QTimer.singleShot(1200, lambda text=action_text: announce_game_event(text, interrupt=False))
+                else:
+                    announce_game_event(action_text, interrupt=True)
                 spoke_event = True
             elif et in ("ROUND_START", "ROUND_STARTED", "GAME_STARTED"):
                 if hasattr(app, "table_view") and app.table_view:

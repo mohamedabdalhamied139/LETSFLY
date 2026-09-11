@@ -44,6 +44,9 @@ async def check_and_finalize_scopa_round(room: Room):
                 "room_id": room.room_id,
                 "winner_label": winner_label,
                 "winning_team": game.winning_team,
+                "final_play_event_type": game.final_play_event_type,
+                "final_play_action": game.final_play_action,
+                "final_play_event_id": game.event_id,
                 "scores": {str(k): v for k, v in game.team_scores.items()},
                 "target_score": target_score,
             })
@@ -56,6 +59,9 @@ async def check_and_finalize_scopa_round(room: Room):
                 "room_id": room.room_id,
                 "winner_id": final_winner_id,
                 "winner_name": final_winner_name,
+                "final_play_event_type": game.final_play_event_type,
+                "final_play_action": game.final_play_action,
+                "final_play_event_id": game.event_id,
                 "scores": {str(k): v for k, v in game.scores.items()},
                 "target_score": target_score,
             })
@@ -82,7 +88,11 @@ async def check_and_finalize_scopa_round(room: Room):
     ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
     ws_manager.broadcast_room(room.room_id, {
         "type": "scopa_round_finished",
+        "room_id": room.room_id,
         "round_summary": game.round_summary,
+        "final_play_event_type": game.final_play_event_type,
+        "final_play_action": game.final_play_action,
+        "final_play_event_id": game.event_id,
         "target_score": target_score,
         "delay_seconds": 5,
         "scores": {str(k): v for k, v in (game.team_scores if game.is_team_game else game.scores).items()},
