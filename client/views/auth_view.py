@@ -158,16 +158,6 @@ class AuthView(QWidget):
         self._register_mode = False
         self._refresh_mode()
 
-        try:
-            from client.session_store import load_credentials
-            saved_u, saved_p = load_credentials()
-            if saved_u:
-                self.username_input.setText(saved_u)
-            if saved_p:
-                self.password_input.setText(saved_p)
-        except Exception:
-            pass
-
         subscribe(self._on_language_changed)
 
     def closeEvent(self, event):

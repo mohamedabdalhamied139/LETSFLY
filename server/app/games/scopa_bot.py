@@ -145,12 +145,12 @@ async def run_scopa_bots(room: Room):
                 game.play_card(curr_id, action["card_index"], action.get("capture_choice"))
                 room.scores = dict(game.team_scores if game.is_team_game else game.scores)
                 broadcast_scopa_state(room, game)
-                if getattr(game, "pending_deal_batch", False):
+                if game.pending_deal_batch:
                     game.pending_deal_batch = False
                     if room.scopa_game and room.scopa_game.active:
                         room.scopa_game._deal_next_batch()
                         broadcast_scopa_state(room, room.scopa_game)
-                if getattr(game, "pending_round_finalize", False):
+                if game.pending_round_finalize:
                     game.pending_round_finalize = False
                     if room.scopa_game and room.scopa_game.active:
                         room.scopa_game._finalize_round()

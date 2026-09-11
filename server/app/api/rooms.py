@@ -430,8 +430,8 @@ async def add_bot(room_id: str, user: User = Depends(get_current_user), db: Sess
         raise HTTPException(404, "الطاولة غير موجودة.")
     if user.id != room.host_id:
         raise HTTPException(403, "إضافة بوت متاح لمضيف الطاولة فقط.")
-    if room.status not in ("waiting", "playing"):
-        raise HTTPException(400, "لا يمكن إضافة بوت في هذه الحالة.")
+    if room.status != "waiting":
+        raise HTTPException(400, "لا يمكن إضافة بوت بعد بدء المباراة.")
     if len(room.players) >= 10:
         raise HTTPException(400, "الطاولة مكتملة.")
 
@@ -439,7 +439,6 @@ async def add_bot(room_id: str, user: User = Depends(get_current_user), db: Sess
     # The bot is not broadcast until the database commit succeeds.
     bot_id = None
     name = None
-    was_playing = False
     async with room._mutation_lock:
         uid_int = int(user.id)
         is_member = (uid_int in room.players or uid_int in room.spectators)
@@ -449,19 +448,12 @@ async def add_bot(room_id: str, user: User = Depends(get_current_user), db: Sess
             raise HTTPException(403, "لم تعد مخولًا لإضافة بوت إلى هذه الطاولة.")
         if not is_member:
             room.add_spectator(uid_int, user.display_name)
-        if room.status not in ("waiting", "playing") or len(room.players) >= 10:
+        if room.status != "waiting" or len(room.players) >= 10:
             raise HTTPException(409, "تغيرت حالة الطاولة. حاول مرة أخرى.")
         bot_id = room._next_bot_id
-        was_playing = (room.status == "playing")
         try:
             _spend_coins(db, user, BOT_COST, "إضافة بوت", commit=False)
             name = room.add_bot()
-            if was_playing:
-                from server.app.games.registry import get_plugin
-                plugin = get_plugin(room.game)
-                if plugin:
-                    from server.app.games.plugins.all_games import generic_bot_add_midgame
-                    generic_bot_add_midgame(room, bot_id, name, plugin)
             db.commit()
         except HTTPException:
             db.rollback()
@@ -486,8 +478,6 @@ async def add_bot(room_id: str, user: User = Depends(get_current_user), db: Sess
         "player_names": [room.player_names[uid] for uid in room.players if uid in room.player_names],
         "players_dict": {str(uid): room.player_names.get(uid, "لاعب") for uid in set(room.players) | set(room.spectators)},
     })
-    if was_playing:
-        ws_manager.broadcast_room(room_id, {"type": "game_state_changed", "room_id": room_id})
     result = room.public_dict(user.id)
     try:
         db.refresh(user)
@@ -505,9 +495,8 @@ async def remove_bot(room_id: str, user: User = Depends(get_current_user)):
         raise HTTPException(404, "الطاولة غير موجودة.")
     if int(user.id) != int(room.host_id):
         raise HTTPException(403, "إزالة بوت متاح للمضيف فقط.")
-    if room.status not in ("waiting", "playing"):
-        raise HTTPException(400, "لا يمكن إزالة بوت في هذه الحالة.")
-    was_playing = False
+    if room.status != "waiting":
+        raise HTTPException(400, "لا يمكن إزالة بوت بعد بدء المباراة.")
     async with room._mutation_lock:
         uid_int = int(user.id)
         is_member = (uid_int in room.players or uid_int in room.spectators)
@@ -515,22 +504,11 @@ async def remove_bot(room_id: str, user: User = Depends(get_current_user)):
             raise HTTPException(403, "لم تعد مخولًا لإزالة بوت من هذه الطاولة.")
         if not is_member:
             room.add_spectator(uid_int, user.display_name)
-        if room.status not in ("waiting", "playing"):
+        if room.status != "waiting":
             raise HTTPException(409, "تغيرت حالة الطاولة. حاول مرة أخرى.")
-        bot_ids = [uid for uid in room.players if uid < 0]
-        if not bot_ids:
-            raise HTTPException(400, "لا يوجد بوت في الطاولة.")
-        target_bot_id = bot_ids[-1]
-        was_playing = (room.status == "playing")
         name = room.remove_bot()
         if not name:
             raise HTTPException(400, "لا يوجد بوت في الطاولة.")
-        if was_playing:
-            from server.app.games.registry import get_plugin
-            plugin = get_plugin(room.game)
-            if plugin:
-                from server.app.games.plugins.all_games import generic_bot_remove_midgame
-                generic_bot_remove_midgame(room, target_bot_id, plugin)
     ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room_id})
     ws_manager.broadcast_room(room_id, {
         "type": "bot_removed",
@@ -539,8 +517,6 @@ async def remove_bot(room_id: str, user: User = Depends(get_current_user)):
         "player_names": [room.player_names[uid] for uid in room.players if uid in room.player_names],
         "players_dict": {str(uid): room.player_names.get(uid, "لاعب") for uid in set(room.players) | set(room.spectators)},
     })
-    if was_playing:
-        ws_manager.broadcast_room(room_id, {"type": "game_state_changed", "room_id": room_id})
     return {"ok": True, "name": name, "room": room.public_dict(user.id)}
 
 def _validate_game_configuration(game: str, target_score: int, rules: dict) -> tuple[int, dict]:

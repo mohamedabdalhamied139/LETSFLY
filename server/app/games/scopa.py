@@ -207,25 +207,35 @@ class ScopaGame:
         is_escoba = bool(self.rules.get("escoba_15") or self.game_mode == "escoba_15")
         if is_escoba:
             target = 15 - card_value
-            result = []
-            for r in range(1, len(self.table_cards) + 1):
-                for combo in combinations(self.table_cards, r):
-                    if sum(c["value"] for c in combo) == target:
-                        result.append(list(combo))
-            return self._remove_duplicate_combos(result)
+            return self._target_combinations(target, 1)
 
         # Classic Scopa
         exact_matches = [c for c in self.table_cards if c["value"] == card_value]
         if exact_matches:
             return [[c] for c in exact_matches]
 
-        result = []
-        for r in range(2, len(self.table_cards) + 1):
-            for combo in combinations(self.table_cards, r):
-                if sum(c["value"] for c in combo) == card_value:
-                    result.append(list(combo))
+        return self._target_combinations(card_value, 2)
 
-        return self._remove_duplicate_combos(result)
+    def _target_combinations(self, target: int, minimum_size: int) -> List[List[Dict[str, Any]]]:
+        """Enumerate positive-value captures without exploring sums above target."""
+        cards = sorted(self.table_cards, key=lambda card: card["value"])
+        found: List[List[Dict[str, Any]]] = []
+
+        def visit(start: int, total: int, chosen: List[Dict[str, Any]]):
+            if total == target:
+                if len(chosen) >= minimum_size:
+                    found.append(list(chosen))
+                return
+            for index in range(start, len(cards)):
+                next_total = total + cards[index]["value"]
+                if next_total > target:
+                    break
+                chosen.append(cards[index])
+                visit(index + 1, next_total, chosen)
+                chosen.pop()
+
+        visit(0, 0, [])
+        return self._remove_duplicate_combos(found)
 
     def _remove_duplicate_combos(self, combos: List[List[Dict[str, Any]]]) -> List[List[Dict[str, Any]]]:
         unique = []
@@ -373,9 +383,8 @@ class ScopaGame:
 
     def _finalize_round(self):
         self.pending_round_finalize = False
-        # The last play ends the deal synchronously. Preserve its semantic
-        # event because _calculate_round_scores will replace it with the round
-        # summary before the client receives a snapshot.
+        # Finalization replaces the event with ROUND_FINISHED.  Preserve the
+        # semantic final-card event so clients can announce it first.
         if self.event_type in ("CARD_PLAYED", "CARD_CAPTURED", "SCOPA_SWEEP"):
             self.final_play_event_type = self.event_type
             self.final_play_action = self.last_action
@@ -624,7 +633,8 @@ class ScopaGame:
             "sound_cue": self.sound_cue,
             "final_play_event_type": self.final_play_event_type,
             "final_play_action": self.final_play_action,
-            "final_play_event_id": getattr(self, "final_play_event_id", None),
+            "final_play_event_id": self.final_play_event_id,
+            "pending_deal_batch": self.pending_deal_batch,
             "pending_round_finalize": self.pending_round_finalize,
             "players": [
                 {"id": uid, "user_id": uid, "name": name, "score": self.scores.get(uid, 0)}

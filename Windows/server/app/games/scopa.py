@@ -625,6 +625,7 @@ class ScopaGame:
             "final_play_event_type": self.final_play_event_type,
             "final_play_action": self.final_play_action,
             "final_play_event_id": getattr(self, "final_play_event_id", None),
+            "pending_deal_batch": self.pending_deal_batch,
             "pending_round_finalize": self.pending_round_finalize,
             "players": [
                 {"id": uid, "user_id": uid, "name": name, "score": self.scores.get(uid, 0)}

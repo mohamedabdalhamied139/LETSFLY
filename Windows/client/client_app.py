@@ -2819,7 +2819,10 @@ class TableVerseApp(QMainWindow):
                         pass
                 if key not in seen_plays:
                     seen_plays.add(key)
-                    delay = 900 if announced else 0
+                    # The final capture may already have been announced by
+                    # the private state snapshot, in which case ``announced``
+                    # is False only because it was de-duplicated here.
+                    delay = 900 if event.get("final_play_action") else 0
                     QTimer.singleShot(delay, lambda: sound_engine.play_event("ROUND_END"))
                     QTimer.singleShot(delay, lambda text=round_summary: reader.speak(text, interrupt=False))
             if self.current_room:
