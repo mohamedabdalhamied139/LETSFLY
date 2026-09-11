@@ -776,11 +776,13 @@ class TableView(QWidget):
             except Exception:
                 first_widget = self.main_table_widget
         
-        is_log_focus = bool(
-            current == self.activity_log
-            or (hasattr(self.activity_log, "viewport") and current == self.activity_log.viewport())
-            or (hasattr(self, "activity_panel") and current == self.activity_panel)
+        activity_viewport = self.activity_log.viewport()
+        is_activity_focus = current in (
+            self.activity_log,
+            activity_viewport,
+            self.activity_panel,
         )
+
         if current == self.chat_input:
             if next_focus:
                 self._focus_target = "activity_log"
@@ -790,7 +792,7 @@ class TableView(QWidget):
                 safe_set_focus(first_widget)
             return True
 
-        elif is_log_focus:
+        elif is_activity_focus:
             if next_focus:
                 self._focus_target = "gameplay"
                 safe_set_focus(first_widget)
