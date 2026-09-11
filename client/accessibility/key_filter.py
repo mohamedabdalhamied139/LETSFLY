@@ -217,11 +217,10 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                     elif game == "UNO":
                         if getattr(self.window, "uno_state", None) and self.window.uno_state.get("buzzer_pending"):
                             self._call("on_buzzer_or_bot")
-                        elif not getattr(self.window, "table_view", None) or not self.window.table_view.is_playing:
+                        else:
                             self._call("on_add_bot")
                     else:
-                        if not getattr(self.window, "table_view", None) or not self.window.table_view.is_playing:
-                            self._call("on_add_bot")
+                        self._call("on_add_bot")
                     return True, 0
 
                 # --- 2. UNO Game-Specific Shortcuts ---

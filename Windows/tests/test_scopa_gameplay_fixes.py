@@ -779,8 +779,10 @@ def test_scopa_round_finished_staggers_round_end_sound_when_final_play_announced
                 with patch("client.client_app.reader.speak") as mock_speak:
                     TableVerseApp._handle_ws_event(app, event)
                     assert mock_timer.called
-                    assert mock_timer.call_args[0][0] == 600
+                    assert mock_timer.call_args_list[0][0][0] == 900
                     assert not mock_play.called
+                    for call in mock_timer.call_args_list:
+                        call[0][1]()
                     assert mock_speak.called
                     assert mock_speak.call_args[1].get("interrupt") is False
 

@@ -2819,11 +2819,9 @@ class TableVerseApp(QMainWindow):
                         pass
                 if key not in seen_plays:
                     seen_plays.add(key)
-                    if announced:
-                        QTimer.singleShot(600, lambda: sound_engine.play_event("ROUND_END"))
-                    else:
-                        sound_engine.play_event("ROUND_END")
-                    reader.speak(round_summary, interrupt=False)
+                    delay = 900 if announced else 0
+                    QTimer.singleShot(delay, lambda: sound_engine.play_event("ROUND_END"))
+                    QTimer.singleShot(delay, lambda text=round_summary: reader.speak(text, interrupt=False))
             if self.current_room:
                 if isinstance(event.get("scores"), dict):
                     self.current_room["scores"] = event.get("scores")

@@ -548,14 +548,12 @@ async def scopa_action(room, user_id, req):
     broadcast_scopa_state(room, game)
     if getattr(game, "pending_deal_batch", False):
         game.pending_deal_batch = False
-        await asyncio.sleep(2.2)
         if room.scopa_game and room.scopa_game.active:
             room.scopa_game._deal_next_batch()
             broadcast_scopa_state(room, room.scopa_game)
 
     if getattr(game, "pending_round_finalize", False):
         game.pending_round_finalize = False
-        await asyncio.sleep(2.5)
         if room.scopa_game and room.scopa_game.active:
             room.scopa_game._finalize_round()
             final_state = game.public_state(user_id)

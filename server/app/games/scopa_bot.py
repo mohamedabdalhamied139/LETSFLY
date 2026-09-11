@@ -147,13 +147,11 @@ async def run_scopa_bots(room: Room):
                 broadcast_scopa_state(room, game)
                 if getattr(game, "pending_deal_batch", False):
                     game.pending_deal_batch = False
-                    await asyncio.sleep(2.2)
                     if room.scopa_game and room.scopa_game.active:
                         room.scopa_game._deal_next_batch()
                         broadcast_scopa_state(room, room.scopa_game)
                 if getattr(game, "pending_round_finalize", False):
                     game.pending_round_finalize = False
-                    await asyncio.sleep(2.5)
                     if room.scopa_game and room.scopa_game.active:
                         room.scopa_game._finalize_round()
                         await check_and_finalize_scopa_round(room)
