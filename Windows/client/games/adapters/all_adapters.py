@@ -159,11 +159,14 @@ def setup_scopa_ui(table_view, playing):
 
 def focus_scopa(table_view):
     if table_view.is_playing:
-        if getattr(table_view, "scopa_card_list", None):
-            if table_view.scopa_card_list.count() > 0 and table_view.scopa_card_list.currentRow() < 0:
-                table_view.scopa_card_list.setCurrentRow(0)
-            if not table_view.scopa_card_list.hasFocus():
-                table_view.scopa_card_list.setFocus()
+        lst = getattr(table_view, "scopa_card_list", None)
+        if lst and lst.count() > 0:
+            if lst.currentRow() < 0:
+                lst.setCurrentRow(0)
+            from client.views.table_view import safe_set_focus, safe_is_valid
+            from PySide6.QtCore import QTimer
+            for delay in (0, 30, 80, 150):
+                QTimer.singleShot(delay, lambda w=lst: safe_set_focus(w) if safe_is_valid(w) else None)
         else:
             table_view.main_table_widget.setFocus()
     else:
