@@ -17,7 +17,11 @@ class ClientStateEngine:
         is_round_finished = bool(state.get("round_finished"))
         if game_type == "TENNIS":
             is_active = str(state.get("state", "")).upper() not in ("", "WAITING", "FINISHED")
-        app.table_view.set_playing_mode(is_active and not is_round_finished)
+        # A Scopa round boundary is not a new screen. Retain its single card
+        # widget while the next deal is pending so focus and final-card audio
+        # are never destroyed by a transient inactive snapshot.
+        keep_scopa_widget = game_type == "SCOPA" and not is_active and not bool(state.get("match_finished"))
+        app.table_view.set_playing_mode((is_active and not is_round_finished) or keep_scopa_widget)
         view_update_callback(is_active, is_round_finished)
 
         if is_active and not is_round_finished:

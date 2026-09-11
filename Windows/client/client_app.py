@@ -674,6 +674,11 @@ class TableVerseApp(QMainWindow):
             if token:
                 self._start_saved_session_restore()
                 return
+            if saved_u and saved_p:
+                # A token may have been cleared after expiry while the account
+                # itself remains opted in to automatic login.
+                self._handle_login(saved_u, saved_p)
+                return
 
         # No auto_login or no token — pre-fill and wait for user
         if saved_u and saved_p:
@@ -1684,10 +1689,7 @@ class TableVerseApp(QMainWindow):
         self.scopa_state = state or {}
         from client.table_framework.state_engine import ClientStateEngine
         def update_view(active, round_finished):
-            if not active:
-                self.table_view.update_scopa_state({"active": False})
-            else:
-                self.table_view.update_scopa_state(self.scopa_state)
+            self.table_view.update_scopa_state(self.scopa_state)
         ClientStateEngine.process_common_state(self, "SCOPA", state, update_view)
 
     def _handle_scopa_action(self, action: str, card_index_str: str = "", choice_idx_str: str = ""):
@@ -2822,6 +2824,14 @@ class TableVerseApp(QMainWindow):
                     event.get("final_play_action"),
                     event.get("final_play_event_id"),
                 )
+                if self.current_room:
+                    if isinstance(event.get("scores"), dict):
+                        self.current_room["scores"] = event.get("scores")
+                    if event.get("target_score") is not None:
+                        self.current_room["target_score"] = event.get("target_score")
+                # Keep the existing Scopa card widget mounted. The following
+                # deal updates its items in-place rather than replacing it.
+                return
             self.uno_state = None
             self.domino_state = None
             self.scopa_state = None

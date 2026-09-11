@@ -1619,21 +1619,21 @@ class TableView(QWidget):
             return
         self._scopa_state = state
         is_active = bool(state.get("active"))
-        if not is_active or not self.is_playing:
+        if not getattr(self, "scopa_container", None):
+            return
+        if not self.is_playing:
             self._last_scopa_rendered_sig = None
-            self.scopa_card_list.clear()
             self.scopa_container.hide()
             self.main_table_widget.show()
             return
         self.scopa_container.setVisible(True)
+        self.main_table_widget.hide()
         self._render_scopa_items()
 
     def _render_scopa_items(self):
         state = self._scopa_state or {}
-        if not state.get("active"):
-            return
-
         hand = list(state.get("my_hand") or [])
+        is_active = bool(state.get("active"))
         curr_turn_id = state.get("current_turn_id")
         curr_name = state.get("current_turn_name", "اللاعب")
 
@@ -1688,7 +1688,7 @@ class TableView(QWidget):
                 "is_waiting": False
             })
 
-        if not hand and is_active:
+        if not hand:
             desired_items_data.append({
                 "text": "",
                 "data": {"type": "waiting"},
