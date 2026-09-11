@@ -1619,28 +1619,39 @@ class TableView(QWidget):
             return
         self._scopa_state = state
         is_active = bool(state.get("active"))
-        if not getattr(self, "scopa_container", None):
-            return
         if not self.is_playing:
             self._last_scopa_rendered_sig = None
+            self.scopa_card_list.clear()
+            self.scopa_container.hide()
+            self.main_table_widget.show()
+            return
+        if not is_active:
+            # Preserve the same list widget until the next deal arrives.  The
+            # final-card state is narration-only and must not clear/focus a
+            # new widget while NVDA is speaking it.
+            if state.get("final_play_action"):
+                self.scopa_container.setVisible(True)
+                return
+            self._last_scopa_rendered_sig = None
+            self.scopa_card_list.clear()
             self.scopa_container.hide()
             self.main_table_widget.show()
             return
         self.scopa_container.setVisible(True)
-        self.main_table_widget.hide()
         self._render_scopa_items()
 
     def _render_scopa_items(self):
         state = self._scopa_state or {}
+        if not state.get("active"):
+            return
+
         hand = list(state.get("my_hand") or [])
-        is_active = bool(state.get("active"))
         curr_turn_id = state.get("current_turn_id")
         curr_name = state.get("current_turn_name", "اللاعب")
 
         new_sig = (
-            tuple((c.get("value"), c.get("suit")) for c in hand),
+            tuple((c.get("id"), c.get("value"), c.get("suit")) for c in hand),
             curr_turn_id,
-            state.get("event_id"),
         )
         if getattr(self, "_last_scopa_rendered_sig", None) == new_sig:
             return
@@ -1688,7 +1699,7 @@ class TableView(QWidget):
                 "is_waiting": False
             })
 
-        if not hand:
+        if not hand and is_active:
             desired_items_data.append({
                 "text": "",
                 "data": {"type": "waiting"},
@@ -1732,11 +1743,13 @@ class TableView(QWidget):
                     (hasattr(self, "chat_input") and self.chat_input.hasFocus())
                     or (hasattr(self, "activity_log") and (self.activity_log.hasFocus() or (hasattr(self.activity_log, "viewport") and self.activity_log.viewport().hasFocus())))
                 )
-                if had_gameplay_focus or not user_in_chat_or_log:
+                should_restore_focus = had_scopa_focus or (
+                    (turn_changed or previous_turn_id is None) and is_my_turn
+                )
+                if should_restore_focus and not user_in_chat_or_log:
                     self._scopa_gameplay_focus = True
                     self._focus_target = "gameplay"
-                    for delay in (0, 30, 80, 150):
-                        QTimer.singleShot(delay, lambda w=self.scopa_card_list: safe_set_focus(w))
+                    QTimer.singleShot(0, lambda w=self.scopa_card_list: safe_set_focus(w))
 
     def _on_scopa_card_activated(self, item: QListWidgetItem):
         data = item.data(Qt.UserRole)

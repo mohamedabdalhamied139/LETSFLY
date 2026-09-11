@@ -17,11 +17,15 @@ class ClientStateEngine:
         is_round_finished = bool(state.get("round_finished"))
         if game_type == "TENNIS":
             is_active = str(state.get("state", "")).upper() not in ("", "WAITING", "FINISHED")
-        # A Scopa round boundary is not a new screen. Retain its single card
-        # widget while the next deal is pending so focus and final-card audio
-        # are never destroyed by a transient inactive snapshot.
-        keep_scopa_widget = game_type == "SCOPA" and not is_active and not bool(state.get("match_finished"))
-        app.table_view.set_playing_mode((is_active and not is_round_finished) or keep_scopa_widget)
+        # Keep Scopa's existing hand widget mounted during the short end-of-
+        # deal transition.  Rebuilding it at this point steals focus from the
+        # final card narration and makes NVDA cancel the speech.
+        keep_scopa_hand = (
+            game_type == "SCOPA"
+            and not is_active
+            and bool(state.get("final_play_action"))
+        )
+        app.table_view.set_playing_mode((is_active and not is_round_finished) or keep_scopa_hand)
         view_update_callback(is_active, is_round_finished)
 
         if is_active and not is_round_finished:
@@ -80,20 +84,15 @@ class ClientStateEngine:
             # another game's registry entry. The server cue wins when valid;
             # otherwise use the shared per-game semantic mapping.
             event_cues = sound_engine.event_cues(game_type, et, state)
-            # Scopa finalizes the round in the same server action as its last
-            # card. Deliver that action separately from the round summary.
-            final_scopa_play_announced = False
-            has_final_scopa_play = False
+            # Scopa finalizes a deal in the same server action as its final
+            # card.  Deliver that card through one de-duplicated path; the
+            # lifecycle frame carries the same data if this snapshot is late.
+            final_play_announced = False
             if game_type == "SCOPA":
                 final_play_event = state.get("final_play_event_type", "")
-                if final_play_event:
-                    has_final_scopa_play = True
-                    final_scopa_play_announced = bool(app._announce_scopa_final_play(
-                        final_play_event,
-                        state.get("final_play_action", ""),
-                        state.get("event_id"),
-                    )
-                    )
+                if final_play_event and hasattr(app, "_announce_scopa_final_play"):
+                    app._announce_scopa_final_play(state)
+                    final_play_announced = True
             if game_type == "SNAKES_LADDERS":
                 raw_cues = state.get("sound_cues") or ()
                 valid_sequence = tuple(c for c in raw_cues if sound_engine.has_cue(c))
@@ -120,8 +119,10 @@ class ClientStateEngine:
             elif et in ("ROUND_FINISHED", "ROUND_END", "ROUND_WON"):
                 if not event_cues:
                     sound_engine.play_event("ROUND_END")
-                if has_final_scopa_play:
-                    QTimer.singleShot(1200, lambda text=action_text: announce_game_event(text, interrupt=False))
+                # Do not cancel the mandatory last-card announcement with the
+                # round summary.  It follows naturally after the card cue.
+                if final_play_announced:
+                    QTimer.singleShot(900, lambda text=action_text: announce_game_event(text, interrupt=False))
                 else:
                     announce_game_event(action_text, interrupt=True)
                 spoke_event = True

@@ -69,6 +69,7 @@ class TableVerseApp(QMainWindow):
         self._active_context_menu = None
         self._last_bluff_prompt_key = None
         self._last_farkle_event_id = 0
+        self._seen_scopa_final_plays = set()
         self._last_exchange_prompt_key = None
         self._match_result_sound_played = False
         self._pre_deactivate_focus = None  # widget focused before window lost OS focus
@@ -675,8 +676,8 @@ class TableVerseApp(QMainWindow):
                 self._start_saved_session_restore()
                 return
             if saved_u and saved_p:
-                # A token may have been cleared after expiry while the account
-                # itself remains opted in to automatic login.
+                # A cleared or expired token must not disable the user's
+                # explicit automatic-login choice.
                 self._handle_login(saved_u, saved_p)
                 return
 
@@ -2296,40 +2297,21 @@ class TableVerseApp(QMainWindow):
                 return
             if self._is_network_error(error):
                 return
-            saved_u, saved_p = load_credentials()
-            if saved_u and saved_p:
-                # An expired JWT must not defeat the user's explicit automatic
-                # login setting. Re-authenticate with the DPAPI-protected
-                # saved account before declaring the session unavailable.
-                self._session_restore_in_progress = False
-                self._handle_login(saved_u, saved_p)
-                return
             self._session_restore_in_progress = False
             self._is_reconnecting = False
             self._reconnect_timeout_timer.stop()
             sound_engine.stop_looping("CONNECTING")
             clear_token()
             self.api.token = None
+            saved_u, saved_p = load_credentials()
+            if saved_u and saved_p:
+                self._session_restore_in_progress = False
+                self._handle_login(saved_u, saved_p)
+                return
             self.stack.setCurrentIndex(0)
             self.auth_view.login_btn.setFocus()
             reader.speak(tr("انتهت جلسة تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى."), interrupt=True)
         self._run_async(self.api.me, done, failed)
-
-    def _announce_scopa_final_play(self, event_type, action_text, event_id=None):
-        """Play and speak the final Scopa card once, even after UI teardown."""
-        event_type = str(event_type or "").upper()
-        action_text = str(action_text or "").strip()
-        if not event_type or not action_text:
-            return False
-        room_id = str((self.current_room or {}).get("id") or "")
-        key = (room_id, str(event_id or ""), event_type)
-        if getattr(self, "_last_scopa_final_play_key", None) == key:
-            return False
-        self._last_scopa_final_play_key = key
-        for cue in sound_engine.event_cues("SCOPA", event_type, {}):
-            sound_engine.play_event(cue)
-        reader.speak(tr(action_text), interrupt=True)
-        return True
 
     def _recover_room_snapshot(self, room, uno_state=None, thief_state=None, farkle_state=None, domino_state=None, american_domino_state=None, snakes_state=None, scopa_state=None, tennis_state=None, ninety_nine_state=None):
         if not room or not self.current_room or room.get("id") != self.current_room.get("id"):
@@ -2781,20 +2763,10 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "scopa_match_finished":
-            final_play_announced = self._announce_scopa_final_play(
-                event.get("final_play_event_type"),
-                event.get("final_play_action"),
-                event.get("final_play_event_id"),
-            )
-            if final_play_announced:
-                QTimer.singleShot(1200, lambda e=dict(event): self._announce_terminal_result(e))
+            if self._announce_scopa_final_play(event):
+                QTimer.singleShot(900, lambda e=dict(event): self._finish_scopa_match(e))
             else:
-                self._announce_terminal_result(event)
-            self.scopa_state = None
-            self.table_view.set_game_type("SCOPA")
-            self.table_view.set_playing_mode(False)
-            self.table_view.clear_hand_for_round_transition()
-            self.table_view.main_table_widget.setFocus()
+                self._finish_scopa_match(event)
             return
 
         if et == "snakes_match_finished":
@@ -2817,21 +2789,19 @@ class TableVerseApp(QMainWindow):
             self.table_view.main_table_widget.setFocus()
             return
 
-        if et in ("round_finished", "ninety_nine_round_finished", "domino_round_finished", "american_domino_round_finished", "scopa_round_finished"):
-            if et == "scopa_round_finished":
-                self._announce_scopa_final_play(
-                    event.get("final_play_event_type"),
-                    event.get("final_play_action"),
-                    event.get("final_play_event_id"),
-                )
-                if self.current_room:
-                    if isinstance(event.get("scores"), dict):
-                        self.current_room["scores"] = event.get("scores")
-                    if event.get("target_score") is not None:
-                        self.current_room["target_score"] = event.get("target_score")
-                # Keep the existing Scopa card widget mounted. The following
-                # deal updates its items in-place rather than replacing it.
-                return
+        if et == "scopa_round_finished":
+            # The final card is part of the completed deal, not a new screen.
+            # Keep the existing Scopa list mounted until the server starts the
+            # next batch, then only update its items in place.
+            self._announce_scopa_final_play(event)
+            if self.current_room:
+                if isinstance(event.get("scores"), dict):
+                    self.current_room["scores"] = event.get("scores")
+                if event.get("target_score") is not None:
+                    self.current_room["target_score"] = event.get("target_score")
+            return
+
+        if et in ("round_finished", "ninety_nine_round_finished", "domino_round_finished", "american_domino_round_finished"):
             self.uno_state = None
             self.domino_state = None
             self.scopa_state = None
@@ -2894,6 +2864,35 @@ class TableVerseApp(QMainWindow):
         won = winner_id is not None and str(winner_id) == str((self.user or {}).get("id"))
         sound_engine.play_event("MATCH_WIN" if won else "MATCH_LOSS")
         reader.speak(tr("فزت بالمباراة." if won else "انتهت المباراة."), interrupt=False)
+
+    def _finish_scopa_match(self, event: dict):
+        self._announce_terminal_result(event)
+        self.scopa_state = None
+        self.table_view.set_game_type("SCOPA")
+        self.table_view.set_playing_mode(False)
+        self.table_view.clear_hand_for_round_transition()
+        self.table_view.main_table_widget.setFocus()
+
+    def _announce_scopa_final_play(self, event: dict):
+        """Speak and play the final Scopa card once, regardless of frame order."""
+        action = str(event.get("final_play_action") or "").strip()
+        event_type = str(event.get("final_play_event_type") or "").strip()
+        if not action or not event_type:
+            return False
+        key = (str((self.current_room or {}).get("id") or ""), str(event.get("event_id") or ""), event_type, action)
+        if key in self._seen_scopa_final_plays:
+            return False
+        self._seen_scopa_final_plays.add(key)
+        if len(self._seen_scopa_final_plays) > 64:
+            self._seen_scopa_final_plays.clear()
+            self._seen_scopa_final_plays.add(key)
+
+        # Stagger the semantic sounds so a platform audio backend cannot drop
+        # the capture cue while the throw cue is still acquiring a channel.
+        for delay, cue in enumerate(sound_engine.event_cues("SCOPA", event_type, event)):
+            QTimer.singleShot(delay * 180, lambda name=cue: sound_engine.play_event(name))
+        reader.speak(tr(action), interrupt=True)
+        return True
     def _on_language_changed(self, _value=None):
         """Apply language changes immediately to all existing UI without restart."""
         try:
