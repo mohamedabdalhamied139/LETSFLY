@@ -10,6 +10,7 @@ import json
 import time
 import struct
 from collections import deque
+from contextlib import asynccontextmanager, suppress
 from server.app.api.auth import router as auth_router
 from server.app.api.users import router as users_router
 from server.app.api.rooms import router as rooms_router
@@ -22,7 +23,23 @@ from server.app.db.database import SessionLocal, User
 from server.app.activity import create_event
 from core_shared.version import BUILD
 from core_shared.protocol import RoomActionRequest
-app = FastAPI(title="TableVerse Server v2", version="2.0.0")
+@asynccontextmanager
+async def lifespan(app):
+    app.state.chat_persist_queue = asyncio.Queue(maxsize=500)
+    worker = asyncio.create_task(_chat_persist_worker(app.state.chat_persist_queue))
+    try:
+        yield
+    finally:
+        try:
+            await asyncio.wait_for(app.state.chat_persist_queue.join(), timeout=10)
+        except asyncio.TimeoutError:
+            logger.warning("Chat persistence queue did not drain before shutdown")
+        finally:
+            worker.cancel()
+            with suppress(asyncio.CancelledError):
+                await worker
+
+app = FastAPI(title="TableVerse Server v2", version="2.0.0", lifespan=lifespan)
 
 _MAX_HTTP_BODY_BYTES = 64 * 1024
 _environment = os.getenv("TABLEVERSE_ENV", "development").strip().lower()
@@ -142,6 +159,16 @@ def _persist_chat_activity(room_id: str, sender_id: int, sender: str, text: str,
     finally:
         db.close()
 
+async def _chat_persist_worker(queue):
+    while True:
+        args = await queue.get()
+        try:
+            await asyncio.to_thread(_persist_chat_activity, *args)
+        except Exception:
+            logger.exception("Chat persistence worker failed")
+        finally:
+            queue.task_done()
+
 _WS_CHAT_WINDOW_SECONDS = 5.0
 _WS_CHAT_MAX_MESSAGES = 10
 _WS_MAX_JSON_BYTES = 4096
@@ -203,7 +230,7 @@ def _ws_user_id(websocket: WebSocket):
 
 @app.websocket("/ws/events")
 async def ws_events(websocket: WebSocket):
-    user_id = _ws_user_id(websocket)
+    user_id = await asyncio.to_thread(_ws_user_id, websocket)
     if user_id is None:
         await websocket.close(code=1008, reason="Authentication required")
         return
@@ -212,7 +239,7 @@ async def ws_events(websocket: WebSocket):
     try:
         event_times = deque()
         while True:
-            raw = await websocket.receive_text()
+            raw = await asyncio.wait_for(websocket.receive_text(), timeout=45)
             if len(raw.encode("utf-8")) > _WS_MAX_JSON_BYTES:
                 await websocket.close(code=1009, reason="Message too large")
                 ws_manager.disconnect(websocket)
@@ -224,7 +251,7 @@ async def ws_events(websocket: WebSocket):
                     response = {"type": "pong"}
                     if isinstance(ping_id, str) and len(ping_id) <= 64:
                         response["ping_id"] = ping_id
-                    await websocket.send_json(response)
+                    await ws_manager.send_json(websocket, response)
                     continue
             except Exception:
                 pass
@@ -274,7 +301,7 @@ async def _disconnect_grace_timeout(room_id: str, user_id: int, player_name: str
 
 @app.websocket("/ws/room/{room_id}")
 async def ws_room(websocket: WebSocket, room_id: str):
-    user_id = _ws_user_id(websocket)
+    user_id = await asyncio.to_thread(_ws_user_id, websocket)
     room = room_manager.get_room(room_id)
     is_room_member = room is not None and (user_id in room.players or user_id in room.spectators)
     if user_id is None or room is None or not is_room_member or user_id in room.banned_players:
@@ -318,10 +345,12 @@ async def ws_room(websocket: WebSocket, room_id: str):
                 "snakes_state": current_room.snakes_game.get_state(user_id) if current_room.snakes_game else None,
                 "scopa_state": current_room.scopa_game.public_state(user_id) if current_room.scopa_game else None,
                 "tennis_state": current_room.tennis_game.full_state() if current_room.tennis_game else None,
+                "ninety_nine_state": current_room.ninety_nine_game.state_for(user_id) if current_room.ninety_nine_game else None,
             }
-        await websocket.send_json(snapshot)
+        await ws_manager.send_json(websocket, snapshot, room_id)
         chat_times = deque()
         voice_times = deque()
+        game_action_times = deque()
         while True:
             current_room = room_manager.get_room(room_id)
             is_room_member = current_room is not None and (user_id in current_room.players or user_id in current_room.spectators)
@@ -330,7 +359,7 @@ async def ws_room(websocket: WebSocket, room_id: str):
                 ws_manager.disconnect(websocket, room_id=room_id)
                 return
 
-            message = await websocket.receive()
+            message = await asyncio.wait_for(websocket.receive(), timeout=45)
             if message.get("type") == "websocket.disconnect":
                 raise WebSocketDisconnect()
             raw_bytes = message.get("bytes")
@@ -375,14 +404,14 @@ async def ws_room(websocket: WebSocket, room_id: str):
                 response = {"type": "pong"}
                 if isinstance(ping_id, str) and len(ping_id) <= 64:
                     response["ping_id"] = ping_id
-                await websocket.send_json(response)
+                await ws_manager.send_json(websocket, response, room_id)
                 continue
             if data.get("type") == "voice_join" and set(data.keys()) == {"type"}:
                 if current_room and user_id in current_room.voice_banned:
-                    await websocket.send_json({"type": "voice_banned_notice", "room_id": room_id, "message": "أنت محظور من المحادثة الصوتية في هذه الطاولة."})
+                    await ws_manager.send_json(websocket, {"type": "voice_banned_notice", "room_id": room_id, "message": "أنت محظور من المحادثة الصوتية في هذه الطاولة."}, room_id)
                     continue
                 if ws_manager.join_voice(room_id, websocket):
-                    await websocket.send_json({"type": "voice_joined", "room_id": room_id})
+                    await ws_manager.send_json(websocket, {"type": "voice_joined", "room_id": room_id}, room_id)
                 continue
             if data.get("type") == "voice_leave" and set(data.keys()) == {"type"}:
                 ws_manager.leave_voice(room_id, websocket)
@@ -397,10 +426,17 @@ async def ws_room(websocket: WebSocket, room_id: str):
                 action_payload = data.get("payload")
                 if not isinstance(action_payload, dict):
                     continue
+                now = time.monotonic()
+                while game_action_times and now - game_action_times[0] >= 1.0:
+                    game_action_times.popleft()
+                if len(game_action_times) >= 20:
+                    await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": "عدد كبير جدًا من حركات اللعبة."}, room_id)
+                    continue
+                game_action_times.append(now)
                 try:
                     req = RoomActionRequest.model_validate(action_payload)
                 except Exception:
-                    await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": False, "error": "إجراء لعبة غير صالح."})
+                    await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": "إجراء لعبة غير صالح."}, room_id)
                     continue
                 async with current_room._mutation_lock:
                     current_room = room_manager.get_room(room_id)
@@ -411,16 +447,16 @@ async def ws_room(websocket: WebSocket, room_id: str):
                     from server.app.games.registry import get_plugin
                     plugin = get_plugin(current_room.game)
                     if not plugin or not plugin.get_engine(current_room):
-                        await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": False, "error": "اللعبة غير نشطة."})
+                        await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": "اللعبة غير نشطة."}, room_id)
                         continue
                     try:
                         result = await plugin.action_handler(current_room, user_id, req)
-                        await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": True, "state": result})
+                        await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": True, "state": result}, room_id)
                     except ValueError as exc:
-                        await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": False, "error": str(exc)})
+                        await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": str(exc)}, room_id)
                     except Exception:
                         logger.exception("WebSocket game action failed for user %s in room %s", user_id, room_id)
-                        await websocket.send_json({"type": "game_action_result", "request_id": request_id, "ok": False, "error": "تعذر تنفيذ الحركة."})
+                        await ws_manager.send_json(websocket, {"type": "game_action_result", "request_id": request_id, "ok": False, "error": "تعذر تنفيذ الحركة."}, room_id)
                 continue
             # The room socket accepts chat only. Game/state events are server-only.
             if set(data.keys()) - {"text"}:
@@ -464,9 +500,12 @@ async def ws_room(websocket: WebSocket, room_id: str):
             # mutation lock while doing synchronous DB writes/commit, allowing
             # chat persistence to stall gameplay actions in the same room.
             ws_manager.broadcast_room(room_id, message)
-            asyncio.create_task(asyncio.to_thread(
-                _persist_chat_activity, room_id, user_id, sender, text, recipients
-            ))
+            try:
+                websocket.app.state.chat_persist_queue.put_nowait(
+                    (room_id, user_id, sender, text, recipients)
+                )
+            except asyncio.QueueFull:
+                logger.warning("Dropping chat activity persistence because the queue is full")
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket, room_id=room_id)
         _handle_room_disconnect(room_id, user_id)

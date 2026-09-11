@@ -16,7 +16,8 @@ async def run_thief_bots(room: Room):
     if not game or not game.active:
         return
     bot_ids = {uid for uid in room.players if uid < 0}
-    for _ in range(300):
+    try:
+      while room.thief_game is game and game.active:
         if not room.thief_game or not room.thief_game.active:
             break
         
@@ -34,6 +35,7 @@ async def run_thief_bots(room: Room):
                     chosen = random.randint(1, 10)
                     game.action(game.thief_id, "choose_floor", str(chosen))
                     ws_manager.broadcast_room(room.room_id, {"type": "thief_state_changed", "room_id": room.room_id})
+            await asyncio.sleep(0.2)
             continue
         if game.phase == "escape":
             # Human investigators signal narration completion from the client.
@@ -43,17 +45,7 @@ async def run_thief_bots(room: Room):
             investigators = game.investigators
             human_investigators = [p for p in investigators if not p.is_bot]
             if not human_investigators:
-                estimated = 0.5 + (len(game.directions) * 0.65)
-                await asyncio.sleep(estimated)
-                try:
-                    async with room._mutation_lock:
-                        if game.phase == "escape" and investigators:
-                            game.action(investigators[0].user_id, "begin_answering")
-                            ws_manager.broadcast_room(room.room_id, {"type": "thief_state_changed", "room_id": room.room_id})
-                except ValueError as exc:
-                    logger.warning("Thief bot could not begin answering: %s", exc)
-                except Exception:
-                    logger.exception("Unexpected Thief bot escape-phase failure")
+                await asyncio.sleep(0.15)
             else:
                 await asyncio.sleep(0.15)
             continue
@@ -102,4 +94,7 @@ async def run_thief_bots(room: Room):
                 ws_manager.broadcast_room(room.room_id, {"type": "thief_state_changed", "room_id": room.room_id})
             continue
         await asyncio.sleep(0.2)
+    finally:
+        if room._bot_task is asyncio.current_task():
+            room._bot_task = None
 

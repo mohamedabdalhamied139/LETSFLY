@@ -65,6 +65,7 @@ class ThiefHuntGame:
         self._round_resolved = False
         self._used_human_thief_ids: set[int] = set()
         self.answer_deadline: Optional[float] = None
+        self.escape_deadline: Optional[float] = None
 
     @property
     def active_players(self):
@@ -82,6 +83,7 @@ class ThiefHuntGame:
         """Stop the match immediately and invalidate all pending phases."""
         self.active = False
         self.answer_deadline = None
+        self.escape_deadline = None
         self.phase = "waiting"
         self.answers.clear()
         self._round_resolved = True
@@ -170,6 +172,7 @@ class ThiefHuntGame:
         self.directions = []
         self.direction_duration = 0
         self.answer_deadline = None
+        self.escape_deadline = None
         self._select_thief()
 
         if self.virtual_thief:
@@ -189,6 +192,7 @@ class ThiefHuntGame:
         self._generate_directions(self.start_floor)
         self.phase = "escape"
         self.answer_deadline = None
+        self.escape_deadline = time.monotonic() + 0.5 + len(self.directions) * 0.65
         self._set_event(f"الجولة {self.round_number}. اللص في الطابق {self.start_floor}.", "ESCAPE_START")
 
     def _begin_answering(self):
@@ -197,10 +201,14 @@ class ThiefHuntGame:
         if self.phase != "escape":
             raise ValueError("لا يمكن بدء الإجابة الآن.")
         self.phase = "answering"
-        self.answer_deadline = time.monotonic() + 10.0
+        self.escape_deadline = None
+        self.answer_deadline = time.monotonic() + 8.0
         self._set_event("اكتب رقم الطابق.", "ANSWER_START")
 
     def tick(self):
+        if (self.active and self.phase == "escape" and self.escape_deadline is not None
+                and time.monotonic() >= self.escape_deadline):
+            self._begin_answering()
         if (
             self.active
             and self.phase == "answering"
@@ -229,6 +237,8 @@ class ThiefHuntGame:
                 raise ValueError("لا يمكن بدء الإجابة الآن.")
             if self.phase == "answering":
                 return self.state_for(uid)
+            if self.escape_deadline is not None and time.monotonic() < self.escape_deadline:
+                raise ValueError("لم ينته سرد الاتجاهات بعد.")
             self._begin_answering()
             return self.state_for(uid)
 
@@ -470,7 +480,6 @@ class ThiefHuntGame:
 
     def state_for(self, viewer_id: int):
         self.tick()
-        viewer = self._find(viewer_id)
         is_thief = viewer_id == self.thief_id and self.thief_id is not None
         revealed = self.phase in ("round_result", "match_finished")
         thief_name = ""

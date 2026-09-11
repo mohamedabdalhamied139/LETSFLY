@@ -170,9 +170,9 @@ class SoundEngine:
         },
         "SCOPA": {
             "GAME_STARTED": ("SCOPA_DEAL",),
-            "ROUND_START": ("SCOPA_ROUND_START", "SCOPA_DEAL"),
-            "ROUND_STARTED": ("SCOPA_ROUND_START", "SCOPA_DEAL"),
-            "DEAL_BATCH": ("SCOPA_DEAL_BATCH", "SCOPA_DEAL"),
+            "ROUND_START": ("SCOPA_DEAL",),
+            "ROUND_STARTED": ("SCOPA_DEAL",),
+            "DEAL_BATCH": ("SCOPA_DEAL",),
             "CARD_PLAYED": ("SCOPA_CARD_THROW",),
             "CARD_CAPTURED": ("SCOPA_CARD_THROW", "SCOPA_EAT_CARDS"),
             "SCOPA_SWEEP": ("SCOPA_CARD_THROW", "SCOPA_EAT_CARDS", "SCOPA_ANNOUNCEMENT"),
@@ -458,11 +458,7 @@ class SoundEngine:
                         return
                 except Exception:
                     logger.exception("Sound cue playback failed: %s", key)
-            try:
-                effects[0].stop()
-                effects[0].play()
-            except Exception:
-                pass
+            logger.debug("Dropping sound cue %s because all pool instances are busy", key)
         except Exception:
             pass
 

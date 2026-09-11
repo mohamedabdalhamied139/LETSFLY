@@ -13,7 +13,7 @@ async def _persist_match(room, winners):
     def save():
         db = SessionLocal()
         try:
-            record_match(db, "FARKLE", room.room_id, room.players, list(winners))
+            record_match(db, "FARKLE", room.room_id, room.players, list(winners), match_key=room.match_key)
             db.commit()
         except Exception:
             db.rollback()

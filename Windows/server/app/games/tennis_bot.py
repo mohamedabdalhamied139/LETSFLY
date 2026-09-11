@@ -40,7 +40,7 @@ async def run_tennis_bots(room: "Room"):
             if not room.tennis_game or room.tennis_game.state == "FINISHED":
                 break
             
-            now    = time.time()
+            now    = time.monotonic()
             game   = room.tennis_game
             events = game.tick(now)
 

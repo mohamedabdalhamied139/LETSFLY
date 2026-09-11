@@ -176,6 +176,9 @@ class ApiClient:
         payload = {"target_user_id": int(target_user_id)} if target_user_id is not None else {}
         return self._request("POST", f"/api/rooms/{room_id}/spectator", payload)
 
+    def toggle_room_privacy(self, room_id: str):
+        return self._request("POST", f"/api/rooms/{room_id}/privacy")
+
     def game_state(self, room_id: str):
         return self._request("GET", f"/api/rooms/{room_id}/game/state")
 

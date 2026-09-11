@@ -22,6 +22,7 @@ class ConnectionManager:
         self.max_total_connections = 1000
         self._connect_lock = asyncio.Lock()
         self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._broadcast_slots = asyncio.BoundedSemaphore(256)
         # Protect the connection registries themselves.  WebSocket lifecycle
         # callbacks and broadcast cleanup can run concurrently with connect/
         # disconnect operations; the async admission lock alone does not cover
@@ -215,6 +216,19 @@ class ConnectionManager:
         for ws in dead:
             self.disconnect(ws, room_id)
 
+    async def send_json(self, ws: WebSocket, message: dict, room_id: str = "") -> bool:
+        """Serialize every outbound JSON frame for one socket."""
+        lock = self._ws_locks.get(ws)
+        if lock is None:
+            return False
+        try:
+            async with lock:
+                await asyncio.wait_for(ws.send_json(message), timeout=self.send_timeout)
+            return True
+        except Exception:
+            self.disconnect(ws, room_id)
+            return False
+
     def _schedule_broadcast(self, coro):
         """Schedule a broadcast coroutine safely from any thread or event loop."""
         try:
@@ -227,9 +241,21 @@ class ConnectionManager:
             if current_loop is not None and current_loop.is_running():
                 if self._loop is None or not self._loop.is_running():
                     self._loop = current_loop
-                self._loop.create_task(coro)
+                async def bounded():
+                    if self._broadcast_slots.locked():
+                        coro.close()
+                        return
+                    async with self._broadcast_slots:
+                        await coro
+                self._loop.create_task(bounded())
             elif self._loop is not None and self._loop.is_running():
-                asyncio.run_coroutine_threadsafe(coro, self._loop)
+                async def bounded_threadsafe():
+                    if self._broadcast_slots.locked():
+                        coro.close()
+                        return
+                    async with self._broadcast_slots:
+                        await coro
+                asyncio.run_coroutine_threadsafe(bounded_threadsafe(), self._loop)
             else:
                 logger.debug("No active running event loop to schedule broadcast")
                 try:

@@ -108,20 +108,17 @@ class TennisGameplayWidget(QListWidget):
         elif key == Qt.Key_Left:
             self._left_held = True
             self._emit_position()
-            self.keyPressed.emit()
             event.accept()
             return
         elif key == Qt.Key_Right:
             self._right_held = True
             self._emit_position()
-            self.keyPressed.emit()
             event.accept()
             return
         elif key == Qt.Key_Up:
             self._left_held = False
             self._right_held = False
             self._emit_position()
-            self.keyPressed.emit()
             event.accept()
             return
 

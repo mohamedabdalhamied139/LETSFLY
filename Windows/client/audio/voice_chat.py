@@ -43,6 +43,7 @@ class VoiceChatManager(QObject):
         self._encode_slots = threading.BoundedSemaphore(_MAX_PACKET_QUEUE)
         self._decode_slots = threading.BoundedSemaphore(_MAX_PACKET_QUEUE)
         self._closed = False
+        self._generation = 0
         self._send_busy = False
         self._voice_join_pending = False
         self._capture_pcm_buffer = bytearray()
@@ -93,6 +94,7 @@ class VoiceChatManager(QObject):
             # clear an active voice session merely because a room snapshot arrived.
             return
         self.leave_room()
+        self._generation += 1
         self.room_id = room_id
         self._voice_session_active = False
         self._announce("voice_connection_restored" if self.enabled else "voice_ready")
@@ -128,6 +130,7 @@ class VoiceChatManager(QObject):
             self.ws.send_json({"type": "voice_leave"})
         was_active = self._voice_session_active or self._voice_join_pending
         self._voice_session_active = False
+        self._generation += 1
         self._voice_join_pending = False
         self.stop_microphone(silent=True)
         self._capture_pcm_buffer.clear()
@@ -268,7 +271,7 @@ class VoiceChatManager(QObject):
             if not self._encode_slots.acquire(blocking=False):
                 return
             fmt = self._input_format
-            future = self._executor.submit(self._prepare_and_send, data, fmt)
+            future = self._executor.submit(self._prepare_and_send, data, fmt, self._generation)
             future.add_done_callback(lambda _f: self._encode_slots.release())
         except Exception:
             logger.exception("Microphone capture failed")
@@ -347,7 +350,7 @@ class VoiceChatManager(QObject):
                 return bytes(len(frame))
         return frame
 
-    def _prepare_and_send(self, data: bytes, fmt):
+    def _prepare_and_send(self, data: bytes, fmt, generation: int):
         if self._closed or self.muted or not self.room_id or not self._voice_session_active:
             return
         try:
@@ -365,7 +368,7 @@ class VoiceChatManager(QObject):
                     del self._capture_pcm_buffer[:FRAME_BYTES]
                     frame = self._filter_echo_from_frame(frame)
                     packet = encode_pcm16(frame, SAMPLE_RATE)
-                    if packet and not self._closed and not self.muted and self.room_id and self._voice_session_active:
+                    if packet and generation == self._generation and not self._closed and not self.muted and self.room_id and self._voice_session_active:
                         if not self.ws.send_bytes(packet):
                             logger.debug("Voice packet send returned false")
         except Exception:
@@ -391,14 +394,16 @@ class VoiceChatManager(QObject):
         payload = bytes(data[8:])
         if len(payload) > 4096 or len(payload) < 9 or payload[:4] != b"LFV1" or not self._decode_slots.acquire(blocking=False):
             return
-        future = self._executor.submit(self._decode_and_queue, payload)
+        future = self._executor.submit(self._decode_and_queue, payload, self._generation)
         future.add_done_callback(lambda _f: self._decode_slots.release())
 
-    def _decode_and_queue(self, payload: bytes):
+    def _decode_and_queue(self, payload: bytes, generation: int):
         if self._closed:
             return
         try:
             pcm = decode_pcm16(payload)
+            if generation != self._generation:
+                return
             if not pcm:
                 return
             output_fmt = getattr(self, "_output_format", None)

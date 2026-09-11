@@ -36,6 +36,7 @@ class Room:
         self.table_created_at = now
         self.table_started_at = None
         self.round_started_at = None
+        self.match_key = None
         self.player_joined_at: Dict[int, str] = {host_id: now}
         self._bot_task = None
         self._mutation_lock = asyncio.Lock()
@@ -47,6 +48,7 @@ class Room:
         self.voice_muted: set[int] = set()
         self.co_host_id: Optional[int] = None
         self.spectators: List[int] = []
+        self.pending_spectators: set[int] = set()
         self.status = "waiting"  # "waiting", "playing", "match_finished"
         self.uno_game: Optional[UnoGame] = None
         self.thief_game: Optional[ThiefHuntGame] = None
@@ -90,16 +92,26 @@ class Room:
         if self.co_host_id == user_id:
             self.co_host_id = None
         if user_id in self.players:
+            # Keep every live engine's private identity state aligned with the
+            # roster before removing the public room membership.
+            for engine in (self.uno_game, self.thief_game, self.farkle_game,
+                           self.domino_game, self.american_domino_game,
+                           self.snakes_game, self.scopa_game,
+                           self.tennis_game, self.ninety_nine_game):
+                remover = getattr(engine, "remove_player", None)
+                if remover:
+                    try:
+                        remover(user_id)
+                    except Exception:
+                        logger.exception("Engine player cleanup failed for room %s", self.room_id)
             self.players.remove(user_id)
             self.player_names.pop(user_id, None)
             self.player_joined_at.pop(user_id, None)
             self.scores.pop(user_id, None)
-            if self.game == "SCOPA" and self.scopa_game is not None:
-                self.scopa_game.remove_player(user_id)
-                if not self.scopa_game.active:
-                    self.cancel_background_tasks()
-                    self.scopa_game = None
-                    self.status = "waiting"
+            if self.game == "SCOPA" and self.scopa_game is not None and not self.scopa_game.active:
+                self.cancel_background_tasks()
+                self.scopa_game = None
+                self.status = "waiting"
         if user_id in self.spectators:
             self.spectators.remove(user_id)
             self.player_names.pop(user_id, None)
@@ -118,6 +130,17 @@ class Room:
             bot_name = f"Bot {abs(bot_id)}"
         self.add_player(bot_id, bot_name)
         return bot_name
+
+    def apply_pending_spectators(self) -> List[int]:
+        moved = []
+        for uid in list(self.pending_spectators):
+            if uid in self.players:
+                self.players.remove(uid)
+                if uid not in self.spectators:
+                    self.spectators.append(uid)
+                moved.append(uid)
+        self.pending_spectators.clear()
+        return moved
 
     def remove_bot(self) -> Optional[str]:
         bot_ids = [uid for uid in self.players if uid < 0]
@@ -163,6 +186,8 @@ class Room:
         game_label = plugin.display_name if plugin else self.game
         return {
             "id": self.room_id,
+            "is_pending_spectator": viewer_id in self.pending_spectators if viewer_id is not None else False,
+            "pending_spectators": list(self.pending_spectators),
             "room_id": self.room_id,
             "game": self.game,
             "status": self.status,
@@ -234,16 +259,18 @@ class RoomManager:
     def add_player_exclusive(self, room: Room, user_id: int, name: str) -> bool:
         """Atomically enforce one-table-per-user within this server process."""
         with self._lock:
-            if any(int(user_id) in r.players for r in self.rooms.values()):
-                return int(user_id) in room.players
+            if any(int(user_id) in r.players or int(user_id) in r.spectators for r in self.rooms.values()):
+                return int(user_id) in room.players and int(user_id) not in room.spectators
             room.add_player(int(user_id), name)
             return True
 
     def add_spectator_exclusive(self, room: Room, user_id: int, name: str) -> bool:
         """Atomically enforce adding a spectator to a room."""
         with self._lock:
-            # If user is in another room's players list, do not allow
-            if any(int(user_id) in r.players and r.room_id != room.room_id for r in self.rooms.values()):
+            if any((int(user_id) in r.players or int(user_id) in r.spectators)
+                   and r.room_id != room.room_id for r in self.rooms.values()):
+                return False
+            if int(user_id) in room.players:
                 return False
             room.add_spectator(int(user_id), name)
             return True

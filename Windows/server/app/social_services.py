@@ -53,20 +53,20 @@ def _apply_ratings(db, game, humans, winners):
         row.rating=max(0, round(row.rating + 32*((1 if won else 0)-expected)))
         row.wins += int(won); row.losses += int(not won)
 
-def record_match(db, game, room_id, participant_ids, winner_ids):
+def record_match(db, game, room_id, participant_ids, winner_ids, *, match_key=None):
     humans=sorted({int(x) for x in participant_ids if x is not None and int(x)>0})
     winners={int(x) for x in winner_ids if x is not None and int(x)>0}
     if not humans: return None
-    if room_id:
-        existing = db.query(MatchRecord).filter_by(room_id=room_id).first()
+    if match_key:
+        existing = db.query(MatchRecord).filter_by(match_key=match_key).first()
         if existing: return existing
-    row=MatchRecord(game=str(game),room_id=room_id,winner_ids=json.dumps(sorted(winners)),human_player_ids=json.dumps(humans))
+    row=MatchRecord(game=str(game),room_id=room_id,match_key=match_key,winner_ids=json.dumps(sorted(winners)),human_player_ids=json.dumps(humans))
     try:
         db.add(row); db.flush()
     except Exception:
         db.rollback()
-        if room_id:
-            existing = db.query(MatchRecord).filter_by(room_id=room_id).first()
+        if match_key:
+            existing = db.query(MatchRecord).filter_by(match_key=match_key).first()
             if existing: return existing
         raise
     _apply_ratings(db, game, humans, winners)
