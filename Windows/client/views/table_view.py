@@ -1657,8 +1657,6 @@ class TableView(QWidget):
         if self.game_type != "SCOPA":
             return
         self._scopa_state = state
-        self.chat_input.show()
-        self.activity_panel.show()
         is_active = bool(state.get("active"))
         if not self.is_playing and not is_active:
             self._last_scopa_rendered_sig = None

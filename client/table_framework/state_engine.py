@@ -104,10 +104,7 @@ class ClientStateEngine:
                 valid_sequence = tuple(c for c in raw_cues if sound_engine.has_cue(c))
                 if et not in ("MATCH_WON", "MATCH_FINISHED") and valid_sequence:
                     event_cues = valid_sequence
-            is_scopa_round_end = game_type == "SCOPA" and et in ("ROUND_FINISHED", "ROUND_END", "ROUND_WON")
-            if is_scopa_round_end:
-                event_cues = ()
-            elif game_type == "SCOPA" and len(event_cues) > 1:
+            if game_type == "SCOPA" and len(event_cues) > 1:
                 for delay, event_cue in enumerate(event_cues):
                     if delay == 0:
                         sound_engine.play_event(event_cue)
@@ -144,17 +141,22 @@ class ClientStateEngine:
                 announce_game_event(msg, interrupt=(game_type != "SCOPA"))
                 spoke_event = True
             elif et in ("ROUND_FINISHED", "ROUND_END", "ROUND_WON"):
+                if not event_cues:
+                    sound_engine.play_event("ROUND_END")
+                # Do not cancel the mandatory last-card announcement with the
+                # round summary.  It follows naturally after the card cue.
                 if game_type == "SCOPA":
-                    # The lifecycle message schedules the one delayed summary.
-                    spoke_event = True
-                else:
-                    if not event_cues:
-                        sound_engine.play_event("ROUND_END")
-                    if final_play_announced:
+                    key = (room_id, str(event_id), et, action_text)
+                    seen_plays = getattr(app, "_seen_scopa_final_plays", None)
+                    if seen_plays is None or key not in seen_plays:
+                        if seen_plays is not None:
+                            seen_plays.add(key)
                         QTimer.singleShot(900, lambda text=action_text: announce_game_event(text, interrupt=False))
-                    else:
-                        announce_game_event(action_text, interrupt=True)
-                    spoke_event = True
+                elif final_play_announced:
+                    QTimer.singleShot(900, lambda text=action_text: announce_game_event(text, interrupt=False))
+                else:
+                    announce_game_event(action_text, interrupt=True)
+                spoke_event = True
             elif et in ("ROUND_START", "ROUND_STARTED", "GAME_STARTED"):
                 if hasattr(app, "table_view") and app.table_view:
                     app.table_view._focus_target = "gameplay"
@@ -197,7 +199,7 @@ class ClientStateEngine:
             
         my_id = (app.user or {}).get("id")
         was_my_turn_attr = f"_was_my_turn_{game_type.lower()}"
-        is_turn_allowed = is_active and not is_round_finished and not state.get("pending_deal_batch") and not state.get("pending_round_finalize") and state.get("event_type") not in ("MATCH_WON", "MATCH_FINISHED", "ROUND_FINISHED", "ROUND_END")
+        is_turn_allowed = is_active and not is_round_finished and state.get("event_type") not in ("MATCH_WON", "MATCH_FINISHED", "ROUND_FINISHED", "ROUND_END")
             
         if is_turn_allowed and curr_id is not None:
             curr_id_str = str(curr_id)
@@ -205,7 +207,7 @@ class ClientStateEngine:
             last_announced_turn = getattr(app, last_turn_attr, None)
             is_my_turn = (curr_id_str == str(my_id)) if my_id is not None else False
             
-            if curr_id_str != str(last_announced_turn):
+            if curr_id_str != str(last_announced_turn) or (game_type == "SCOPA" and et == "DEAL_BATCH"):
                 setattr(app, last_turn_attr, curr_id_str)
                 setattr(app, f"_last_turn_{game_type.lower()}", curr_id_str)
                 setattr(app, was_my_turn_attr, is_my_turn)

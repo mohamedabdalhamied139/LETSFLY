@@ -5,7 +5,7 @@ import threading
 import time
 import uuid
 from datetime import datetime, timezone
-from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QListWidget, QListWidgetItem, QMenu, QDialog
+from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QListWidget, QListWidgetItem, QMenu, QDialog, QWidget
 from PySide6.QtCore import QTimer, Qt, QObject, Signal, QEvent
 
 from client.accessibility.reader import reader
@@ -94,6 +94,11 @@ class TableVerseApp(QMainWindow):
         self.rooms_menu_view = RoomsMenuView(self) # Index 2
         self.join_rooms_view = JoinRoomsView(self) # Index 3
         self.table_view = TableView(self)          # Index 4
+        # Deliberately empty while a saved or manual login is in progress.
+        # This prevents a stale login/table screen from remaining interactive.
+        self.login_loading_view = QWidget(self)
+        self.login_loading_view.setAccessibleName("")
+        self.login_loading_view.setAccessibleDescription("")
         install_localization(QApplication.instance())
         subscribe_language_change(self._on_language_changed)
         localize_widget_tree(self)
@@ -104,6 +109,7 @@ class TableVerseApp(QMainWindow):
         self.stack.addWidget(self.rooms_menu_view)
         self.stack.addWidget(self.join_rooms_view)
         self.stack.addWidget(self.table_view)
+        self.stack.addWidget(self.login_loading_view)
 
         for view in (self.home_view, self.rooms_menu_view, self.join_rooms_view, self.table_view):
             panel = getattr(view, "activity_panel", None)
@@ -2267,6 +2273,9 @@ class TableVerseApp(QMainWindow):
 
     def _show_reconnect_placeholder(self):
         """Hide all login/game inputs while reconnecting."""
+        if self._login_reconnect_in_progress or self._session_restore_in_progress:
+            self.stack.setCurrentWidget(self.login_loading_view)
+            return
         self.poll_timer.stop()
         self.table_view.set_game_type(str((self.current_room or {}).get("game") or "").upper())
         self.table_view.set_playing_mode(False)
@@ -2322,7 +2331,7 @@ class TableVerseApp(QMainWindow):
                 return
             self.stack.setCurrentIndex(0)
             self.auth_view.login_btn.setFocus()
-            reader.speak(tr("انتهت جلسة تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى."), interrupt=True)
+            reader.speak(tr("تعذر الدخول التلقائي. يرجى كتابة بيانات الدخول."), interrupt=True)
         self._run_async(self.api.me, done, failed)
 
     def _recover_room_snapshot(self, room, uno_state=None, thief_state=None, farkle_state=None, domino_state=None, american_domino_state=None, snakes_state=None, scopa_state=None, tennis_state=None, ninety_nine_state=None):

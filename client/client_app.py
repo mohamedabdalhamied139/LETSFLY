@@ -5,7 +5,7 @@ import threading
 import time
 import uuid
 from datetime import datetime, timezone
-from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QListWidget, QListWidgetItem, QMenu, QDialog
+from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QListWidget, QListWidgetItem, QMenu, QDialog, QWidget
 from PySide6.QtCore import QTimer, Qt, QObject, Signal, QEvent
 
 from client.accessibility.reader import reader
@@ -94,6 +94,9 @@ class TableVerseApp(QMainWindow):
         self.rooms_menu_view = RoomsMenuView(self) # Index 2
         self.join_rooms_view = JoinRoomsView(self) # Index 3
         self.table_view = TableView(self)          # Index 4
+        self.login_loading_view = QWidget(self)
+        self.login_loading_view.setAccessibleName("")
+        self.login_loading_view.setAccessibleDescription("")
         install_localization(QApplication.instance())
         subscribe_language_change(self._on_language_changed)
         localize_widget_tree(self)
@@ -104,6 +107,7 @@ class TableVerseApp(QMainWindow):
         self.stack.addWidget(self.rooms_menu_view)
         self.stack.addWidget(self.join_rooms_view)
         self.stack.addWidget(self.table_view)
+        self.stack.addWidget(self.login_loading_view)
 
         for view in (self.home_view, self.rooms_menu_view, self.join_rooms_view, self.table_view):
             panel = getattr(view, "activity_panel", None)
@@ -537,6 +541,7 @@ class TableVerseApp(QMainWindow):
 
     # ---------- Auth Handlers ----------
     def _handle_login(self, u, p):
+        self.stack.setCurrentWidget(self.login_loading_view)
         sound_engine.play_looping("CONNECTING")
         def done(res):
             sound_engine.stop_looping("CONNECTING")
@@ -556,6 +561,7 @@ class TableVerseApp(QMainWindow):
             self._start_session_clean(dname)
         def fail(err):
             sound_engine.stop_looping("CONNECTING")
+            self.stack.setCurrentIndex(0)
             self._show_error(err)
         self._run_async(lambda: self.api.login(u, p), done, fail)
 
@@ -650,14 +656,12 @@ class TableVerseApp(QMainWindow):
                 def failed(_):
                     sound_engine.stop_looping("CONNECTING")
                     clear_token(); self.api.token = None
-                    # Token expired, fall back to pre-fill
+                    # Token expired: use saved credentials automatically.
                     if saved_u and saved_p:
-                        self.auth_view.username_input.setText(saved_u)
-                        self.auth_view.password_input.setText(saved_p)
-                        reader.speak(tr("انتهت الجلسة. بياناتك محفوظة، اضغط تسجيل الدخول."))
-                        QTimer.singleShot(100, lambda: self.auth_view.login_btn.setFocus())
+                        self._handle_login(saved_u, saved_p)
                     else:
-                        reader.speak(tr("انتهت جلسة تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى."))
+                        self.stack.setCurrentIndex(0)
+                        reader.speak(tr("تعذر الدخول التلقائي. يرجى كتابة بيانات الدخول."))
                         QTimer.singleShot(100, lambda: self.auth_view.username_input.setFocus())
                 self._run_async(self.api.me, done, failed)
                 return
