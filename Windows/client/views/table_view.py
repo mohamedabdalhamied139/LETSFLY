@@ -427,7 +427,7 @@ class TableView(QWidget):
 
         # 4. Chat Input
         self.chat_input = QLineEdit()
-        self.chat_input.setFocusPolicy(Qt.ClickFocus)
+        self.chat_input.setFocusPolicy(Qt.StrongFocus)
         self.chat_input.setPlaceholderText(tr("الدردشة..."))
         self.chat_input.setAccessibleName(tr("الدردشة"))
         self.chat_input.setAccessibleDescription("")
@@ -776,31 +776,36 @@ class TableView(QWidget):
             except Exception:
                 first_widget = self.main_table_widget
         
+        is_log_focus = bool(
+            current == self.activity_log
+            or (hasattr(self.activity_log, "viewport") and current == self.activity_log.viewport())
+            or (hasattr(self, "activity_panel") and current == self.activity_panel)
+        )
         if current == self.chat_input:
             if next_focus:
                 self._focus_target = "activity_log"
-                self.activity_log.setFocus()
+                safe_set_focus(self.activity_log)
             else:
                 self._focus_target = "gameplay"
-                first_widget.setFocus()
+                safe_set_focus(first_widget)
             return True
 
-        elif current == self.activity_log:
+        elif is_log_focus:
             if next_focus:
                 self._focus_target = "gameplay"
-                first_widget.setFocus()
+                safe_set_focus(first_widget)
             else:
                 self._focus_target = "chat"
-                self.chat_input.setFocus()
+                safe_set_focus(self.chat_input)
             return True
         else:
             # Current is some table element (cards, dominoes, dice, etc)
             if next_focus:
                 self._focus_target = "chat"
-                self.chat_input.setFocus()
+                safe_set_focus(self.chat_input)
             else:
                 self._focus_target = "activity_log"
-                self.activity_log.setFocus()
+                safe_set_focus(self.activity_log)
             return True
 
 
