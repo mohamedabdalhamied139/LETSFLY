@@ -76,6 +76,16 @@ class ClientStateEngine:
             # another game's registry entry. The server cue wins when valid;
             # otherwise use the shared per-game semantic mapping.
             event_cues = sound_engine.event_cues(game_type, et, state)
+            # Scopa finalizes the round in the same server action as its last
+            # card. The round event otherwise replaces CARD_PLAYED/CAPTURED
+            # before this snapshot is delivered, silently dropping that cue.
+            if game_type == "SCOPA":
+                final_play_event = state.get("final_play_event_type", "")
+                if final_play_event:
+                    final_play_cues = sound_engine.event_cues(
+                        game_type, final_play_event, state
+                    )
+                    event_cues = tuple(final_play_cues) + tuple(event_cues)
             if game_type == "SNAKES_LADDERS":
                 raw_cues = state.get("sound_cues") or ()
                 valid_sequence = tuple(c for c in raw_cues if sound_engine.has_cue(c))
