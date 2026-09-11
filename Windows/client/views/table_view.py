@@ -246,10 +246,15 @@ class ScopaCardList(QListWidget):
                 Qt.FocusReason.MouseFocusReason,
                 Qt.FocusReason.PopupFocusReason,
             )
-            should_hold_focus = (is_my_turn or getattr(parent_table, "_scopa_gameplay_focus", False))
+            should_hold_focus = (
+                is_my_turn
+                or getattr(parent_table, "_scopa_gameplay_focus", False)
+                or getattr(parent_table, "is_playing", False)
+            )
             if should_hold_focus and event.reason() not in allowed_reasons:
                 if self.count() > 0 and not getattr(parent_table, "_is_modal_active", lambda: False)():
-                    QTimer.singleShot(0, lambda w=self: safe_set_focus(w))
+                    for delay in (0, 30, 80, 150):
+                        QTimer.singleShot(delay, lambda w=self: safe_set_focus(w) if safe_is_valid(w) else None)
             elif event.reason() in allowed_reasons:
                 parent_table._scopa_gameplay_focus = False
 
@@ -1753,13 +1758,7 @@ class TableView(QWidget):
             item.setToolTip("")
             item.setStatusTip("")
             item.setWhatsThis("")
-            accessible_text_role = getattr(Qt.ItemDataRole, "AccessibleTextRole", None)
-            accessible_description_role = getattr(Qt.ItemDataRole, "AccessibleDescriptionRole", None)
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            if accessible_text_role is not None:
-                item.setData(accessible_text_role, item_spec["text"] if not item_spec["is_waiting"] else "")
-            if accessible_description_role is not None:
-                item.setData(accessible_description_role, item_spec["text"] if not item_spec["is_waiting"] else "")
 
         # 2. Before removing excess items, clamp selection to a remaining item so Qt doesn't kick focus out to chat
         if target_count > 0 and self.scopa_card_list.count() > target_count:
@@ -1773,19 +1772,12 @@ class TableView(QWidget):
         # 4. Add new items if needed
         for idx in range(self.scopa_card_list.count(), target_count):
             item_spec = desired_items_data[idx]
-            item = QListWidgetItem()
-            item.setText(item_spec["text"])
+            item = QListWidgetItem(item_spec["text"])
             item.setData(Qt.UserRole, item_spec["data"])
             item.setToolTip("")
             item.setStatusTip("")
             item.setWhatsThis("")
-            accessible_text_role = getattr(Qt.ItemDataRole, "AccessibleTextRole", None)
-            accessible_description_role = getattr(Qt.ItemDataRole, "AccessibleDescriptionRole", None)
             item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            if accessible_text_role is not None:
-                item.setData(accessible_text_role, item_spec["text"] if not item_spec["is_waiting"] else "")
-            if accessible_description_role is not None:
-                item.setData(accessible_description_role, item_spec["text"] if not item_spec["is_waiting"] else "")
             self.scopa_card_list.addItem(item)
 
         self.scopa_card_list.blockSignals(False)
@@ -1805,11 +1797,21 @@ class TableView(QWidget):
                     self._focus_target = "gameplay"
                     if not self.scopa_card_list.hasFocus():
                         safe_set_focus(self.scopa_card_list)
+                    for delay in (0, 30, 80, 150):
+                        QTimer.singleShot(
+                            delay,
+                            lambda w=self.scopa_card_list: safe_set_focus(w) if safe_is_valid(w) and (self._focus_target == "gameplay" or not (self.chat_input.hasFocus() or self.activity_log.hasFocus())) else None
+                        )
                 elif ((turn_changed or previous_turn_id is None) and is_my_turn) and not user_in_chat_or_log:
                     self._scopa_gameplay_focus = True
                     self._focus_target = "gameplay"
                     if not self.scopa_card_list.hasFocus():
                         safe_set_focus(self.scopa_card_list)
+                    for delay in (0, 30, 80, 150):
+                        QTimer.singleShot(
+                            delay,
+                            lambda w=self.scopa_card_list: safe_set_focus(w) if safe_is_valid(w) and (self._focus_target == "gameplay" or not (self.chat_input.hasFocus() or self.activity_log.hasFocus())) else None
+                        )
 
     def _on_scopa_card_activated(self, item: QListWidgetItem):
         data = item.data(Qt.UserRole)
@@ -1823,6 +1825,11 @@ class TableView(QWidget):
             self._focus_target = "gameplay"
             if not self.scopa_card_list.hasFocus():
                 safe_set_focus(self.scopa_card_list)
+            for delay in (0, 30, 80, 150):
+                QTimer.singleShot(
+                    delay,
+                    lambda w=self.scopa_card_list: safe_set_focus(w) if safe_is_valid(w) and (self._focus_target == "gameplay" or not (self.chat_input.hasFocus() or self.activity_log.hasFocus())) else None
+                )
             self.scopaActionSubmitted.emit("play", str(card_index), "")
 
     def _clear_main_table_item_text(self):

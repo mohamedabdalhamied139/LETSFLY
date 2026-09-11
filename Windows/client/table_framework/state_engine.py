@@ -181,7 +181,7 @@ class ClientStateEngine:
 
                 elif game_type == "SCOPA":
                     if et in ("CARD_PLAYED", "CARD_CAPTURED", "SCOPA_SCORED", "SCOPA_SWEEP"):
-                        announce_game_event(action_text, interrupt=True)
+                        announce_game_event(action_text, interrupt=False)
                         spoke_event = True
                         if hasattr(app, "_seen_scopa_final_plays"):
                             room_id = str((app.current_room or {}).get("id") or "")

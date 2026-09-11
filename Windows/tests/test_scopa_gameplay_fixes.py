@@ -110,7 +110,8 @@ def test_scopa_card_list_focus_out_protection(qapp):
 
         # Focus must be re-pinned via singleShot
         assert mock_single_shot.called
-        assert mock_single_shot.call_args[0][0] == 0
+        delays = [call[0][0] for call in mock_single_shot.call_args_list]
+        assert 0 in delays
 
 
 def test_scopa_card_list_focus_out_allowed_for_tab(qapp):

@@ -17,7 +17,21 @@ class ClientStateEngine:
         is_round_finished = bool(state.get("round_finished"))
         if game_type == "TENNIS":
             is_active = str(state.get("state", "")).upper() not in ("", "WAITING", "FINISHED")
-        app.table_view.set_playing_mode(is_active and not is_round_finished)
+        # Keep Scopa's existing hand widget mounted during the short end-of-
+        # deal transition.  Rebuilding it at this point steals focus from the
+        # final card narration and makes NVDA cancel the speech.
+        is_match_over = bool(
+            state.get("winner_id") is not None
+            or state.get("winning_team") is not None
+            or (getattr(app, "current_room", None) or {}).get("status") in ("match_finished", "waiting")
+        )
+        keep_scopa_hand = (
+            game_type == "SCOPA"
+            and not is_active
+            and not is_match_over
+            and bool(state.get("final_play_action"))
+        )
+        app.table_view.set_playing_mode((is_active and not is_round_finished) or keep_scopa_hand)
         view_update_callback(is_active, is_round_finished)
 
         if is_active and not is_round_finished:
@@ -76,18 +90,45 @@ class ClientStateEngine:
             # another game's registry entry. The server cue wins when valid;
             # otherwise use the shared per-game semantic mapping.
             event_cues = sound_engine.event_cues(game_type, et, state)
+            # Scopa finalizes a deal in the same server action as its final
+            # card.  Deliver that card through one de-duplicated path; the
+            # lifecycle frame carries the same data if this snapshot is late.
+            final_play_announced = False
+            if game_type == "SCOPA":
+                final_play_event = state.get("final_play_event_type", "")
+                if final_play_event and hasattr(app, "_announce_scopa_final_play"):
+                    app._announce_scopa_final_play(state)
+                    final_play_announced = True
             if game_type == "SNAKES_LADDERS":
                 raw_cues = state.get("sound_cues") or ()
                 valid_sequence = tuple(c for c in raw_cues if sound_engine.has_cue(c))
                 if et not in ("MATCH_WON", "MATCH_FINISHED") and valid_sequence:
                     event_cues = valid_sequence
-            for event_cue in event_cues:
-                sound_engine.play_event(event_cue)
+            if game_type == "SCOPA" and len(event_cues) > 1:
+                for delay, event_cue in enumerate(event_cues):
+                    if delay == 0:
+                        sound_engine.play_event(event_cue)
+                    else:
+                        QTimer.singleShot(delay * 180, lambda c=event_cue: sound_engine.play_event(c))
+            else:
+                for event_cue in event_cues:
+                    sound_engine.play_event(event_cue)
 
             if et in ("MATCH_WON", "MATCH_FINISHED"):
                 winner_id = state.get("winner_id") or state.get("match_winner_id")
+                winning_team = state.get("winning_team")
+                teams = state.get("teams") or {}
                 my_id = (app.user or {}).get("id")
-                is_me = (str(winner_id) == str(my_id)) if (winner_id is not None and my_id is not None) else False
+                if winning_team is not None and my_id is not None and str(my_id) in teams:
+                    is_me = (teams.get(str(my_id)) == winning_team)
+                elif winner_id is not None and my_id is not None:
+                    is_me = (str(winner_id) == str(my_id))
+                else:
+                    winning_ids = state.get("winning_ids")
+                    if isinstance(winning_ids, (list, tuple, set)) and my_id is not None:
+                        is_me = any(str(w) == str(my_id) for w in winning_ids)
+                    else:
+                        is_me = False
                 if not getattr(app, "_match_result_sound_played", False):
                     sound_engine.play_event("MATCH_WIN" if is_me else "MATCH_LOSS")
                     app._match_result_sound_played = True
@@ -97,12 +138,24 @@ class ClientStateEngine:
                     msg = tr("مبروك! لقد فزت.") + " " + localized_action
                 else:
                     msg = tr("حظ أوفر!") + " " + localized_action
-                announce_game_event(msg, interrupt=True)
+                announce_game_event(msg, interrupt=(game_type != "SCOPA"))
                 spoke_event = True
             elif et in ("ROUND_FINISHED", "ROUND_END", "ROUND_WON"):
                 if not event_cues:
                     sound_engine.play_event("ROUND_END")
-                announce_game_event(action_text, interrupt=True)
+                # Do not cancel the mandatory last-card announcement with the
+                # round summary.  It follows naturally after the card cue.
+                if game_type == "SCOPA":
+                    key = (room_id, str(event_id), et, action_text)
+                    seen_plays = getattr(app, "_seen_scopa_final_plays", None)
+                    if seen_plays is None or key not in seen_plays:
+                        if seen_plays is not None:
+                            seen_plays.add(key)
+                        QTimer.singleShot(900, lambda text=action_text: announce_game_event(text, interrupt=False))
+                elif final_play_announced:
+                    QTimer.singleShot(900, lambda text=action_text: announce_game_event(text, interrupt=False))
+                else:
+                    announce_game_event(action_text, interrupt=True)
                 spoke_event = True
             elif et in ("ROUND_START", "ROUND_STARTED", "GAME_STARTED"):
                 if hasattr(app, "table_view") and app.table_view:
@@ -128,8 +181,11 @@ class ClientStateEngine:
 
                 elif game_type == "SCOPA":
                     if et in ("CARD_PLAYED", "CARD_CAPTURED", "SCOPA_SCORED", "SCOPA_SWEEP"):
-                        announce_game_event(action_text, interrupt=True)
+                        announce_game_event(action_text, interrupt=False)
                         spoke_event = True
+                        if hasattr(app, "_seen_scopa_final_plays"):
+                            room_id = str((app.current_room or {}).get("id") or "")
+                            app._seen_scopa_final_plays.add((room_id, str(event_id), et, action_text))
 
                 elif game_type not in ("THIEF_HUNT", "SNAKES_LADDERS"):
                     announce_game_event(action_text, interrupt=False)
@@ -151,18 +207,17 @@ class ClientStateEngine:
             last_announced_turn = getattr(app, last_turn_attr, None)
             is_my_turn = (curr_id_str == str(my_id)) if my_id is not None else False
             
-            if curr_id_str != str(last_announced_turn):
+            if curr_id_str != str(last_announced_turn) or (game_type == "SCOPA" and et == "DEAL_BATCH"):
                 setattr(app, last_turn_attr, curr_id_str)
                 setattr(app, f"_last_turn_{game_type.lower()}", curr_id_str)
                 setattr(app, was_my_turn_attr, is_my_turn)
-                suppress_turn_announcement = (game_type == "SCOPA" and et == "DEAL_BATCH")
                 if is_my_turn:
                     if not event_cues:
                         sound_engine.play_event("TURN_START")
-                    if not spoke_event and not suppress_turn_announcement:
+                    if not spoke_event:
                         announce_game_event("دورك", interrupt=False)
                 else:
-                    if not spoke_event and not suppress_turn_announcement:
+                    if not spoke_event:
                         announce_game_event(f"دور {current_name}", interrupt=False)
         elif state.get("event_type") in ("MATCH_WON", "MATCH_FINISHED", "ROUND_FINISHED", "ROUND_END"):
             setattr(app, was_my_turn_attr, False)
