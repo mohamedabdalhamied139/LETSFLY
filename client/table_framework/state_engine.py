@@ -51,9 +51,8 @@ class ClientStateEngine:
         action_text = state.get("last_action", "")
         et = state.get("event_type", "")
         
-        # Only reset last_id if the server actually started a new game/round and the event_id wrapped around to 1,
-        # OR if we explicitly need to handle a fresh start. Do NOT reset last_id on every single state update!
-        if (event_id == 1 and last_id > 1) or (et in ("GAME_STARTED", "ROUND_START", "ROUND_STARTED") and last_id > 0 and event_id <= last_id):
+        # Only reset last_id if the server actually started a new game/round and the event_id wrapped around to 1
+        if event_id == 1 and last_id > 1:
             last_id = 0
             app._match_result_sound_played = False
 
@@ -151,8 +150,6 @@ class ClientStateEngine:
                     # summary: scopa_round_finished schedules it once.
                     spoke_event = True
                 else:
-                    if not event_cues:
-                        sound_engine.play_event("ROUND_END")
                     if final_play_announced:
                         QTimer.singleShot(900, lambda text=action_text: announce_game_event(text, interrupt=False))
                     else:
@@ -162,8 +159,6 @@ class ClientStateEngine:
                 if hasattr(app, "table_view") and app.table_view:
                     app.table_view._focus_target = "gameplay"
                     app.table_view.focus_initial()
-                if not event_cues:
-                    sound_engine.play_event("ROUND_START")
                 announce_game_event(action_text, interrupt=True)
                 spoke_event = True
             else:
