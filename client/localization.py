@@ -391,11 +391,17 @@ class TranslationManager:
                     else:
                         role = "text"
                     if role == "pts":
-                        translated_args.append("points" if val.startswith("\u0646") else "units")
+                        if active == "fr":
+                            translated_args.append("points" if val.startswith("\u0646") else "unités")
+                        else:
+                            translated_args.append("points" if val.startswith("\u0646") else "units")
                     elif role == "score_list":
-                        translated_args.append(re.sub(r"(?<!\w)نقاط(?!\w)", "points", val).replace("، ", ", "))
+                        score_unit = "points" if active in ("en", "fr") else "نقاط"
+                        comma = ", " if active in ("en", "fr") else "، "
+                        translated_args.append(re.sub(r"(?<!\w)نقاط(?!\w)", score_unit, val).replace("، ", comma))
                     elif role == "set_list":
-                        translated_args.append(val.replace("، ", ", "))
+                        comma = ", " if active in ("en", "fr") else "، "
+                        translated_args.append(val.replace("، ", comma))
                     elif role in {"game", "title", "rules", "color", "combo", "tile", "side", "card", "card_list", "status", "sub", "ordinal", "floor"}:
                         # These roles are explicitly user-facing/localizable categories.
                         translated = self.tr(val)
@@ -403,18 +409,27 @@ class TranslationManager:
                         # numbers untouched inside a localized fragment. When no full
                         # catalog/pattern match exists, translate only known presentation
                         # tokens such as the Arabic score unit instead of touching names.
-                        if role == "sub" and active == "en":
-                            translated = re.sub(r"(?<!\w)النتائج:(?!\w)", "Scores:", translated)
-                            translated = re.sub(r"(?<!\w)المجموعات:(?!\w)", "Groups:", translated)
-                            translated = re.sub(r"(?<!\w)الدور التالي:(?!\w)", "Next turn:", translated)
-                            translated = re.sub(r"(?<!\w)نقاط(?=\.|،|,|$)", "points", translated)
-                            translated = translated.replace("، ", ", ")
+                        if role == "sub":
+                            if active == "en":
+                                translated = re.sub(r"(?<!\w)النتائج:(?!\w)", "Scores:", translated)
+                                translated = re.sub(r"(?<!\w)المجموعات:(?!\w)", "Groups:", translated)
+                                translated = re.sub(r"(?<!\w)الدور التالي:(?!\w)", "Next turn:", translated)
+                                translated = re.sub(r"(?<!\w)نقاط(?=\.|،|,|$)", "points", translated)
+                                translated = translated.replace("، ", ", ")
+                            elif active == "fr":
+                                translated = re.sub(r"(?<!\w)النتائج:(?!\w)", "Scores :", translated)
+                                translated = re.sub(r"(?<!\w)المجموعات:(?!\w)", "Groupes :", translated)
+                                translated = re.sub(r"(?<!\w)الدور التالي:(?!\w)", "Tour suivant :", translated)
+                                translated = re.sub(r"(?<!\w)نقاط(?=\.|،|,|$)", "points", translated)
+                                translated = translated.replace("، ", ", ")
                         translated_args.append(translated)
                     else:
                         # user/num/text/dice are runtime data and must remain untouched.
                         translated_args.append(val)
                 try:
-                    out = template.format(*translated_args)
+                    # Resolve pattern template against active catalog if available (e.g. for French or other non-English locales)
+                    target_template = catalog.get(template, template)
+                    out = target_template.format(*translated_args)
                     leading = s[:len(s) - len(s.lstrip())]
                     trailing = s[len(s.rstrip()):]
                     return f"{leading}{out}{trailing}"
@@ -459,16 +474,20 @@ class TranslationManager:
         # 6. Known compound phrases (fallback)
         if s.startswith("\u0625\u0639\u062f\u0627\u062f\u0627\u062a ") and not s.startswith("\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u063a\u064a\u0631"):
             remainder = s[len("\u0625\u0639\u062f\u0627\u062f\u0627\u062a "):]
-            return f"{self.tr(remainder)} Settings"
+            settings_word = self.tr("\u0625\u0639\u062f\u0627\u062f\u0627\u062a")
+            return f"{self.tr(remainder)} {settings_word}"
         if s.startswith("\u0625\u062c\u0631\u0627\u0621\u0627\u062a "):
             remainder = s[len("\u0625\u062c\u0631\u0627\u0621\u0627\u062a "):]
-            return f"{self.tr(remainder)} Actions"
+            actions_word = self.tr("\u0625\u062c\u0631\u0627\u0621\u0627\u062a")
+            return f"{self.tr(remainder)} {actions_word}"
         if s.startswith("\u0634\u0631\u062d "):
             remainder = s[len("\u0634\u0631\u062d "):]
-            return f"{self.tr(remainder)} Guide"
+            guide_word = self.tr("Guide") if "Guide" in catalog else ("Guide" if active == "en" else "Guide")
+            return f"{self.tr(remainder)} {guide_word}"
         if s.startswith("\u0627خ\u062a\u0635\u0627\u0631\u0627\u062a "):
             remainder = s[len("\u0627خ\u062a\u0635\u0627\u0631\u0627\u062a "):]
-            return f"{self.tr(remainder)} Shortcuts"
+            shortcuts_word = self.tr("\u0627خ\u062a\u0635\u0627\u0631\u0627\u062a")
+            return f"{self.tr(remainder)} {shortcuts_word}"
 
         # 6. Safe fallback: return original text
         return s

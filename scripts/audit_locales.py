@@ -64,8 +64,50 @@ def perform_audit():
             report.append(f"Missing keys compared to Arabic: {len(missing)}")
             for k in sorted(missing):
                 report.append(f"  - [Missing in {lang_code}]: {k}")
+
+            # Check for English copy-paste placeholders
+            identical_to_en = []
+            for k in ar_keys.intersection(other_keys):
+                en_val = en_data.get(k)
+                oth_val = other_data.get(k)
+                ar_val = ar_data.get(k)
+                if oth_val and en_val and oth_val == en_val and oth_val != ar_val:
+                    # Ignore short symbols / numbers
+                    if len(oth_val) > 1 and not oth_val.isdigit():
+                        identical_to_en.append((k, en_val))
+
+            report.append(f"Untranslated (Identical to English placeholders): {len(identical_to_en)}")
+            if identical_to_en:
+                for k, v in identical_to_en[:20]:
+                    report.append(f"  - [Placeholder in {lang_code}]: '{k}' -> '{v}'")
+                if len(identical_to_en) > 20:
+                    report.append(f"  ... and {len(identical_to_en) - 20} more untranslated placeholders.")
+            else:
+                report.append(f"RESULT: 100% genuine translations in {lang_code}! Zero English placeholders.")
+
         except Exception as ex:
             report.append(f"Could not audit {other.name}: {ex}")
+
+    # Check pattern templates localization
+    patterns_file = loc_dir / 'patterns.json'
+    if patterns_file.is_file():
+        try:
+            p_data = json.loads(patterns_file.read_text(encoding='utf-8'))
+            all_templates = {p.get('template') for p in p_data if p.get('template')}
+            report.append("-" * 60)
+            report.append(f"Pattern Templates Audit (Total unique templates: {len(all_templates)})")
+            for other in other_files:
+                lang_code = other.stem
+                other_data = json.loads(other.read_text(encoding='utf-8'))
+                missing_tmpl = [t for t in all_templates if t not in other_data]
+                report.append(f"Templates missing in {lang_code}.json: {len(missing_tmpl)} / {len(all_templates)}")
+                if missing_tmpl:
+                    for t in sorted(missing_tmpl)[:10]:
+                        report.append(f"  - [Missing pattern template in {lang_code}]: {t}")
+                    if len(missing_tmpl) > 10:
+                        report.append(f"  ... and {len(missing_tmpl) - 10} more.")
+        except Exception as ex:
+            report.append(f"Could not audit patterns: {ex}")
 
     # 2. Check for hardcoded / uncataloged Arabic strings in client python code
     import ast
@@ -157,6 +199,11 @@ def run_gui():
     sys.exit(app.exec())
 
 if __name__ == '__main__':
+    if sys.stdout.encoding != 'utf-8':
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
     if '--cli' in sys.argv:
         print(perform_audit())
     else:
