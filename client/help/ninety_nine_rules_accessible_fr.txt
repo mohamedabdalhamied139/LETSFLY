@@ -1,0 +1,19 @@
+Explication et règles du jeu quatre-vingt-dix-neuf :
+But du jeu :
+Maintenir le total cumulé inférieur ou égal à 99. Le joueur contraint de dépasser le total de 99 perd un point (une vie). Le dernier joueur détenant une vie remporte la partie !
+
+Règles du jeu :
+1. Chaque joueur commence avec trois cartes et trois points (vies).
+2. A votre tour, vous jouez une carte de votre main, qui s'ajoute au total cumulé partagé, puis vous piochez une nouvelle carte.
+3. Si votre carte fait dépasser le total de 99, vous perdez un point et le tour se termine.
+4. Lorsqu'un joueur perd ses trois vies, il est éliminé du match.
+
+Valeurs des cartes spéciales :
+• As : Ajoute 1 ou 11 (au choix du joueur).
+• Cartes 2 à 8 : Ajoutez directement leur valeur nominale.
+• 9 : Carte Pass (passe le tour sans changer le total).
+• 10 : Soustrait 10 du total cumulé.
+• Jack : ajoute 10.
+• Reine : ajoute 10.
+• Roi : fixe directement le total cumulé à 99 !
+• 4 : Inverse le sens du jeu.

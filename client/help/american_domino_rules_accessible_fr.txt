@@ -1,0 +1,145 @@
+Guide complet et règles pour les dominos américains (tous les cinq dominos)
+
+Première section : Introduction et concept de base du jeu
+
+Le concept des cinq et le secret de l'excitation
+American Dominoes ou All Fives est l'un des jeux de dominos les plus excitants et les plus stratégiques au monde.
+Dans ce jeu, votre objectif n'est pas seulement de vous débarrasser des tuiles que vous avez en main, mais vous concourez pour marquer des points pendant le jeu à chaque tour où vous placez une tuile sur la table, en plus de gagner des points supplémentaires à la fin de chaque tour.
+Le principal secret pour marquer des points est de faire en sorte que la somme des nombres aux extrémités ouvertes de la table soit un multiple de cinq, comme 5, 10, 15, 20, à tout moment où vous jouez votre tuile.
+
+Jeu de tuiles et négociation
+Le jeu se joue avec un jeu de dominos double-six de vingt-huit pièces.
+Dans un match à deux joueurs : Chaque joueur reçoit sept tuiles en main et les quatorze tuiles restantes sont placées dans le cimetière (pioche).
+Dans un match à trois joueurs : Chaque joueur reçoit cinq tuiles en main et treize tuiles sont placées dans la banque.
+Dans une partie à quatre joueurs : Chaque joueur reçoit cinq tuiles en main et huit tuiles sont placées dans la banque.
+
+Ouvrir la table et commencer à jouer
+Au premier tour : Le joueur avec la double tuile la plus haute en main, comme 6-6 ou 5-5, commence par ouvrir la table et placer sa tuile au milieu. S'il n'y a pas de double, le joueur avec la tuile de valeur totale la plus élevée commence.
+Lors des tours suivants : le vainqueur du tour précédent commence le tour et peut ouvrir la table avec n'importe quelle tuile qu'il juge appropriée de sa main.
+La table se déroule avec deux extrémités ouvertes pour le jeu : l'extrémité droite et l'extrémité gauche.
+
+Exemple pratique d'ouverture de la table avec une double tuile qui marque immédiatement des points :
+Supposons que le premier joueur ouvre la table en jouant une double tuile 5-5.
+Que se passe-t-il et combien de points le premier joueur obtient-il ?
+La tuile 5-5 étant un double posé sur la table, sa valeur est calculée par la somme de ses deux moitiés (5 plus 5 égale 10).
+Le nombre 10 étant un multiple de cinq, le premier joueur obtient immédiatement 10 points dans son score au début du match.
+
+Exemple pratique d'ouverture de la table avec une tuile ordinaire qui marque des points :
+Supposons que le premier joueur du deuxième tour choisisse d'ouvrir la table avec une tuile 5-0 ou 6-4.
+Qu'obtient le premier joueur ?
+S'ils ouvrent avec une tuile 5-0, la somme de ses extrémités est 5 plus 0 égale 5, ils obtiennent donc immédiatement 5 points.
+S'ils ouvrent avec une tuile 6-4, la somme de ses extrémités est 6 plus 4 égale 10, ils obtiennent donc immédiatement 10 points.
+
+Section deux : Le secret du jeu et comment marquer des points pendant le jeu
+
+Comment calculer la somme des extrémités ouvertes
+Chaque fois que vous placez une tuile sur l'une des extrémités de la table, le jeu calcule la somme des nombres exposés sur toutes les extrémités ouvertes :
+Premièrement : Tuiles régulières à la fin : seul le numéro extérieur ouvert est compté. Par exemple, si l’extrémité gauche se termine par une tuile 3-2 et que le chiffre 2 est à l’extérieur, l’extrémité gauche compte pour 2.
+Deuxièmement : Doubles tuiles à la fin : La somme des deux moitiés est comptée ensemble. Par exemple, si l’extrémité droite se termine par une double tuile 4-4, l’extrémité droite compte pour 8 (4 plus 4 égale 8). S'il se termine par une tuile 6-6, cela compte pour 12 (6 plus 6 égale 12).
+Troisièmement : additionner les extrémités : la valeur de l’extrémité gauche est ajoutée à la valeur de l’extrémité droite. Si le résultat est un multiple de cinq (5, 10, 15, 20), ces points sont immédiatement ajoutés à votre score et un son de partition est joué.
+
+Exemples pratiques de notation de multiples de cinq :
+
+Exemple de notation de 5 points :
+Supposons que l'extrémité gauche de la table porte le numéro 2 et l'extrémité droite le numéro 4. C'est votre tour et vous jouez une tuile 4-3 à l'extrémité droite.
+Que deviennent les bouts de tableau et combien de points marquez-vous ?
+L'extrémité gauche conserve la valeur 2 et la nouvelle extrémité droite prend la valeur 3.
+La somme des deux extrémités : 2 plus 3 égale 5.
+Félicitations ! Vous avez immédiatement marqué 5 points dans votre score.
+
+Exemple de score de 10 points en jouant une double tuile :
+Supposons que l’extrémité gauche de la table porte le numéro 0 et l’extrémité droite le numéro 5. Vous jouez une tuile 5-5 à l’extrémité droite.
+Que deviennent les bouts de tableau et combien de points marquez-vous ?
+L'extrémité gauche porte le numéro 0 (sa valeur est 0).
+L'extrémité droite a une double tuile 5-5 (sa valeur est 5 plus 5 égale 10).
+La somme des deux extrémités : 0 plus 10 égale 10.
+Vous obtenez immédiatement 10 points complets ajoutés à votre compte.
+
+Exemple de notation de 15 points :
+Supposons que l’extrémité gauche ait une double tuile 5-5 (valeur 10) et que l’extrémité droite ait le numéro 2. Vous jouez une tuile 2-5 à l’extrémité droite.
+Que devient le total ?
+L'extrémité gauche a une valeur de 10 (carreau 5-5).
+L'extrémité droite porte désormais le numéro 5 après avoir joué la tuile 2-5.
+La somme des deux extrémités : 10 plus 5 égale 15.
+Félicitations ! Vous avez gagné 15 points immédiats dans votre score.
+
+Exemple de score de 20 points (score le plus élevé en un seul mouvement) :
+Supposons que l’extrémité gauche de la table se termine par une double tuile 6-6 (valeur 12) et que l’extrémité droite se termine par le chiffre 1. Vous jouez une tuile 1-4 suivie d’une double tuile 4-4 à l’extrémité droite (valeur 8).
+Que devient la somme des deux extrémités ?
+L'extrémité gauche a une valeur de 12 (carreau 6-6).
+L'extrémité droite a une valeur de 8 (carreau 4-4).
+La somme des deux extrémités : 12 plus 8 égale 20.
+Vous obtenez immédiatement 20 points complets !
+
+Troisième section : Fins identiques et sélection de fin tactique
+
+L'importance de la sélection finale dans les dominos américains
+Dans certaines situations, les deux extrémités de la table peuvent avoir un nombre identique (par exemple, le numéro 5 à gauche et le numéro 5 à droite), et vous tenez une tuile comme 5-2 dans votre main.
+Si une extrémité se termine par une tuile normale (valeur 5) et l'autre extrémité se termine par une tuile double 5-5 (valeur 10), placer votre tuile à gauche changera complètement le score par rapport à la placer à droite :
+Si vous jouez du côté normal, la valeur devient 2 et le double reste 10, donc la somme est : 2 plus 10 égale 12 (aucun point marqué).
+Si vous jouez sur le double bout, vous couvrez le double et la valeur devient 2 tandis que le bout régulier reste 5, donc la somme est : 2 plus 5 égale 7.
+Dans ces situations, le jeu propose un menu de sélection permettant de choisir la fin souhaitée avec les touches fléchées et de confirmer avec la touche Entrée, permettant une planification tactique pour bloquer l'adversaire ou chasser à cinq.
+
+Exemple tactique de sélection de fin :
+Supposons que l’extrémité gauche ait une tuile 3-3 (valeur 6) et que l’extrémité droite ait une tuile normale avec le chiffre 3 (valeur 3). Vous détenez une tuile 3-4.
+Que se passe-t-il si vous jouez à droite ?
+L'extrémité droite devient 4, et l'extrémité gauche reste 6 (le double 3-3), donc la somme est : 6 plus 4 égale 10.
+Vous choisissez de jouer du bon côté pour marquer immédiatement 10 points !
+
+Section quatre : Dessiner et passer le virage
+
+Règles de dessin
+Si c'est votre tour et que vous n'avez en main aucune tuile correspondant à l'une ou l'autre des extrémités ouvertes, vous devez piocher dans le cimetière en appuyant sur la barre d'espace ou sur la touche D.
+Vous continuez à piocher jusqu’à obtenir une tuile jouable, et vous la jouez immédiatement.
+Si le boneyard est vide et que vous n'avez aucun coup valide, vous passez (Pass) pour passer le tour au joueur suivant.
+Règle importante : Le tirage volontaire est interdit si vous détenez une tuile jouable en main.
+
+Exemple de dessin :
+Supposons que les extrémités de la table soient 4 et 6 et que votre main ne contienne ni 4 ni 6.
+Vous appuyez sur Espace et piochez depuis la banque jusqu'à ce qu'une tuile 6-1 sorte, vous arrêtez de piocher et la jouez immédiatement à l'extrémité droite.
+
+Section cinq : Fin du tour et calcul du score final
+
+Une partie de dominos américains se termine de deux manières :
+Premièrement : Lorsqu'un des joueurs termine toutes les tuiles de sa main (domino).
+Deuxièmement : lorsque la table est bloquée et que tous les joueurs passent parce qu'ils ne peuvent pas jouer et que la banque est vide.
+
+Méthode de calcul des points de fin de tour (arrondi au cinq le plus proche)
+Le joueur gagnant du tour (qui termine ses tuiles en premier, ou qui a le moins de points de main dans un bloc) reçoit un bonus final égal à la somme des points des tuiles restantes dans les mains de tous les adversaires, arrondi au multiple de cinq le plus proche :
+Si le total des points des adversaires est de 1 ou 2, le résultat est arrondi à zéro.
+Si le total est de 3, 4, 5, 6 ou 7, il est arrondi à 5 points.
+Si le total est de 8, 9, 10, 11 ou 12, il est arrondi à 10 points.
+Si le total est de 13, 14, 15, 16 ou 17, il est arrondi à 15 points.
+Si le total est de 18, 19, 20, 21 ou 22, il est arrondi à 20 points.
+Et ainsi de suite pour cinq points supplémentaires.
+
+Exemple pratique de calcul de fin de tour et de score du gagnant :
+Supposons que le premier joueur ait terminé toutes ses tuiles et gagné la manche, et que la main du deuxième joueur contienne deux tuiles : 6-5 et 4-2 (somme de leurs points : 11 plus 6 égale 17 points).
+Combien de points le premier joueur obtient-il ?
+Le nombre 17 est arrondi au multiple de cinq le plus proche, soit 15.
+15 points sont immédiatement ajoutés au score du premier joueur en guise de bonus de victoire.
+
+Section six : Systèmes de notation et victoire du match
+
+Le jeu prend en charge deux systèmes de notation officiels, qui sont sélectionnés dans les paramètres de la salle :
+
+Premier système : notation standard
+Dans ce système, les points sont calculés par leur valeur naturelle directe (5, 10, 15, 20...).
+L'objectif par défaut pour un match est de 150 points (ou tout objectif défini par l'hôte de la salle, tel que 100, 200 ou 250).
+Le vainqueur du match est le premier joueur dont le score cumulé atteint l'objectif fixé (150 points).
+
+Deuxième système : notation des unités
+Le système de notation des unités est le système approuvé dans les championnats du monde officiels de dominos américains.
+Dans ce système, tous les 5 points que vous marquez équivaut à 1 unité :
+Marquer 5 points équivaut à une unité (1).
+Marquer 10 points équivaut à deux unités (2).
+Marquer 15 points équivaut à 3 unités (3).
+Marquer 20 points équivaut à 4 unités (4).
+L'objectif par défaut pour une correspondance dans le système d'unités est de 31 unités.
+Le vainqueur du match est le premier joueur dont les unités cumulées atteignent 31 unités.
+
+Exemple pratique complet d’un match complet avec notation unitaire :
+Supposons que le match se joue avec le système d'unités jusqu'à un objectif de 31 unités entre deux joueurs.
+Au premier tour, le premier joueur marquait 15 points en jouant une tuile qui faisait une somme de 15 aux extrémités, gagnant 3 unités dans son score.
+À la fin du tour, ils ont gagné 20 points de la main de l'adversaire après l'arrondi, gagnant 4 unités supplémentaires, portant leur score total à 7 unités.
+Les tours se poursuivent jusqu'à ce que le premier joueur atteigne 31 unités pour être couronné champion du match.

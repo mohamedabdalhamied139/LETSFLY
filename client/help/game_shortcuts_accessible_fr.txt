@@ -1,0 +1,41 @@
+TableVerse — Guide général des raccourcis courants
+
+1. Aide et raccourcis système :
+• F1 : ouvre la fenêtre de visualisation des raccourcis.
+• Ctrl+F1 : Ouvrir la visionneuse des règles du jeu (ou la liste des jeux sur l'écran principal).
+• F2 : Annoncer les pièces et le solde du portefeuille.
+• F3 : Vérifiez le ping de connexion au serveur.
+• F4 : Basculer entre le mode joueur et le mode spectateur.
+• F5 : Reconnectez-vous manuellement au serveur.
+• Maj+T : annonce le temps de jeu écoulé sur la table.
+
+2. Raccourcis de requête de table et de lecteur :
+• P : Annoncer la liste des joueurs et compter sur la table.
+• Shift+P : Ouvrir la liste des joueurs de la table interactive.
+• T : Annoncer le joueur dont c'est le tour.
+• S : Annoncer le score actuel, les points arrondis ou le score cible.
+• R : Annoncer la fin des cartes, des dés ou des dominos actuellement les plus joués.
+• Maj+R : Annoncer les règles de la salle et les paramètres actifs de la table.
+• C : Annoncer le contexte de jeu rapide (score du tour, banque restante, etc.).
+• V : Annoncez le nombre de cartes restantes dans les mains des joueurs ou dans les tuiles du plateau.
+
+3. Raccourcis d'hôte et de gestion de table :
+• Entrée : démarrez le jeu lorsque vous vous concentrez sur un élément de table dans la salle d'attente.
+• Maj+X : Terminez la partie en cours et retournez dans la salle d'attente.
+• B : Ajoutez un joueur robot à la pièce.
+• Maj+B : Supprime le dernier joueur bot ajouté.
+• Ctrl+H : basculer la confidentialité des tables entre public et privé.
+
+4. Raccourcis voix et chat :
+• M : désactiver ou réactiver le microphone dans le chat vocal.
+• Alt+Maj+V : activer ou désactiver le chat vocal dans la salle.
+
+5. Navigation générale et menus :
+• Ctrl+F : ouvrir la liste d'amis.
+• Ctrl+W : Ouvrir la liste des utilisateurs en ligne.
+• Applications ou Maj+F10 : ouvrir le menu contextuel.
+• Q : Quittez la table ou la salle après confirmation.
+• Échapper : Fermez les boîtes de dialogue et les menus contextuels.
+
+Remarque :
+Chaque jeu dispose de raccourcis de jeu supplémentaires (tels que les touches fléchées, Entrée pour jouer et Espace pour dessiner ou frapper), appuyez sur F1 dans n'importe quel tableau pour afficher tous les raccourcis spécifiques au jeu.

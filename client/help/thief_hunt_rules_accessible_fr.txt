@@ -1,0 +1,111 @@
+Règles et guide complets du jeu Thief Hunt (Attraper le voleur et calcul du plancher mental)
+
+Section 1 : Introduction et concept de base du jeu
+
+Concept de jeu et défi de la mémoire et du calcul rapide
+Thief Hunt ou Catch the Thief est un jeu stratégique et un défi mental amusant qui repose sur la mémoire auditive, une concentration élevée et des calculs et des devinettes rapides.
+Les événements du jeu se déroulent à l'intérieur d'une immense tour commerciale composée de 10 étages numérotés par ordre croissant du premier étage (1) au dixième étage (10).
+Les joueurs s'affrontent dans le rôle de détectives pour attraper le voleur qui se cache et déterminer avec précision son emplacement final après une série d'évasions rapides par les ascenseurs et les escaliers.
+
+Rôles de jeu et voleur virtuel
+Dans le mode pris en charge par défaut du jeu :
+Le moteur de jeu joue le rôle du voleur virtuel, tandis que tous les joueurs présents dans la salle (humains et robots) jouent le rôle des détectives concurrents.
+En mode personnalisé : l'un des joueurs peut être choisi pour assumer le rôle du voleur humain afin de choisir lui-même l'étage de départ.
+
+Les trois phases du cycle
+Chaque tour du jeu Thief Hunt se compose de trois phases consécutives :
+Première phase : Choix de l'étage de départ (le voleur choisit secrètement entre 1 et 10).
+Deuxième phase : phase d'évasion et narration des directions (le voleur monte et descend et le lecteur d'écran raconte les mouvements de manière audible).
+Troisième phase : phase de réponse rapide (une fenêtre de réponse exclusive de 8 secondes s'ouvre pour saisir le numéro d'étage final).
+
+Exemple pratique de démarrage du cycle et de narration des instructions :
+Supposons que la ronde commence et que le voleur parte du quatrième étage (4).
+Ensuite, le voleur s'est déplacé dans l'ordre suivant : vers le haut, puis vers le haut, puis vers le bas.
+Que fait le détective intelligent ?
+Le détective calcule dans leur esprit :
+Commencé à 4 heures.
+J'ai monté une marche pour atteindre l'étage 5.
+J'ai monté une autre marche pour atteindre l'étage 6.
+Puis je descendis une marche pour atteindre le cinquième étage.
+Le dernier étage où s’est installé le voleur est donc le 5ème étage !
+
+Section 2 : Règles sur les voies d'évacuation et les déplacements des voleurs
+
+Générer des mouvements et augmenter la difficulté lors des tours avancés
+Au premier tour : Le voleur commence par trois mouvements de fuite (« haut » ou « bas »).
+A chaque nouveau tour : Le nombre de mouvements augmente d'un mouvement supplémentaire (4 mouvements au deuxième tour, 5 mouvements au troisième tour, etc.), ce qui relève le défi et augmente le frisson du calcul mental !
+
+Règles de délimitation des bâtiments (premier et dixième étages)
+Le bâtiment est régi par deux limites strictes :
+Limite inférieure : Premier étage (1), et si le voleur est à l'étage 1, son prochain mouvement doit inévitablement être vers le haut.
+Limite supérieure : dixième étage (10), et si le voleur est au 10e étage, son prochain mouvement sera inévitablement vers le bas.
+Aux étages entre le 2 et le 9 : Le voleur se déplace librement et aléatoirement vers le haut ou vers le bas.
+
+Exemple pratique du voleur rebondissant du dixième étage :
+Supposons que le voleur se trouve au 9ème étage et que les mouvements soient les suivants : haut, puis bas, puis bas.
+Calcul mental :
+À partir du 9, je suis monté jusqu'à l'étage 10 (le toit).
+À partir du 10, je suis descendu jusqu’au 9e étage.
+À partir du 9ème étage, je suis descendu jusqu'au 8ème étage.
+Par conséquent, l'emplacement final du voleur est le huitième étage (8).
+
+Section 3 : Phase de réponse et détermination du gagnant du tour
+
+Fenêtre de réponse et délai
+Dès la fin de la narration audio des directions :
+La zone de saisie de la réponse s'ouvre immédiatement avec un son d'alerte.
+Le jeu accorde à tous les détectives un délai unifié de 8 secondes complètes.
+Chaque détective tape le numéro d'étage attendu (de 1 à 10) et appuie sur la touche Entrée pour confirmer la réponse.
+Les réponses restent secrètes et privées pour chaque joueur pendant toute la durée du compte à rebours afin d'éviter toute tricherie et copie des réponses.
+
+Règles pour décider du gagnant et des points du tour
+A la fin de la fenêtre de réponses, le jeu examine les réponses de tous les concurrents et applique les règles strictes suivantes :
+Premier cas : victoire du détective solitaire
+Si un seul détective réussit à taper le bon numéro d’étage alors que les autres font une erreur :
+Ce détective est immédiatement déclaré vainqueur du tour et gagne un point de victoire complet (1 victoire) sur son solde.
+
+Deuxième affaire : égalité entre détectives
+Si plusieurs détectives réussissent à taper le bon numéro d'étage (par exemple, deux détectives ont tous deux tapé le bon étage 7) :
+Le tour se termine par une égalité et aucun joueur ne gagne de point de victoire, pour encourager le seul détective ayant la bonne solution.
+
+Troisième cas : le voleur gagne et s'échappe
+Si tous les détectives font une erreur en devinant l'étage, ou si les huit secondes se terminent sans fournir de réponse correcte :
+Le voleur est déclaré vainqueur du tour et un point de victoire complet est ajouté à son solde.
+
+Exemple pratique d'un détective solitaire gagnant parmi trois joueurs :
+Supposons que le dernier étage du voleur soit le 6ème étage et que les réponses des trois détectives soient les suivantes :
+Le premier joueur a écrit : 6.
+Le deuxième joueur a écrit : 5.
+Le troisième joueur a écrit : 7.
+Alors, qui remporte la manche ?
+Le premier joueur remporte la manche car il est le seul détective à avoir deviné le bon étage, et un point est ajouté à son solde.
+
+Exemple pratique d'égalité entre deux joueurs :
+Supposons que le dernier étage du voleur soit l’étage 3, que le premier joueur ait écrit 3 et que le deuxième joueur ait écrit 3.
+Que se passe-t-il ?
+Le tour se termine sur une égalité sans accorder de point à aucun des deux.
+
+Section 4 : Système de tours, de matchs et de bris d'égalité
+
+Nombre de tours et cible
+Le nombre par défaut pour un match est de 5 tours (ou tout nombre déterminé par l'hôte de la salle entre 3 et 10 tours).
+Les points de tour s'accumulent tour après tour dans le bilan de chaque concurrent.
+
+Rounds de bris d'égalité par mort subite
+Aucun match dans Catch the Thief ne se termine jamais par une égalité :
+Si les tours spécifiés pour le match se terminent et qu'il y a égalité pour la première place entre deux joueurs ou plus (par exemple, deux joueurs avec deux points de victoire chacun), le jeu ne se termine pas, mais passe immédiatement aux tours de mort subite.
+Les tours supplémentaires se poursuivent tour par tour jusqu'à ce qu'un joueur réussisse à obtenir uniquement le solde de points le plus élevé pour être officiellement couronné champion du match.
+
+Mode élimination pour les professionnels
+Lorsque le mode d'élimination est activé dans les paramètres de la pièce :
+À la fin des tours programmés, le solde de points le plus bas dans la salle est vérifié et le propriétaire du score le plus bas est expulsé et éliminé de la compétition !
+Le match continue avec les joueurs restants, et à chaque cycle un joueur est éliminé jusqu'à ce qu'il ne reste qu'un seul joueur couronné du championnat.
+
+Exemple pratique complet d’un match complet et de tours de bris d’égalité :
+Supposons que le match se déroule en 3 tours entre quatre joueurs :
+Au premier tour : Le premier joueur a gagné (un point pour le premier joueur).
+Au deuxième tour : le deuxième joueur a gagné (un point pour le deuxième joueur).
+Au troisième tour : Le voleur a gagné (un point pour le voleur).
+Le score à la fin du troisième tour : Égalité entre le premier joueur et le deuxième joueur avec un point chacun.
+Le match entre dans un tie-break décisif (quatrième tour mort subite).
+Au quatrième tour, le premier joueur a deviné seul le sol du voleur, son solde est donc devenu deux points et il a officiellement remporté le match et a été sacré champion !

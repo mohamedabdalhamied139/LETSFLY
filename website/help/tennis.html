@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التنس - شرح وقواعد اللعبة | LetsFly Help Center</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">تخطي إلى المحتوى الرئيسي (Skip to main content)</a>
+
+    <header role="banner">
+        <div class="nav-container">
+            <a href="../index.html" class="brand" aria-label="LetsFly الرئيسية">
+                🎮 LetsFly <span class="highlight">TableVerse</span>
+            </a>
+            
+            <nav role="navigation" aria-label="قائمة المساعدة">
+                <ul>
+                    <li><a href="../index.html" data-lang-content="ar">الرئيسية</a><a href="../index.html" data-lang-content="en" style="display:none;">Home</a><a href="../index.html" data-lang-content="fr" style="display:none;">Accueil</a></li>
+                    <li><a href="../index.html#games" data-lang-content="ar">قائمة الألعاب</a><a href="../index.html#games" data-lang-content="en" style="display:none;">Games List</a><a href="../index.html#games" data-lang-content="fr" style="display:none;">Liste des jeux</a></li>
+                </ul>
+            </nav>
+
+            <div class="lang-selector" role="group" aria-label="اختيار اللغة / Language selection">
+                <button type="button" class="lang-btn active" data-lang="ar" aria-pressed="true">العربية</button>
+                <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">English</button>
+                <button type="button" class="lang-btn" data-lang="fr" aria-pressed="false">Français</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content" role="main">
+        <article class="help-article" data-lang-content="ar">
+            <h1>دليل وقواعد لعبة تنس المضرب الشامل (Real Tennis Table)</h1>
+<h2>القسم الأول: مقدمة وطريقة اللعب الأساسية</h2>
+<h3>فكرة اللعبة والهدف الأساسي</h3>
+<p>تعتبر لعبة تنس المضرب على منصة TableVerse محاكاة رياضية واقعية ثلاثية الأبعاد لرياضة التنس العالمية، صُممت خصيصاً لتكون متاحة بالكامل للمكفوفين وضعاف البصر بالاعتماد على هندسة الصوت المكاني المحيطي (Binaural 3D Audio) وقارئ الشاشة المدمج.</p>
+<p>تُلعب المباراة بنظام الفردي (لاعب ضد لاعب عبر الشبكة أو لاعب ضد البوت)، ويهدف كل لاعب إلى إرسال الكرة ورد ضربات الخصم ببراعة في التوقيت والمسار المناسبين لحسم النقاط والأشواط والمجموعات.</p>
+<h3>التعريف بالمشروع التأسيسي (Built Upon leap_tennis_win)</h3>
+<p>هذه اللعبة مبنية على المشروع المفتوح المصدر الرائد Leap Tennis (المعروف برمجياً باسم leap_tennis_win أو Tennis for the Blind)، والذي قام بتطويره وبرمجته المطور nzorb بالتعاون مع المنظمة غير الربحية اليونانية SciFY (Science For You) ضمن مسابقة Leap Motion 3D Jam عام 2015 لتمكين المكفوفين وضعاف البصر من ممارسة ألعاب الفيديو الرياضية بالاعتماد الكلي على الصوت ثلاثي الأبعاد.</p>
+<p>وقد قامت منصة TableVerse بإعادة بناء وتطوير اللعبة بالكامل، حيث نقلتها من بيئة الاستشعار الحركي القديمة إلى نظام الطاولات التنافسية عبر لوحة المفاتيح، مع تطبيق اللوائح الدولية الرسمية للاتحاد الدولي للتنس (ITF).</p>
+<h3>عدد اللاعبين وتوزيع الملعب</h3>
+<p>تُلعب مباراة التنس بين لاعبين اثنين في وضع الفردي.</p>
+<h3>ينقسم الملعب الصوتي إلى ثلاثة مسارات رئيسية:</h3>
+<p>1. المسار الأيسر (Left Lane): يغطي الجانب الأيسر من الملعب ويُسمع بوضوح في سماعة الأذن اليسرى.</p>
+<p>2. المسار الأوسط (Center Lane): يغطي منتصف الملعب ويُسمع متوازناً بين السماعتين.</p>
+<p>3. المسار الأيمن (Right Lane): يغطي الجانب الأيمن من الملعب ويُسمع بوضوح في سماعة الأذن اليمنى.</p>
+<h3>طريقة سير اللعب خطوة بخطوة</h3>
+<h3>تسير مباراة التنس وفق الخطوات التالية:</h3>
+<p>أولاً: يبدأ الشوط بإرسال الكرة من اللاعب صاحب الإرسال بالضغط على مفتاح المسافة Space أو مفتاح الإدخال Enter.</p>
+<p>ثانياً: تنطلق الكرة باتجاه ملعب الخصم عابرة الشبكة في المنتصف.</p>
+<p>ثالثاً: ترتطم الكرة بأرضية ملعب المستقبل في أحد المسارات الثلاثة، مما يمنحه إشارة صوتية فورية لتحديد مسار الكرة.</p>
+<p>رابعاً: يتحرك المستقبل إلى نفس مسار الكرة ويضغط زر التسديد في اللحظة التي تصل فيها الكرة إلى خط المضرب لردها.</p>
+<p>خامساً: يستمر تبادل الضربات (الرالي) حتى يفشل أحد اللاعبين في رد الكرة، فتُحتسب نقطة للطرف الآخر مع تصفيق الجمهور ونداء الحكم بالنتيجة.</p>
+<p>سادساً: بعد نهاية النقطة، يحصل اللاعبان على فترة راحة مدتها 4.5 ثانية للاستماع لإعلان النتيجة والاستعداد للإرسال التالي.</p>
+<p>مثال عملي على بداية الإرسال وتبادل الضربات بين لاعبين اثنين:</p>
+<p>ولنفترض أن المباراة بدأت بين اللاعب الأول واللاعب الثاني، وكان الإرسال مع اللاعب الأول.</p>
+<h3>فماذا يفعل اللاعب الأول وكيف يرد اللاعب الثاني؟</h3>
+<p>يضغط اللاعب الأول مفتاح المسافة Space فيطلق إرسالاً قوياً ينطلق نحو المسار الأيمن.</p>
+<p>يسمع اللاعب الثاني صوت عبور الكرة فوق الشبكة (air)، يليه صوت ارتداد الكرة على أرضية ملعبه في الجهة اليمنى (bounce).</p>
+<p>يتحرك اللاعب الثاني فوراً بالضغط على السهم الأيمن، وبمجرد وصول الكرة إلى خط مضربه يضغط مفتاح الإدخال Enter فيسدد الكرة بنجاح نحو منتصف ملعب اللاعب الأول.</p>
+<h3>يستمر الرالي بينهما حتى يحسم أحدهما النقطة!</h3>
+<h2>القسم الثاني: الخط الزمني الدقيق للنقطة والفيزياء الصوتية ثلاثية الأبعاد</h2>
+<p>تخضع كل ضربة في التنس لخط زمني سمعي دقيق يتيح للاعب قراءة مسار الكرة وسرعتها قبل وصولها:</p>
+<h3>1. لحظة الانطلاق والضربة (0% Strike)</h3>
+<p>يصدر صوت ضربة المضرب فور إطلاق الكرة (صوت hit_1 للاعب أو hit_2 للخصم) في المسار المحدد، وهو ما يعلن بداية رحلة الكرة عبر الملعب.</p>
+<h3>2. عبور الشبكة في المنتصف (50% Net Crossing)</h3>
+<p>عندما تقطع الكرة نصف المسافة تماماً، تعبر فوق شبكة منتصف الملعب ويصدر صوت صفير الهواء المميز (صوت air)، مما يؤكد لك أن الكرة عبرت الشبكة بنجاح ولم تصطدم بها.</p>
+<p>3. ارتداد الكرة على الأرض (75% Floor Bounce) - الإشارة الذهبية</p>
+<p>عند وصول الكرة إلى 75% من مسافة الرحلة، ترتطم بأرضية نصف ملعبك ويصدر صوت الارتطام القوي (صوت bounce) في المسار المحدد (يسار، وسط، أو يمين).</p>
+<p>هذا الصوت هو الإشارة السمعية الأهم على الإطلاق! فهو ينبهك بدقة إلى المسار الذي يجب أن تتواجد فيه قبل وصول الكرة إلى مضربك بحوالي ثلث إلى نصف ثانية، مما يمنحك التوقيت الكافي لتعديل موقعك.</p>
+<h3>4. وصول الكرة لخط المضرب والتسديد (100% Baseline Reach)</h3>
+<p>عند وصول الكرة إلى 100% من المسافة، تكون الكرة قد وصلت تماماً إلى خط وقوفك الخلفي ومضربك.</p>
+<p>إذا كنت متمركزاً في نفس مسار الكرة وضغطت مفتاح التسديد، يُسدد مضربك الكرة فوراً وترتد نحو ملعب الخصم.</p>
+<p>أما إذا كنت في مسار مختلف أو تأخرت في التسديد، تفوتك الكرة وتضيع النقطة وتسمع ردة فعل الجمهور.</p>
+<h3>5. فترة الراحة بعد كل نقطة (Rest Period)</h3>
+<p>حرصاً على محاكاة التنس الحقيقي ولراحة اللاعبين بعد كل رالي سريع، تتوقف اللعبة تلقائياً لمدة 4.5 ثانية بعد نهاية النقطة.</p>
+<p>خلال هذه الفترة، يستمع اللاعبون لهتاف وتصفيق الجمهور ونداء حكم التنس الرسمي بالنتيجة، مما يمنحك وقتاً لالتقاط الأنفاس والتركيز قبل الإرسال التالي.</p>
+<h3>مثال عملي على قراءة مسار الكرة والتسديد الناجح:</h3>
+<p>ولنفترض أن الخصم سدد كرة قوية، وسمعت صوت الهواء فوق الشبكة، ثم سمعت صوت الارتطام بالأرض (bounce) في سماعة الأذن اليسرى بوضوح.</p>
+<h3>فماذا تفعل لرد الكرة؟</h3>
+<p>تضغط فوراً على السهم الأيسر لتتحرك إلى المسار الأيسر (تسمع صوت خطوة jm في اليسار لتأكيد وصولك)، وتنتظر ثلث ثانية حتى تصل الكرة إلى خط المضرب ثم تضغط مفتاح الإدخال Enter فترد الكرة بقوة!</p>
+<h2>القسم الثالث: نظام النقاط وقوانين التنس الدولية الرسمية</h2>
+<p>تطبق اللعبة المعايير واللوائح الرسمية المعتمدة دولياً من الاتحاد الدولي للتنس (ITF) ورابطة محترفي التنس (ATP):</p>
+<h3>أولاً: حساب النقاط داخل الشوط الواحد (Game)</h3>
+<h3>تبدأ كل نقطة بالصفر (Love)، وتتدرج النقاط كالتالي:</h3>
+<ul>
+<li>النقطة الأولى: تعادل 15.</li>
+<li>النقطة الثانية: تعادل 30.</li>
+<li>النقطة الثالثة: تعادل 40.</li>
+<li>النقطة الرابعة: تحسم الشوط لصالح اللاعب المتقدم.</li>
+</ul>
+<h3>ثانياً: حالة التعادل والأفضلية (Deuce &amp; Advantage)</h3>
+<p>إذا وصل اللاعبان إلى النتيجة 40 مقابل 40، يعلن الحكم: &quot;تعادل&quot; (Deuce).</p>
+<p>في هذه الحالة، يجب على أحد اللاعبين الفوز بنقطتين متتاليتين لحسم الشوط:</p>
+<ul>
+<li>إذا فاز المرسل بالنقطة التالية، تصبح النتيجة: &quot;أفضلية للمرسل&quot; (Advantage Server).</li>
+<li>إذا فاز المستقبل بالنقطة التالية، تصبح النتيجة: &quot;أفضلية للمستقبل&quot; (Advantage Receiver).</li>
+<li>إذا فاز اللاعب الآخر بالنقطة التالية بعد الأفضلية، يعود الشوط فوراً إلى &quot;تعادل&quot; (Deuce).</li>
+<li>يستمر التنافس حتى ينجح أحد اللاعبين في حسم نقطتين متتاليتين للفوز بالشوط.</li>
+</ul>
+<h3>ثالثاً: حساب الأشواط والمجموعات (Games &amp; Sets)</h3>
+<ul>
+<li>يفوز اللاعب بالمجموعة (Set) عند وصوله إلى 6 أشواط، بشرط التقدم على الخصم بفارق شوطين على الأقل (مثل 6-0، 6-2، 6-4، أو 7-5).</li>
+<li>إذا وصلت النتيجة إلى 6 أشواط مقابل 6 أشواط، يستمر اللعب حتى يتحقق فارق الشوطين لحسم المجموعة.</li>
+</ul>
+<h3>رابعاً: حسم المباراة بالمعايير العالمية (Match Win)</h3>
+<ul>
+<li>تُقام مباريات التنس وفق النظام الدولي المعتمد: نظام حسم المجموعتين (Best of 3 Sets).</li>
+<li>الفائز بالمباراة كاملة هو أول لاعب ينجح في حسم مجموعتين كاملتين (2 Sets).</li>
+</ul>
+<h3>خامساً: تبادل الإرسال (Alternating Serves)</h3>
+<ul>
+<li>يتناوب اللاعبان على الإرسال شوطاً بشوط؛ حيث يرسل اللاعب الأول طوال الشوط الأول كاملاً، ثم ينتقل الإرسال إلى اللاعب الثاني طوال الشوط الثاني كاملاً، وهكذا حتى نهاية المباراة.</li>
+</ul>
+<h3>مثال عملي على سيناريو الشوط والتعادل ديوس:</h3>
+<p>ولنفترض أن النتيجة وصلت إلى 40 لـ أحمد مقابل 40 لـ محمود (تعادل Deuce)، والإرسال مع أحمد.</p>
+<p>فاز أحمد بالنقطة التالية، فأعلن الحكم: &quot;أفضلية للمرسل&quot;.</p>
+<p>ثم فاز محمود بالنقطة التي تليها، فأعلن الحكم: &quot;تعادل&quot; مرة أخرى.</p>
+<h3>ثم فاز أحمد بنقطتين متتاليتين، فأعلن الحكم فوز أحمد بالشوط!</h3>
+<h3>مثال عملي على حسم المجموعة والمباراة:</h3>
+<p>ولنفترض أن أحمد فاز بالمجموعة الأولى بنتيجة 6 أشواط مقابل 4 أشواط.</p>
+<p>ثم في المجموعة الثانية تقدم أحمد بنتيجة 5 أشواط مقابل 3 أشواط، وحسم الشوط التالي ليصبح 6 أشواط مقابل 3 أشواط.</p>
+<p>بذلك يحسم أحمد مجموعتين دون مقابل (2 Sets to 0)، ويعلن الحكم فوز أحمد بالمباراة كاملة!</p>
+<h2>القسم الرابع: أسلوب التحكم، التمركز، وتنفيذ الضربات</h2>
+<h3>التحكم في التمركز والحركة:</h3>
+<ul>
+<li>سهم لليسار (Left Arrow): التحرك السريع إلى المسار الأيسر (تسمع صوت خطوة في سماعة الأذن اليسرى).</li>
+<li>سهم لأعلى (Up Arrow): التمركز في المسار الأوسط (تسمع صوت خطوة في المنتصف).</li>
+<li>سهم لليمين (Right Arrow): التحرك السريع إلى المسار الأيمن (تسمع صوت خطوة في سماعة الأذن اليمنى).</li>
+</ul>
+<h3>تنفيذ الإرسال:</h3>
+<ul>
+<li>عندما يحين دورك في الإرسال بعد انتهاء فترة الراحة، اضغط مفتاح المسافة Space أو مفتاح الإدخال Enter لإطلاق الكرة وإرسالها بقوة إلى ملعب الخصم.</li>
+</ul>
+<h3>رد وتسديد الكرات أثناء الرالي:</h3>
+<ul>
+<li>عند اقتراب الكرة وسماع صوت الارتطام بالأرض (bounce)، تحرك إلى مسار الكرة واضغط مفتاح الإدخال Enter أو المسافة Space لرد الكرة في المسار الحالي.</li>
+<li>الضربة القطرية لليسار (حرف A): تسديد كرة سريعة موجهة نحو أقصى يسار ملعب الخصم (Crosscourt Left).</li>
+<li>الضربة القطرية لليمين (حرف D): تسديد كرة سريعة موجهة نحو أقصى يمين ملعب الخصم (Crosscourt Right).</li>
+</ul>
+<h3>مثال عملي على تنفيذ ضربة قطرية مباغتة:</h3>
+<p>ولنفترض أن الخصم يتمركز في منتصف الملعب، وسدد كرة نحو مسارك الأوسط.</p>
+<p>تستقر في المنتصف وتضغط حرف A فتسدد الكرة بزاوية حادة نحو أقصى يسار ملعبه.</p>
+<p>يضطر الخصم للتحرك السريع نحو اليسار للحاق بها، مما يفتح لك كامل الجانب الأيمن لتسديد الضربة القادمة عبر حرف D وحسم النقطة!</p>
+<h2>القسم الخامس: إرشادات واستراتيجيات اللعب السمعي للمكفوفين</h2>
+<h3>1. ارتداء سماعات الرأس (Headphones)</h3>
+<p>احرص دائماً على ارتداء سماعات رأس ستيريو محيطية عالية الجودة، حيث يعتمد اللعب بالكامل على التمييز السمعي الفوري بين اليمين واليسار والمنتصف.</p>
+<h3>2. استغلال صوت الارتداد (Bounce) كإنذار مبكر</h3>
+<p>صوت ارتداد الكرة على الأرض هو صديقك الأول في الملعب؛ فهو يخبرك بمسار الكرة قبل وصولها بمقدار ثلث ثانية، مما يتيح لك وقتاً كافياً للتحرك إلى المسار الصحيح قبل الضغط على زر التسديد.</p>
+<h3>3. التنويع والمباغتة بالضربات القطرية</h3>
+<p>لا تلعب دائماً في نفس المسار؛ نوّع ضرباتك بين التسديد في المنتصف والضربات القطرية الموجهة (A و D) لإجبار المنافس أو البوت على التحرك السريع وفتح ثغرات في ملعبه.</p>
+<h3>4. الاستماع لنداءات حكم التنس</h3>
+<p>يقوم حكم التنس بإعلان تفاصيل النتيجة الرسمية بدقة بعد كل نقطة وشوط.</p>
+<h2>القسم السادس: اختصارات لوحة المفاتيح الشاملة</h2>
+<h3>أولاً: اختصارات اللعب والتسديد أثناء المباراة</h3>
+<ul>
+<li>سهم لليسار: التحرك إلى المسار الأيسر لتغطية الكرة.</li>
+<li>سهم لأعلى: التمركز في المسار الأوسط.</li>
+<li>سهم لليمين: التحرك إلى المسار الأيمن لتغطية الكرة.</li>
+<li>مفتاح الإدخال (Enter): تنفيذ الإرسال / تسديد ورد الكرة الأساسي في المسار الحالي.</li>
+<li>مفتاح المسافة (Space): تنفيذ الإرسال / تسديد ورد الكرة الأساسي في المسار الحالي.</li>
+<li>حرف A: تسديد ضربة قطرية سريعة نحو أقصى اليسار (Crosscourt Left).</li>
+<li>حرف D: تسديد ضربة قطرية سريعة نحو أقصى اليمين (Crosscourt Right).</li>
+</ul>
+<h3>ثانياً: اختصارات الاستعلام السريع بالصوت</h3>
+<ul>
+<li>حرف S: إعلان سكور المباراة الحالي (النقاط، والأشواط، والمجموعات بالتفصيل، وصاحب الإرسال).</li>
+<li>حرف T: إعلان صاحب الإرسال الحالي ومسار اللعب.</li>
+<li>حرف P: إعلان أسماء اللاعبين المتواجدين على الطاولة.</li>
+<li>شفت مع حرف R: إعلان القواعد والمعايير الرسمية للمباراة (المعايير الدولية - حسم مجموعتين).</li>
+</ul>
+<h3>ثالثاً: اختصارات الطاولة والنظام</h3>
+<ul>
+<li>إف واحد (F1): فتح نافذة الاختصارات السريعة للتنس.</li>
+<li>كنترول مع إف واحد (Ctrl+F1): فتح هذا الدليل الشامل لقواعد التنس.</li>
+<li>مفتاح التطبيقات (Apps) أو شفت مع إف عشرة (Shift+F10): فتح قائمة خيارات وسياق الطاولة.</li>
+<li>حرف Q: مغادرة الطاولة (مع نافذة تأكيد قابلة للتنقل بسهم فوق وتحت).</li>
+<li>شفت مع حرف X: إيقاف المباراة والعودة للانتظار (خاص بمضيف الطاولة).</li>
+<li>إف اثنان (F2): إعلان رصيد المحفظة.</li>
+<li>إف ثلاثة (F3): قياس سرعة الاتصال بالخادم (Ping).</li>
+</ul>
+<hr style="margin: 2rem 0; border: 1px solid var(--border-color);">
+<h1>دليل اختصارات لوحة المفاتيح للعبة تنس المضرب (Real Tennis Table)</h1>
+<h3>أولاً: اختصارات الحركة وتنفيذ الضربات في الوقت الحقيقي</h3>
+<ul>
+<li>سهم لليسار: التحرك السريع إلى المسار الأيسر لتغطية الكرة.</li>
+<li>سهم لأعلى: التمركز في المسار الأوسط.</li>
+<li>سهم لليمين: التحرك السريع إلى المسار الأيمن لتغطية الكرة.</li>
+<li>مفتاح الإدخال (Enter): تنفيذ الإرسال / تسديد ورد الكرة الأساسي في المسار الحالي.</li>
+<li>مفتاح المسافة (Space): تنفيذ الإرسال / تسديد ورد الكرة الأساسي في المسار الحالي.</li>
+<li>حرف A: تسديد ضربة قطرية سريعة نحو أقصى اليسار (Crosscourt Left).</li>
+<li>حرف D: تسديد ضربة قطرية سريعة نحو أقصى اليمين (Crosscourt Right).</li>
+</ul>
+<h3>ثانياً: اختصارات الاستعلام الصوتي السريع والمعلومات</h3>
+<ul>
+<li>حرف S: إعلان سكور المباراة الحالي (النقاط، والأشواط، والمجموعات لكلا اللاعبين بالتفصيل، واسم صاحب الإرسال).</li>
+<li>حرف T: إعلان صاحب الإرسال الحالي ومسار اللعب.</li>
+<li>حرف P: إعلان أسماء اللاعبين المتواجدين على الطاولة.</li>
+<li>شفت مع حرف R: إعلان القواعد والمعايير الرسمية للمباراة (المعايير الدولية - حسم مجموعتين).</li>
+</ul>
+<h3>ثالثاً: اختصارات النظام والمساعدة</h3>
+<ul>
+<li>إف واحد (F1): فتح هذه النافذة لاستعراض اختصارات التنس السريعة.</li>
+<li>كنترول مع إف واحد (Ctrl+F1): فتح الدليل الشامل لقواعد وقوانين التنس.</li>
+<li>مفتاح التطبيقات (Apps) أو شفت مع إف عشرة (Shift+F10): فتح قائمة خيارات وسياق الطاولة.</li>
+<li>حرف Q: مغادرة الطاولة (مع نافذة تأكيد قابلة للتنقل بسهم فوق وتحت).</li>
+<li>شفت مع حرف X: إيقاف المباراة والعودة للانتظار (خاص بمضيف الطاولة).</li>
+<li>إف اثنان (F2): إعلان رصيد المحفظة.</li>
+<li>إف ثلاثة (F3): قياس سرعة الاتصال بالخادم (Ping).</li>
+</ul>
+        </article>
+
+        <article class="help-article" data-lang-content="en" style="display:none;" aria-hidden="true">
+            <h1>Comprehensive Guide and Rules for Real Tennis Table</h1>
+<h2>Section One: Introduction and Basic Gameplay</h2>
+<h3>Game Concept and Main Objective</h3>
+<p>The tennis game on the TableVerse platform is a realistic 3D sports simulation of international tennis, specifically designed to be fully accessible to the blind and visually impaired, relying on Binaural 3D Audio engineering and an integrated screen reader.</p>
+<p>The match is played in singles mode (player vs player over the network or player vs bot). Each player aims to serve the ball and return the opponent&#x27;s shots skillfully with the right timing and trajectory to win points, games, and sets.</p>
+<p>Introduction to the Foundational Project (Built Upon leap_tennis_win)</p>
+<p>This game is built upon the pioneering open-source project Leap Tennis (known programmatically as leap_tennis_win or Tennis for the Blind), developed and programmed by the developer nzorb in collaboration with the Greek non-profit organization SciFY (Science For You) as part of the Leap Motion 3D Jam competition in 2015, to enable the blind and visually impaired to play sports video games entirely relying on 3D audio.</p>
+<p>The TableVerse platform has completely rebuilt and developed the game, moving it from the old motion sensing environment to the competitive table system via the keyboard, applying the official international regulations of the International Tennis Federation (ITF).</p>
+<h3>Number of Players and Court Layout</h3>
+<p>The tennis match is played between two players in singles mode.</p>
+<h3>The audio court is divided into three main lanes:</h3>
+<p>1. Left Lane: Covers the left side of the court and is heard clearly in the left earphone.</p>
+<p>2. Center Lane: Covers the middle of the court and is heard balanced between both earphones.</p>
+<p>3. Right Lane: Covers the right side of the court and is heard clearly in the right earphone.</p>
+<h3>Step-by-Step Gameplay</h3>
+<h3>The tennis match proceeds according to the following steps:</h3>
+<p>First: The game begins with the serving player serving the ball by pressing the Space bar or the Enter key.</p>
+<p>Second: The ball launches towards the opponent&#x27;s court, crossing the net in the middle.</p>
+<p>Third: The ball hits the floor of the receiver&#x27;s court in one of the three lanes, giving an immediate audio cue to determine the ball&#x27;s trajectory.</p>
+<p>Fourth: The receiver moves to the same lane as the ball and presses the hit button the moment the ball reaches the baseline to return it.</p>
+<p>Fifth: The exchange of shots (rally) continues until one player fails to return the ball, scoring a point for the other party, accompanied by audience applause and the umpire calling the score.</p>
+<p>Sixth: After the end of the point, the players get a 4.5-second rest period to hear the score announcement and prepare for the next serve.</p>
+<p>Practical Example of Starting a Serve and Exchanging Shots Between Two Players:</p>
+<p>Suppose the match starts between the first player and the second player, and the serve is with the first player.</p>
+<p>What does the first player do and how does the second player respond?</p>
+<p>The first player presses the Space bar, launching a powerful serve towards the right lane.</p>
+<p>The second player hears the sound of the ball crossing over the net (air), followed by the sound of the ball bouncing on their court&#x27;s floor on the right side (bounce).</p>
+<p>The second player immediately moves by pressing the right arrow, and as soon as the ball reaches their baseline, they press the Enter key, successfully hitting the ball towards the middle of the first player&#x27;s court.</p>
+<p>The rally continues between them until one of them wins the point!</p>
+<h2>Section Two: Precise Timeline of a Point and 3D Audio Physics</h2>
+<p>Every shot in tennis follows a precise auditory timeline that allows the player to read the ball&#x27;s trajectory and speed before it arrives:</p>
+<h3>1. Moment of Launch and Strike (0% Strike)</h3>
+<p>The sound of the racket hitting is emitted immediately upon launching the ball (hit_1 sound for the player or hit_2 for the opponent) in the specified lane, announcing the beginning of the ball&#x27;s journey across the court.</p>
+<h3>2. Crossing the Net in the Middle (50% Net Crossing)</h3>
+<p>When the ball covers exactly half the distance, it crosses over the mid-court net, and the distinct sound of whistling air (air sound) is emitted, confirming that the ball has successfully crossed the net and hasn&#x27;t hit it.</p>
+<p>3. Ball Bouncing on the Floor (75% Floor Bounce) - The Golden Cue</p>
+<p>When the ball reaches 75% of the journey&#x27;s distance, it hits the floor of your half of the court, and a loud impact sound (bounce sound) is emitted in the specified lane (left, center, or right).</p>
+<p>This sound is the absolute most important audio cue! It accurately alerts you to the lane you need to be in before the ball reaches your racket by about a third to a half of a second, giving you ample time to adjust your position.</p>
+<p>4. Ball Reaching the Baseline and Striking (100% Baseline Reach)</p>
+<p>When the ball reaches 100% of the distance, it has fully reached your backline and your racket.</p>
+<p>If you are positioned in the same lane as the ball and press the hit key, your racket immediately strikes the ball, and it rebounds towards the opponent&#x27;s court.</p>
+<p>However, if you are in a different lane or are late in hitting, you miss the ball, lose the point, and hear the audience&#x27;s reaction.</p>
+<h3>5. Rest Period After Each Point (Rest Period)</h3>
+<p>In order to simulate real tennis and for the comfort of the players after every fast rally, the game automatically pauses for 4.5 seconds after the end of a point.</p>
+<p>During this period, players listen to the audience&#x27;s cheering and applause and the official tennis umpire&#x27;s call of the score, giving you time to catch your breath and focus before the next serve.</p>
+<p>Practical Example of Reading the Ball&#x27;s Trajectory and Successful Striking:</p>
+<p>Suppose the opponent hit a powerful ball, and you heard the sound of the air over the net, then you heard the sound of it hitting the ground (bounce) clearly in your left earphone.</p>
+<h3>What do you do to return the ball?</h3>
+<p>You immediately press the left arrow to move to the left lane (you hear the jm step sound on the left confirming your arrival), wait a third of a second until the ball reaches the baseline, then press the Enter key, returning the ball powerfully!</p>
+<h2>Section Three: Point System and Official International Tennis Rules</h2>
+<p>The game applies the official international standards and regulations approved by the International Tennis Federation (ITF) and the Association of Tennis Professionals (ATP):</p>
+<h3>First: Calculating Points Within a Single Game</h3>
+<p>Every point starts at zero (Love), and points progress as follows:</p>
+<ul>
+<li>First point: Equals 15.</li>
+<li>Second point: Equals 30.</li>
+<li>Third point: Equals 40.</li>
+<li>Fourth point: Wins the game for the leading player.</li>
+</ul>
+<h3>Second: The State of Tie and Advantage (Deuce &amp; Advantage)</h3>
+<p>If the two players reach a score of 40 to 40, the umpire announces: &quot;Deuce&quot;.</p>
+<p>In this case, one of the players must win two consecutive points to win the game:</p>
+<ul>
+<li>If the server wins the next point, the score becomes: &quot;Advantage Server&quot;.</li>
+<li>If the receiver wins the next point, the score becomes: &quot;Advantage Receiver&quot;.</li>
+<li>If the other player wins the next point after the advantage, the game immediately returns to &quot;Deuce&quot;.</li>
+<li>The competition continues until one of the players successfully secures two consecutive points to win the game.</li>
+</ul>
+<h3>Third: Calculating Games and Sets</h3>
+<ul>
+<li>A player wins a Set upon reaching 6 games, provided they lead the opponent by a difference of at least two games (e.g., 6-0, 6-2, 6-4, or 7-5).</li>
+<li>If the score reaches 6 games to 6 games, play continues until a two-game difference is achieved to win the set.</li>
+</ul>
+<p>Fourth: Winning the Match by International Standards (Match Win)</p>
+<ul>
+<li>Tennis matches are held according to the approved international system: the Best of 3 Sets system.</li>
+<li>The winner of the entire match is the first player to successfully win two full sets (2 Sets).</li>
+</ul>
+<h3>Fifth: Alternating Serves</h3>
+<ul>
+<li>The two players alternate serving game by game; the first player serves throughout the entire first game, then the serve goes to the second player for the entire second game, and so on until the end of the match.</li>
+</ul>
+<h3>Practical Example of a Game Scenario and Deuce:</h3>
+<p>Suppose the score reached 40 for Ahmed versus 40 for Mahmoud (Deuce), and the serve is with Ahmed.</p>
+<p>Ahmed won the next point, so the umpire announced: &quot;Advantage Server&quot;.</p>
+<p>Then Mahmoud won the point after that, so the umpire announced: &quot;Deuce&quot; again.</p>
+<p>Then Ahmed won two consecutive points, and the umpire announced Ahmed&#x27;s victory in the game!</p>
+<h3>Practical Example of Winning a Set and Match:</h3>
+<p>Suppose Ahmed won the first set with a score of 6 games to 4 games.</p>
+<p>Then in the second set, Ahmed led with a score of 5 games to 3 games, and won the next game to make it 6 games to 3 games.</p>
+<p>Thus, Ahmed wins two sets to none (2 Sets to 0), and the umpire announces Ahmed&#x27;s victory in the entire match!</p>
+<h2>Section Four: Control Scheme, Positioning, and Shot Execution</h2>
+<h3>Controlling Positioning and Movement:</h3>
+<ul>
+<li>Left Arrow: Quick move to the left lane (you hear a footstep sound in the left earphone).</li>
+<li>Up Arrow: Position in the center lane (you hear a footstep sound in the middle).</li>
+<li>Right Arrow: Quick move to the right lane (you hear a footstep sound in the right earphone).</li>
+</ul>
+<h3>Executing the Serve:</h3>
+<ul>
+<li>When it is your turn to serve after the rest period ends, press the Space bar or the Enter key to launch the ball and serve it powerfully to the opponent&#x27;s court.</li>
+</ul>
+<h3>Returning and Hitting Balls During a Rally:</h3>
+<ul>
+<li>As the ball approaches and you hear the sound of it hitting the ground (bounce), move to the ball&#x27;s lane and press the Enter key or the Space bar to return the ball in the current lane.</li>
+<li>Crosscourt Left Shot (Letter A): Hitting a fast ball aimed towards the far left of the opponent&#x27;s court (Crosscourt Left).</li>
+<li>Crosscourt Right Shot (Letter D): Hitting a fast ball aimed towards the far right of the opponent&#x27;s court (Crosscourt Right).</li>
+</ul>
+<h3>Practical Example of Executing a Surprise Crosscourt Shot:</h3>
+<p>Suppose the opponent is positioned in the middle of the court, and hit a ball towards your center lane.</p>
+<p>You settle in the middle and press the letter A, hitting the ball at a sharp angle towards the far left of their court.</p>
+<p>The opponent is forced to move quickly to the left to catch up with it, which opens up their entire right side for you to hit the next shot using the letter D and win the point!</p>
+<h2>Section Five: Audio Gameplay Instructions and Strategies for the Blind</h2>
+<h3>1. Wearing Headphones</h3>
+<p>Always make sure to wear high-quality stereo surround headphones, as the gameplay relies entirely on instantaneous auditory discrimination between left, right, and center.</p>
+<h3>2. Utilizing the Bounce Sound as an Early Warning</h3>
+<p>The sound of the ball bouncing on the floor is your best friend on the court; it tells you the ball&#x27;s trajectory a third of a second before its arrival, giving you enough time to move to the correct lane before pressing the hit button.</p>
+<h3>3. Varying and Surprising with Crosscourt Shots</h3>
+<p>Do not always play in the same lane; vary your shots between hitting in the middle and targeted crosscourt shots (A and D) to force the opponent or bot to move quickly and open up gaps in their court.</p>
+<h3>4. Listening to the Tennis Umpire&#x27;s Calls</h3>
+<p>The tennis umpire accurately announces the details of the official score after every point and game.</p>
+<h2>Section Sixth: Comprehensive Keyboard Shortcuts</h2>
+<h3>First: Gameplay and Hitting Shortcuts During a Match</h3>
+<ul>
+<li>Left Arrow: Move to the left lane to cover the ball.</li>
+<li>Up Arrow: Position in the center lane.</li>
+<li>Right Arrow: Move to the right lane to cover the ball.</li>
+<li>Enter Key: Execute the serve / basic hit and return of the ball in the current lane.</li>
+<li>Space Bar: Execute the serve / basic hit and return of the ball in the current lane.</li>
+<li>Letter A: Hit a fast crosscourt shot towards the far left (Crosscourt Left).</li>
+<li>Letter D: Hit a fast crosscourt shot towards the far right (Crosscourt Right).</li>
+</ul>
+<h3>Second: Quick Audio Query Shortcuts</h3>
+<ul>
+<li>Letter S: Announce the current match score (points, games, and sets in detail, and the server).</li>
+<li>Letter T: Announce the current server and the lane of play.</li>
+<li>Letter P: Announce the names of the players present at the table.</li>
+<li>Shift + Letter R: Announce the official rules and standards of the match (international standards - best of three sets).</li>
+</ul>
+<h3>Third: Table and System Shortcuts</h3>
+<ul>
+<li>F1: Open the quick tennis shortcuts window.</li>
+<li>Ctrl + F1: Open this comprehensive guide to tennis rules.</li>
+<li>Apps Key or Shift + F10: Open the table context and options menu.</li>
+<li>Letter Q: Leave the table (with a confirmation window navigable with up and down arrows).</li>
+<li>Shift + Letter X: Stop the match and return to waiting (for the table host).</li>
+<li>F2: Announce the wallet balance.</li>
+<li>F3: Check the server connection speed (Ping).</li>
+</ul>
+<hr style="margin: 2rem 0; border: 1px solid var(--border-color);">
+<h1>Keyboard Shortcuts Guide for Real Tennis Table</h1>
+<h3>First: Real-time Movement and Shot Execution Shortcuts</h3>
+<ul>
+<li>Left Arrow: Quick move to the left lane to cover the ball.</li>
+<li>Up Arrow: Position in the center lane.</li>
+<li>Right Arrow: Quick move to the right lane to cover the ball.</li>
+<li>Enter Key: Execute the serve / basic hit and return of the ball in the current lane.</li>
+<li>Space Bar: Execute the serve / basic hit and return of the ball in the current lane.</li>
+<li>Letter A: Hit a fast crosscourt shot towards the far left (Crosscourt Left).</li>
+<li>Letter D: Hit a fast crosscourt shot towards the far right (Crosscourt Right).</li>
+</ul>
+<h3>Second: Quick Audio Query and Information Shortcuts</h3>
+<ul>
+<li>Letter S: Announce the current match score (points, games, and sets for both players in detail, and the server&#x27;s name).</li>
+<li>Letter T: Announce the current server and the lane of play.</li>
+<li>Letter P: Announce the names of the players present at the table.</li>
+<li>Shift + Letter R: Announce the official rules and standards of the match (international standards - best of three sets).</li>
+</ul>
+<h3>Third: System and Help Shortcuts</h3>
+<ul>
+<li>F1: Open this window to review quick tennis shortcuts.</li>
+<li>Ctrl + F1: Open the comprehensive guide to tennis rules and laws.</li>
+<li>Apps Key or Shift + F10: Open the table context and options menu.</li>
+<li>Letter Q: Leave the table (with a confirmation window navigable with up and down arrows).</li>
+<li>Shift + Letter X: Stop the match and return to waiting (for the table host).</li>
+<li>F2: Announce the wallet balance.</li>
+<li>F3: Check the server connection speed (Ping).</li>
+</ul>
+        </article>
+
+        <article class="help-article" data-lang-content="fr" style="display:none;" aria-hidden="true">
+            <h1>Guide complet et règles pour le vrai tennis de table</h1>
+<h3>Première section : Introduction et gameplay de base</h3>
+<h3>Concept du jeu et objectif principal</h3>
+<p>Le jeu de tennis sur la plateforme TableVerse est une simulation sportive 3D réaliste du tennis international, spécialement conçue pour être entièrement accessible aux aveugles et malvoyants, s&#x27;appuyant sur l&#x27;ingénierie audio 3D binaurale et un lecteur d&#x27;écran intégré.</p>
+<p>Le match se joue en mode simple (joueur contre joueur sur le réseau ou joueur contre bot). Chaque joueur vise à servir le ballon et à renvoyer habilement les tirs de l&#x27;adversaire avec le bon timing et la bonne trajectoire pour gagner des points, des jeux et des sets.</p>
+<p>Introduction au projet fondamental (construit sur leap_tennis_win)</p>
+<p>Ce jeu est basé sur le projet open source pionnier Leap Tennis (connu par programme sous le nom de leap_tennis_win ou Tennis for the Blind), développé et programmé par le développeur nzorb en collaboration avec l&#x27;organisation grecque à but non lucratif SciFY (Science For You) dans le cadre du concours Leap Motion 3D Jam en 2015, pour permettre aux aveugles et aux malvoyants de jouer à des jeux vidéo sportifs entièrement basés sur l&#x27;audio 3D.</p>
+<p>La plateforme TableVerse a entièrement reconstruit et développé le jeu, en le faisant passer de l&#x27;ancien environnement de détection de mouvement au système de table compétitif via le clavier, en appliquant les réglementations internationales officielles de la Fédération Internationale de Tennis (ITF).</p>
+<h3>Nombre de joueurs et disposition du terrain</h3>
+<p>Le match de tennis se joue entre deux joueurs en mode simple.</p>
+<h3>Le tribunal audio est divisé en trois couloirs principaux :</h3>
+<p>1. Voie gauche : couvre le côté gauche du terrain et est clairement entendu dans l’écouteur gauche.</p>
+<p>2. Voie centrale : couvre le milieu du terrain et est entendu de manière équilibrée entre les deux écouteurs.</p>
+<p>3. Voie droite : couvre le côté droit du terrain et est clairement entendu dans l’écouteur droit.</p>
+<h3>Gameplay étape par étape</h3>
+<h3>Le match de tennis se déroule selon les étapes suivantes :</h3>
+<p>Premièrement : Le jeu commence avec le joueur au service qui sert le ballon en appuyant sur la barre d&#x27;espace ou sur la touche Entrée.</p>
+<p>Deuxièmement : Le ballon s&#x27;élance vers le terrain adverse, traversant le filet au milieu.</p>
+<p>Troisièmement : le ballon touche le sol du terrain du receveur dans l&#x27;une des trois voies, donnant un signal audio immédiat pour déterminer la trajectoire du ballon.</p>
+<p>Quatrièmement : le receveur se déplace dans le même couloir que le ballon et appuie sur le bouton de frappe au moment où le ballon atteint la ligne de fond pour le renvoyer.</p>
+<p>Cinquièmement : L&#x27;échange de tirs (échange) se poursuit jusqu&#x27;à ce qu&#x27;un joueur ne parvienne pas à renvoyer le ballon, marquant un point pour l&#x27;autre partie, accompagné des applaudissements du public et de l&#x27;arbitre annonçant le score.</p>
+<p>Sixièmement : Après la fin du point, les joueurs bénéficient d&#x27;une période de repos de 4,5 secondes pour entendre l&#x27;annonce du score et se préparer au prochain service.</p>
+<p>Exemple pratique de démarrage d&#x27;un service et d&#x27;échange de tirs entre deux joueurs :</p>
+<p>Supposons que le match commence entre le premier joueur et le deuxième joueur et que le service soit avec le premier joueur.</p>
+<p>Que fait le premier joueur et comment le deuxième joueur réagit-il ?</p>
+<p>Le premier joueur appuie sur la barre Espace, lançant un service puissant vers le couloir droit.</p>
+<p>Le deuxième joueur entend le bruit du ballon traversant le filet (air), suivi du bruit du ballon rebondissant sur le sol de son terrain du côté droit (rebond).</p>
+<p>Le deuxième joueur se déplace immédiatement en appuyant sur la flèche droite, et dès que le ballon atteint sa ligne de fond, il appuie sur la touche Entrée, réussissant à frapper le ballon vers le milieu du terrain du premier joueur.</p>
+<p>L&#x27;échange continue entre eux jusqu&#x27;à ce que l&#x27;un d&#x27;eux remporte le point !</p>
+<h2>Section deux : Chronologie précise d&#x27;un point et physique audio 3D</h2>
+<p>Chaque coup au tennis suit une chronologie auditive précise qui permet au joueur de lire la trajectoire et la vitesse de la balle avant qu&#x27;elle n&#x27;arrive :</p>
+<h3>1. Moment de lancement et de frappe (0 % de frappe)</h3>
+<p>Le son de la frappe de la raquette est émis immédiatement lors du lancement de la balle (son hit_1 pour le joueur ou hit_2 pour l&#x27;adversaire) dans le couloir spécifié, annonçant le début du parcours de la balle à travers le terrain.</p>
+<h3>2. Traversée du Net au milieu (50% Net Crossing)</h3>
+<p>Lorsque le ballon parcourt exactement la moitié de la distance, il traverse le filet du milieu du terrain et un sifflement distinct (son de l&#x27;air) est émis, confirmant que le ballon a réussi à traverser le filet et ne l&#x27;a pas touché.</p>
+<p>3. Balle rebondissant sur le sol (75 % de rebond au sol) – La queue d&#x27;or</p>
+<p>Lorsque la balle atteint 75 % de la distance parcourue, elle touche le sol de votre moitié de terrain et un fort son d&#x27;impact (son de rebond) est émis dans la voie spécifiée (gauche, centre ou droite).</p>
+<p>Ce son est le signal audio le plus important ! Il vous avertit avec précision de la voie dans laquelle vous devez vous trouver avant que la balle n&#x27;atteigne votre raquette d&#x27;environ un tiers à une demi-seconde, vous laissant suffisamment de temps pour ajuster votre position.</p>
+<p>4. Balle atteignant la ligne de base et frappant (portée de la ligne de base à 100 %)</p>
+<p>Lorsque la balle atteint 100 % de la distance, elle a entièrement atteint votre ligne arrière et votre raquette.</p>
+<p>Si vous vous positionnez dans le même couloir que la balle et que vous appuyez sur la touche frappe, votre raquette frappe immédiatement la balle, et celle-ci rebondit vers le terrain adverse.</p>
+<p>Cependant, si vous êtes dans une autre voie ou si vous êtes en retard pour frapper, vous ratez le ballon, perdez le point et entendez la réaction du public.</p>
+<h3>5. Période de repos après chaque point (période de repos)</h3>
+<p>Afin de simuler le vrai tennis et pour le confort des joueurs après chaque échange rapide, le jeu s&#x27;arrête automatiquement pendant 4,5 secondes après la fin d&#x27;un point.</p>
+<p>Pendant cette période, les joueurs écoutent les acclamations et les applaudissements du public ainsi que l&#x27;annonce du score par l&#x27;arbitre officiel du tennis, ce qui vous laisse le temps de reprendre votre souffle et de vous concentrer avant le prochain service.</p>
+<p>Exemple pratique de lecture de la trajectoire du ballon et de frappe réussie :</p>
+<p>Supposons que l&#x27;adversaire frappe une balle puissante et que vous entendiez le bruit de l&#x27;air au-dessus du filet, puis que vous entendiez clairement le bruit de la balle frappant le sol (rebond) dans votre écouteur gauche.</p>
+<h3>Que faire pour renvoyer le ballon ?</h3>
+<p>Vous appuyez immédiatement sur la flèche gauche pour vous déplacer vers la voie de gauche (vous entendez le son du pas jm à gauche confirmant votre arrivée), attendez un tiers de seconde jusqu&#x27;à ce que le ballon atteigne la ligne de fond, puis appuyez sur la touche Entrée, renvoyant le ballon avec puissance !</p>
+<h2>Section trois : Système de points et règles officielles du tennis international</h2>
+<p>Le jeu applique les normes et réglementations internationales officielles approuvées par la Fédération Internationale de Tennis (ITF) et l&#x27;Association des Professionnels du Tennis (ATP) :</p>
+<h3>Premièrement : Calculer les points dans une seule partie</h3>
+<p>Chaque point commence à zéro (Amour), et les points progressent comme suit :</p>
+<ul>
+<li>Premier point : est égal à 15.</li>
+<li>Deuxième point : Égal à 30.</li>
+<li>Troisième point : Égal à 40.</li>
+<li>Quatrième point : Gagne la partie pour le premier joueur.</li>
+</ul>
+<p>Deuxièmement : l’état d’égalité et d’avantage (Deuce &amp; Advantage)</p>
+<p>Si les deux joueurs atteignent un score de 40 à 40, l&#x27;arbitre annonce : &quot;Deuce&quot;.</p>
+<p>Dans ce cas, l&#x27;un des joueurs doit gagner deux points consécutifs pour remporter la partie :</p>
+<ul>
+<li>Si le serveur gagne le point suivant, le score devient : &quot;Avantage Server&quot;.</li>
+<li>Si le receveur gagne le point suivant, le score devient : &quot;Avantage Receveur&quot;.</li>
+<li>Si l&#x27;autre joueur gagne le point suivant après l&#x27;avantage, le jeu revient immédiatement à &quot;Deuce&quot;.</li>
+<li>La compétition continue jusqu&#x27;à ce que l&#x27;un des joueurs réussisse à obtenir deux points consécutifs pour remporter la partie.</li>
+</ul>
+<h3>Troisièmement : Calculer des jeux et des ensembles</h3>
+<ul>
+<li>Un joueur remporte un set après avoir atteint 6 jeux, à condition qu&#x27;il mène l&#x27;adversaire avec une différence d&#x27;au moins deux jeux (par exemple 6-0, 6-2, 6-4 ou 7-5).</li>
+<li>Si le score atteint 6 jeux, le jeu continue jusqu&#x27;à ce qu&#x27;une différence de deux jeux soit atteinte pour remporter le set.</li>
+</ul>
+<p>Quatrième : Gagner le match selon les normes internationales (Match Win)</p>
+<ul>
+<li>Les matchs de tennis se déroulent selon le système international homologué : le système Best of 3 Sets.</li>
+<li>Le vainqueur de l&#x27;ensemble du match est le premier joueur à remporter deux sets complets (2 sets).</li>
+</ul>
+<h3>Cinquième : services alternés</h3>
+<ul>
+<li>Les deux joueurs alternent le service jeu par jeu ; le premier joueur sert pendant toute la première partie, puis le service revient au deuxième joueur pendant toute la deuxième partie, et ainsi de suite jusqu&#x27;à la fin du match.</li>
+</ul>
+<h3>Exemple pratique d&#x27;un scénario de jeu et Deuce :</h3>
+<p>Supposons que le score atteigne 40 pour Ahmed contre 40 pour Mahmoud (Deuce), et que le service soit avec Ahmed.</p>
+<p>Ahmed a gagné le point suivant, alors l&#x27;arbitre a annoncé : &quot;Advantage Server&quot;.</p>
+<p>Ensuite, Mahmoud a gagné le point, alors l&#x27;arbitre a annoncé à nouveau : &quot;Deuce&quot;.</p>
+<p>Puis Ahmed a remporté deux points consécutifs, et l&#x27;arbitre a annoncé la victoire d&#x27;Ahmed dans le match !</p>
+<h3>Exemple pratique de victoire d’un set et d’un match :</h3>
+<p>Supposons qu&#x27;Ahmed remporte le premier set avec un score de 6 jeux contre 4 jeux.</p>
+<p>Puis dans le deuxième set, Ahmed a mené avec un score de 5 jeux à 3 jeux, et a remporté le jeu suivant pour porter le score à 6 jeux à 3 jeux.</p>
+<p>Ainsi, Ahmed gagne deux sets à zéro (2 sets à 0), et l&#x27;arbitre annonce la victoire d&#x27;Ahmed pour tout le match !</p>
+<h2>Section quatre : Schéma de contrôle, positionnement et exécution des tirs</h2>
+<h3>Contrôler le positionnement et le mouvement :</h3>
+<ul>
+<li>Flèche gauche : déplacement rapide vers la voie de gauche (vous entendez un bruit de pas dans l&#x27;écouteur gauche).</li>
+<li>Flèche vers le haut : positionnez-vous dans la voie centrale (vous entendez un bruit de pas au milieu).</li>
+<li>Flèche droite : déplacement rapide vers la voie de droite (vous entendez un bruit de pas dans l&#x27;écouteur droit).</li>
+</ul>
+<h3>Exécution du service :</h3>
+<ul>
+<li>Lorsque c&#x27;est votre tour de servir après la fin de la période de repos, appuyez sur la barre Espace ou sur la touche Entrée pour lancer le ballon et le servir puissamment vers le terrain adverse.</li>
+</ul>
+<h3>Retourner et frapper des balles pendant un échange :</h3>
+<ul>
+<li>Lorsque la balle s&#x27;approche et que vous entendez le bruit de sa frappe sur le sol (rebond), déplacez-vous vers le couloir de la balle et appuyez sur la touche Entrée ou sur la barre Espace pour renvoyer la balle dans le couloir actuel.</li>
+<li>Crosscourt Left Shot (Lettre A) : Frapper une balle rapide dirigée vers l&#x27;extrême gauche du terrain adverse (Crosscourt Left).</li>
+<li>Crosscourt Right Shot (Lettre D) : Frapper une balle rapide dirigée vers l&#x27;extrême droite du terrain adverse (Crosscourt Right).</li>
+</ul>
+<h3>Exemple pratique d’exécution d’un tir croisé surprise :</h3>
+<p>Supposons que l&#x27;adversaire soit positionné au milieu du terrain et qu&#x27;il frappe une balle vers votre couloir central.</p>
+<p>Vous vous installez au milieu et appuyez sur la lettre A, frappant la balle selon un angle aigu vers l&#x27;extrême gauche de leur terrain.</p>
+<p>L&#x27;adversaire est obligé de se déplacer rapidement vers la gauche pour le rattraper, ce qui ouvre tout son côté droit pour que vous puissiez frapper le prochain coup en utilisant la lettre D et gagner le point !</p>
+<h2>Section cinq : Instructions et stratégies de jeu audio pour les aveugles</h2>
+<h3>1. Porter des écouteurs</h3>
+<p>Assurez-vous toujours de porter des écouteurs surround stéréo de haute qualité, car le gameplay repose entièrement sur une discrimination auditive instantanée entre la gauche, la droite et le centre.</p>
+<h3>2. Utiliser le son de rebond comme avertissement précoce</h3>
+<p>Le bruit de la balle qui rebondit sur le sol est votre meilleur ami sur le terrain ; il vous indique la trajectoire de la balle un tiers de seconde avant son arrivée, vous laissant suffisamment de temps pour vous déplacer vers la bonne voie avant d&#x27;appuyer sur le bouton de frappe.</p>
+<h3>3. Varier et surprendre avec les tirs croisés</h3>
+<p>Ne jouez pas toujours dans la même voie ; Variez vos tirs entre les frappes au milieu et les tirs croisés ciblés (A et D) pour forcer l&#x27;adversaire ou le bot à se déplacer rapidement et à ouvrir des brèches dans son terrain.</p>
+<h3>4. Écouter les appels de l&#x27;arbitre de tennis</h3>
+<p>L&#x27;arbitre de tennis annonce avec précision les détails du score officiel après chaque point et chaque match.</p>
+<h2>Section sixième : Raccourcis clavier complets</h2>
+<p>Premièrement : gameplay et raccourcis de frappe pendant un match</p>
+<ul>
+<li>Flèche gauche : déplacez-vous vers la voie de gauche pour couvrir le ballon.</li>
+<li>Flèche vers le haut : position dans la voie centrale.</li>
+<li>Flèche droite : déplacez-vous vers la voie de droite pour couvrir le ballon.</li>
+<li>Touche Entrée : Exécuter le service/coup de base et le retour de la balle dans le couloir actuel.</li>
+<li>Barre d&#x27;espace : Exécuter le service/coup de base et le retour du ballon dans le couloir actuel.</li>
+<li>Lettre A : Frapper un tir croisé rapide vers l&#x27;extrême gauche (Crosscourt Left).</li>
+<li>Lettre D : Frapper un tir croisé rapide vers l&#x27;extrême droite (Crosscourt Right).</li>
+</ul>
+<h3>Deuxièmement : raccourcis de requête audio rapide</h3>
+<ul>
+<li>Lettre S : Annoncer le score du match en cours (points, jeux et sets en détail, ainsi que le serveur).</li>
+<li>Lettre T : Annoncer le serveur actuel et la voie de jeu.</li>
+<li>Lettre P : Annoncer les noms des joueurs présents à la table.</li>
+<li>Maj + Lettre R : Annoncer les règles et standards officiels du match (normes internationales - meilleur des trois sets).</li>
+</ul>
+<h3>Troisièmement : raccourcis de table et de système</h3>
+<ul>
+<li>F1 : ouvrez la fenêtre des raccourcis rapides du tennis.</li>
+<li>Ctrl + F1 : ouvrez ce guide complet des règles du tennis.</li>
+<li>Touche Applications ou Maj + F10 : ouvrez le menu contextuel et d&#x27;options du tableau.</li>
+<li>Lettre Q : Quittez la table (avec une fenêtre de confirmation navigable avec des flèches haut et bas).</li>
+<li>Maj + Lettre X : Arrêtez le match et revenez en attente (pour l&#x27;hôte de la table).</li>
+<li>F2 : Annoncer le solde du portefeuille.</li>
+<li>F3 : Vérifier la vitesse de connexion du serveur (Ping).</li>
+</ul>
+<hr style="margin: 2rem 0; border: 1px solid var(--border-color);">
+<h1>Guide des raccourcis clavier pour une vraie table de tennis</h1>
+<p>Premièrement : raccourcis de mouvement et d&#x27;exécution de tir en temps réel</p>
+<ul>
+<li>Flèche gauche : déplacement rapide vers la voie de gauche pour couvrir le ballon.</li>
+<li>Flèche vers le haut : position dans la voie centrale.</li>
+<li>Flèche droite : déplacement rapide vers la voie de droite pour couvrir le ballon.</li>
+<li>Touche Entrée : Exécuter le service/coup de base et le retour de la balle dans le couloir actuel.</li>
+<li>Barre d&#x27;espace : Exécuter le service/coup de base et le retour du ballon dans le couloir actuel.</li>
+<li>Lettre A : Frapper un tir croisé rapide vers l&#x27;extrême gauche (Crosscourt Left).</li>
+<li>Lettre D : Frapper un tir croisé rapide vers l&#x27;extrême droite (Crosscourt Right).</li>
+</ul>
+<p>Deuxièmement : requête audio rapide et raccourcis d&#x27;informations</p>
+<ul>
+<li>Lettre S : Annoncez le score du match en cours (points, jeux et sets pour les deux joueurs en détail, ainsi que le nom du serveur).</li>
+<li>Lettre T : Annoncer le serveur actuel et la voie de jeu.</li>
+<li>Lettre P : Annoncer les noms des joueurs présents à la table.</li>
+<li>Maj + Lettre R : Annoncer les règles et standards officiels du match (normes internationales - meilleur des trois sets).</li>
+</ul>
+<h3>Troisièmement : raccourcis système et aide</h3>
+<ul>
+<li>F1 : ouvrez cette fenêtre pour consulter les raccourcis rapides du tennis.</li>
+<li>Ctrl + F1 : Ouvrir le guide complet des règles et lois du tennis.</li>
+<li>Touche Applications ou Maj + F10 : ouvrez le menu contextuel et d&#x27;options du tableau.</li>
+<li>Lettre Q : Quittez la table (avec une fenêtre de confirmation navigable avec des flèches haut et bas).</li>
+<li>Maj + Lettre X : Arrêtez le match et revenez en attente (pour l&#x27;hôte de la table).</li>
+<li>F2 : Annoncer le solde du portefeuille.</li>
+<li>F3 : Vérifier la vitesse de connexion du serveur (Ping).</li>
+</ul>
+        </article>
+    </main>
+
+    <footer role="contentinfo">
+        <p>&copy; 2026 LetsFly TableVerse. جميع الحقوق محفوظة | All rights reserved | Tous droits réservés.</p>
+        <p><a href="../index.html" style="color: var(--accent-color);">العودة للصفحة الرئيسية</a></p>
+    </footer>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>
