@@ -530,7 +530,7 @@ def _validate_game_configuration(game: str, target_score: int, rules: dict) -> t
     game = str(game or "").upper()
     rules = dict(rules or {})
     specs = {
-        "UNO": ({k: "bool" for k, _, _ in __import__("core_shared.rules_config", fromlist=["RULE_DEFINITIONS"]).RULE_DEFINITIONS}, (1, 9999)),
+        "UNO": ({**{k: "bool" for k, _, _ in __import__("core_shared.rules_config", fromlist=["RULE_DEFINITIONS"]).RULE_DEFINITIONS}, "turn_timer": "any"}, (1, 9999)),
         "THIEF_HUNT": ({"rounds": ("int", 1, 10), "allow_human_thief": "bool", "elimination_mode": "bool"}, (1, 1)),
         "FARKLE": ({"min_bank": ("int", 30, 10000), "first_bank_min": ("int", 50, 10000)}, (1, 100000)),
         "DOMINO": ({"mode": ("choice", {"draw", "block"}), "hand_size": ("int", 1, 7)}, (1, 10000)),
@@ -538,7 +538,7 @@ def _validate_game_configuration(game: str, target_score: int, rules: dict) -> t
         "SNAKES_LADDERS": ({"knockout": "bool", "mystery_tiles": "bool"}, (100, 100)),
         "SCOPA": ({"scopa_mode": ("choice", {"classic", "escoba_15", "asso_piglia_tutto", "scopone"}), "classic": "bool", "escoba_15": "bool", "asso_piglia_tutto": "bool", "scopone": "bool", "inverted": "bool", "teams_enabled": "bool", "custom_teams": "dict"}, (1, 1000)),
         "TENNIS": ({"bot_difficulty": ("choice", {"EASY", "NORMAL", "HARD", "EXPERT"})}, (1, 5)),
-        "NINETY_NINE": ({"starting_tokens": ("int", 1, 99)}, (1, 99)),
+        "NINETY_NINE": ({"starting_tokens": ("int", 1, 99), "turn_timer": "any"}, (1, 99)),
     }
     allowed, target_bounds = specs.get(game, ({}, (1, 9999)))
     unknown = sorted(set(rules) - set(allowed))
