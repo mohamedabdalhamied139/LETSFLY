@@ -442,7 +442,8 @@ class SettingsListMenu(QDialog):
                         idx = options.index(current)
                     except ValueError:
                         idx = 0
-                    new_idx = (idx + 1) % len(options)
+                    direction = 1 if event.key() == Qt.Key_Right else -1
+                    new_idx = (idx + direction) % len(options)
                     new_opt = options[new_idx]
                     self.values[fkey] = new_opt
                     labels = field.get("labels", {})
