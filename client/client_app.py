@@ -3163,6 +3163,13 @@ class TableVerseApp(QMainWindow):
             active_rules.append(f"صعوبة البوت: {diff_names.get(diff, diff)}")
             target = room.get("target_score") or 1
             active_rules.append(f"عدد المجموعات للفوز: {target}")
+        elif game in ("NINETY_NINE", "NINETYNINE"):
+            tokens = rules.get("starting_tokens") or room.get("target_score") or 11
+            active_rules.append(f"النقاط: {tokens}")
+            timer_val = rules.get("turn_timer") or room.get("turn_timer") or "none"
+            from client.table_framework.settings_registry import TIMER_LABELS
+            timer_label = TIMER_LABELS.get(str(timer_val), str(timer_val))
+            active_rules.append(f"وقت الدور: {timer_label}")
 
         else:
             for k, v in rules.items():
@@ -3174,7 +3181,7 @@ class TableVerseApp(QMainWindow):
         if not active_rules:
             reader.speak(tr("اللعب بالوضع الافتراضي."), interrupt=True)
         else:
-            sep = ", " if get_language() == "en" else "، "
+            sep = ", " if language() == "en" else "، "
             localized_rules = [tr(r) for r in active_rules]
             reader.speak(tr("الإعدادات الحالية: {rules}", rules=sep.join(localized_rules)), interrupt=True)
 
