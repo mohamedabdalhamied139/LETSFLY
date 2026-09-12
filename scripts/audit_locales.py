@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -65,6 +66,37 @@ def perform_audit():
                 report.append(f"  - [Missing in {lang_code}]: {k}")
         except Exception as ex:
             report.append(f"Could not audit {other.name}: {ex}")
+
+    # 2. Check for hardcoded / uncataloged Arabic strings in client python code
+    import ast
+    arabic_re = re.compile(r'[\u0600-\u06FF]')
+    client_dir = project_root / 'client'
+    uncataloged_code_strings = []
+
+    for py_file in client_dir.rglob('*.py'):
+        if 'locales' in str(py_file):
+            continue
+        try:
+            content = py_file.read_text(encoding='utf-8')
+            tree = ast.parse(content, filename=str(py_file))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                    val = node.value.strip()
+                    if arabic_re.search(val) and len(val) > 1 and not val.startswith(('?', '^', '(?', '[')):
+                        if '\n' not in val and val not in ar_keys and val != "إعدادات غير":
+                            uncataloged_code_strings.append((py_file.name, getattr(node, 'lineno', 0), val))
+        except Exception:
+            pass
+
+    report.append("-" * 60)
+    report.append(f"Hardcoded Uncataloged Arabic strings in Client Code: {len(uncataloged_code_strings)}")
+    if not uncataloged_code_strings:
+        report.append("RESULT: Clean! No uncataloged hardcoded Arabic strings found in code.")
+    else:
+        for fname, line_num, s in uncataloged_code_strings[:25]:
+            report.append(f"  - [{fname}:{line_num}]: {s}")
+        if len(uncataloged_code_strings) > 25:
+            report.append(f"  ... and {len(uncataloged_code_strings) - 25} more.")
 
     report.append("=" * 60)
     return "\n".join(report)

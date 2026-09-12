@@ -2003,17 +2003,18 @@ class TableVerseApp(QMainWindow):
             return
 
         count = len(names)
-        names_str = " و ".join(names)
+        join_word = " and " if language() == "en" else " و "
+        names_str = join_word.join(names)
         if count == 1:
-            text = f"لاعب واحد على الطاولة: {names[0]}"
+            text = tr("لاعب واحد على الطاولة: {0}", names[0])
         elif count == 2:
-            text = f"لاعبان على الطاولة: {names[0]} و {names[1]}"
+            text = tr("لاعبان على الطاولة: {0} و {1}", names[0], names[1])
         elif 3 <= count <= 10:
-            text = f"{count} لاعبين على الطاولة: {names_str}"
+            text = tr("{0} لاعبين على الطاولة: {1}", count, names_str)
         else:
-            text = f"{count} لاعباً على الطاولة: {names_str}"
+            text = tr("{0} لاعباً على الطاولة: {1}", count, names_str)
 
-        reader.speak(tr(text), interrupt=True)
+        reader.speak(text, interrupt=True)
 
     def on_open_table_players(self):
         """Open the Table Players list dialog with captain at the top, vice-captain, and contextual actions."""
@@ -3142,12 +3143,12 @@ class TableVerseApp(QMainWindow):
             if rules.get("scopone") and "سكوبون" not in active_rules: active_rules.append("سكوبون")
             if rules.get("inverted") and "سكوبا المعكوسة" not in active_rules: active_rules.append("سكوبا المعكوسة")
             target = room.get("target_score") or rules.get("target_score") or 11
-            active_rules.append(f"الهدف {target} نقطة")
+            active_rules.append(tr("الهدف {0} نقطة", target))
         elif game == "SNAKES_LADDERS":
             if rules.get("knockout"): active_rules.append("نظام استبعاد اللاعبين")
             if rules.get("mystery_tiles"): active_rules.append("المربعات الغامضة")
         elif game == "THIEF_HUNT":
-            active_rules.append(f"عدد الجولات: {rules.get('rounds', 5)}")
+            active_rules.append(tr("عدد الجولات: {0}", rules.get('rounds', 5)))
             if rules.get("allow_human_thief"): active_rules.append("السماح للاعبين بدور اللص")
             if rules.get("elimination_mode"): active_rules.append("نظام الإقصاء")
         elif game in ("DOMINO", "AMERICAN_DOMINO"):
@@ -3155,21 +3156,21 @@ class TableVerseApp(QMainWindow):
             active_rules.append("لعب بدون سحب" if mode == "block" else ("خمسات" if mode == "all_fives" else "لعب مع سحب"))
             if rules.get("count_remaining_pips"): active_rules.append("حساب نقاط الخصوم")
         elif game == "FARKLE":
-            active_rules.append(f"الحد الأدنى للإيداع: {rules.get('min_bank', 30)}")
-            active_rules.append(f"الحد الأدنى لفتح الرصيد: {rules.get('first_bank_min', 50)}")
+            active_rules.append(tr("الحد الأدنى للإيداع: {0}", rules.get('min_bank', 30)))
+            active_rules.append(tr("الحد الأدنى لفتح الرصيد: {0}", rules.get('first_bank_min', 50)))
         elif game == "TENNIS":
             diff_names = {"EASY": "سهل", "NORMAL": "متوسط", "HARD": "صعب", "EXPERT": "محترف"}
             diff = rules.get("bot_difficulty", "NORMAL")
-            active_rules.append(f"صعوبة البوت: {diff_names.get(diff, diff)}")
+            active_rules.append(tr("صعوبة البوت: {0}", diff_names.get(diff, diff)))
             target = room.get("target_score") or 1
-            active_rules.append(f"عدد المجموعات للفوز: {target}")
+            active_rules.append(tr("عدد المجموعات للفوز: {0}", target))
         elif game in ("NINETY_NINE", "NINETYNINE"):
             tokens = rules.get("starting_tokens") or room.get("target_score") or 11
-            active_rules.append(f"النقاط: {tokens}")
+            active_rules.append(tr("النقاط: {0}", tokens))
             timer_val = rules.get("turn_timer") or room.get("turn_timer") or "none"
             from client.table_framework.settings_registry import TIMER_LABELS
             timer_label = TIMER_LABELS.get(str(timer_val), str(timer_val))
-            active_rules.append(f"وقت الدور: {timer_label}")
+            active_rules.append(tr("وقت الدور: {0}", timer_label))
 
         else:
             for k, v in rules.items():

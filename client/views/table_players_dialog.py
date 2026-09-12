@@ -222,7 +222,7 @@ class TableSubstituteChoiceDialog(QDialog):
                     pass
             if uid == host_id:
                 return host_name
-            return f"لاعب {uid}" if uid > 0 else f"بوت {abs(uid)}"
+            return tr("لاعب {0}", uid) if uid > 0 else tr("بوت {0}", abs(uid))
 
         # 1. Option: Replace with a bot (only if target is a human player)
         if target_id > 0:
@@ -344,7 +344,7 @@ class TablePlayersDialog(QDialog):
                                 return str(pname)
             if uid == host_id:
                 return host_name
-            return f"لاعب {uid}" if uid > 0 else f"بوت {abs(uid)}"
+            return tr("لاعب {0}", uid) if uid > 0 else tr("بوت {0}", abs(uid))
 
         # 1. Captain (always first)
         captain_user = {
