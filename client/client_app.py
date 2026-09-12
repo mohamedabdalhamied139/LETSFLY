@@ -2331,10 +2331,8 @@ class TableVerseApp(QMainWindow):
             self._is_reconnecting = False
             self._reconnect_timeout_timer.stop()
             sound_engine.stop_looping("CONNECTING")
-            if was_reconnecting or not self.current_room:
-                sound_engine.play_event("CONNECTED")
-
             if was_reconnecting:
+                sound_engine.play_event("CONNECTED")
                 reader.speak(tr("connection restored successfully"), interrupt=True)
 
             if self.current_room:
