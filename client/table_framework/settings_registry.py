@@ -73,10 +73,20 @@ class GameSettingsDefinition:
 
 from core_shared.rules_config import RULE_DEFINITIONS, DEFAULT_RULES, NO_MERCY_CHILDREN
 
+TIMER_OPTIONS = ["none"] + [str(s) for s in range(3, 11)] + ["15", "20", "25", "30", "35", "40", "45", "50", "55", "60"]
+TIMER_LABELS = {"none": "بدون وقت"}
+for _s in range(3, 61):
+    _s_str = str(_s)
+    if _s in (3, 4, 5, 6, 7, 8, 9, 10):
+        TIMER_LABELS[_s_str] = f"{_s} ثواني"
+    else:
+        TIMER_LABELS[_s_str] = f"{_s} ثانية"
+
 # NINETY_NINE
 def ninety_nine_mapper(values):
     target = int(values.get("target_score", 11) or 11)
-    return target, {"starting_tokens": target}
+    timer_val = values.get("turn_timer", "none")
+    return target, {"starting_tokens": target, "turn_timer": timer_val}
 
 # SNAKES_LADDERS
 def snakes_mapper(values):
@@ -133,6 +143,7 @@ def uno_mapper(values):
         rules["no_mercy"] = False
         for child in NO_MERCY_CHILDREN:
             rules[child] = False
+    rules["turn_timer"] = values.get("turn_timer", "none")
     return target, rules
 
 # THIEF_HUNT
@@ -167,7 +178,8 @@ GAME_SETTINGS_REGISTRY = {
         state_getter="uno_state",
         state_applier="_apply_uno_state",
         custom_fields=[
-            SettingField("target_score", "عدد النقاط النهائي", kind="number", default_value=11, minimum=1, maximum=99, step=1)
+            SettingField("target_score", "عدد النقاط النهائي", kind="number", default_value=11, minimum=1, maximum=99, step=1),
+            SettingField("turn_timer", "وقت الدور", kind="choice", default_value="none", options=TIMER_OPTIONS, labels=TIMER_LABELS),
         ],
         rule_mapper=ninety_nine_mapper
     ),
@@ -274,7 +286,8 @@ GAME_SETTINGS_REGISTRY = {
         state_getter="uno_state",
         state_applier="_apply_uno_state",
         custom_fields=[
-            SettingField("target_score", "عدد النقاط النهائي", kind="number", default_value=500, minimum=1, step=50)
+            SettingField("target_score", "عدد النقاط النهائي", kind="number", default_value=500, minimum=1, step=50),
+            SettingField("turn_timer", "وقت الدور", kind="choice", default_value="none", options=TIMER_OPTIONS, labels=TIMER_LABELS),
         ] + [
             SettingField(
                 key, label, kind="bool",
