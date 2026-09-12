@@ -148,7 +148,7 @@ async def run_scopa_bots(room: Room):
                 if game.pending_deal_batch:
                     game.pending_deal_batch = False
                     if room.scopa_game and room.scopa_game.active:
-                        schedule_scopa_deal_batch(room, delay_seconds=3.0)
+                        schedule_scopa_deal_batch(room, delay_seconds=0.4)
                         break
                 if game.pending_round_finalize:
                     game.pending_round_finalize = False

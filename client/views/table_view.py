@@ -240,26 +240,34 @@ class ScopaCardList(QListWidget):
             my_id = (app.user or {}).get("id") if app and hasattr(app, "user") and app.user else None
             curr_id = state.get("current_turn_id")
             is_my_turn = bool(my_id is not None and curr_id is not None and str(curr_id) == str(my_id))
+            focus_target = getattr(parent_table, "_focus_target", None)
+            is_navigating_to_chat_or_log = (
+                focus_target in ("chat", "activity_log")
+                or (hasattr(parent_table, "chat_input") and parent_table.chat_input.hasFocus())
+                or (hasattr(parent_table, "activity_log") and (parent_table.activity_log.hasFocus() or (hasattr(parent_table.activity_log, "viewport") and parent_table.activity_log.viewport().hasFocus())))
+            )
             allowed_reasons = (
                 Qt.FocusReason.TabFocusReason,
                 Qt.FocusReason.BacktabFocusReason,
                 Qt.FocusReason.MouseFocusReason,
                 Qt.FocusReason.PopupFocusReason,
             )
+            if event.reason() in allowed_reasons or is_navigating_to_chat_or_log:
+                parent_table._scopa_gameplay_focus = False
+                return
+
             should_hold_focus = (
                 is_my_turn
                 or getattr(parent_table, "_scopa_gameplay_focus", False)
                 or getattr(parent_table, "is_playing", False)
             )
-            if should_hold_focus and event.reason() not in allowed_reasons:
+            if should_hold_focus:
                 if self.count() > 0 and not getattr(parent_table, "_is_modal_active", lambda: False)():
                     def _repin(w=self, pt=parent_table):
-                        if safe_is_valid(w) and not getattr(pt, "_is_modal_active", lambda: False)():
+                        if safe_is_valid(w) and not getattr(pt, "_is_modal_active", lambda: False)() and getattr(pt, "_focus_target", None) == "gameplay":
                             safe_set_focus(w)
                     for delay in (0, 30):
                         QTimer.singleShot(delay, _repin)
-            elif event.reason() in allowed_reasons:
-                parent_table._scopa_gameplay_focus = False
 
     def currentItemChanged(self, current, previous):
         super().currentItemChanged(current, previous)

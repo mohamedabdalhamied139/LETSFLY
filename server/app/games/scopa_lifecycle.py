@@ -160,7 +160,7 @@ async def _start_next_scopa_round_after_delay(room: Room):
             room._round_transition_task = None
 
 
-def schedule_scopa_deal_batch(room: Room, delay_seconds: float = 3.0):
+def schedule_scopa_deal_batch(room: Room, delay_seconds: float = 0.4):
     """Schedule dealing the next batch of cards after a delay, allowing last card speech to finish."""
     if getattr(room, "_deal_batch_task", None) is None or room._deal_batch_task.done():
         room._deal_batch_task = asyncio.create_task(_deal_next_batch_after_delay(room, delay_seconds))
