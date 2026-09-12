@@ -614,6 +614,10 @@ class TableView(QWidget):
         self._thief_input_mode = "answer"
         lst.setAccessibleName(tr("إجابة الطابق"))
         lst.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+        for i in range(lst.count()):
+            it = lst.item(i)
+            val = it.data(Qt.UserRole) or str(i + 1)
+            it.setText(tr("الطابق {0}", val))
         lst.setEnabled(True)
         lst.show()
         self._focus_target = "gameplay"

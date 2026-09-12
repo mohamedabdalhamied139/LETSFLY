@@ -1663,5 +1663,7 @@
   "50 ثانية": "50 seconds",
   "55 ثانية": "55 seconds",
   "60 ثانية": "60 seconds",
-  "الاختصارات العامة للعبة": "General Game Shortcuts"
+  "الاختصارات العامة للعبة": "General Game Shortcuts",
+  "الطابق": "Floor",
+  "الطابق {0}": "Floor {0}"
 }

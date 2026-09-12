@@ -393,7 +393,7 @@ class TranslationManager:
                         translated_args.append(re.sub(r"(?<!\w)نقاط(?!\w)", "points", val).replace("، ", ", "))
                     elif role == "set_list":
                         translated_args.append(val.replace("، ", ", "))
-                    elif role in {"game", "title", "rules", "color", "combo", "tile", "side", "card", "card_list", "status", "sub"}:
+                    elif role in {"game", "title", "rules", "color", "combo", "tile", "side", "card", "card_list", "status", "sub", "ordinal", "floor"}:
                         # These roles are explicitly user-facing/localizable categories.
                         translated = self.tr(val)
                         # Some composite summaries intentionally keep dynamic names and

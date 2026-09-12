@@ -31,7 +31,7 @@ def setup_thief_ui(table_view, playing):
             table_view.thief_answer_input.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
             table_view.thief_answer_input.setFocusPolicy(Qt.StrongFocus)
             for floor in range(1, 11):
-                item = QListWidgetItem(str(floor))
+                item = QListWidgetItem(tr("الطابق {0}", floor))
                 item.setData(Qt.UserRole, str(floor))
                 table_view.thief_answer_input.addItem(item)
             table_view.thief_answer_input.itemActivated.connect(table_view._on_thief_floor_activated)

@@ -484,8 +484,8 @@
     "pattern": "^الجولة\\ (.*?)\\.\\ اللص\\ في\\ الطابق\\ (.*?)\\.$",
     "template": "Round {0}. The thief is on floor {1}.",
     "roles": [
-      "text",
-      "text"
+      "num",
+      "ordinal"
     ]
   },
   {
@@ -1436,7 +1436,7 @@
     "pattern": "^انتهت\\ الجولة\\ بالتعادل\\.\\ اللص\\ كان\\ في\\ الطابق\\ (.*?)\\.$",
     "template": "Round ended in a tie. The thief was on floor {0}.",
     "roles": [
-      "text"
+      "ordinal"
     ]
   },
   {
@@ -1567,8 +1567,8 @@
     "pattern": "^الفائز\\ (.*?)،\\ اللص\\ كان\\ في\\ الطابق\\ (.*?)\\.$",
     "template": "Winner {0}, the thief was on floor {1}.",
     "roles": [
-      "text",
-      "text"
+      "user",
+      "ordinal"
     ]
   },
   {
@@ -1867,7 +1867,7 @@
     "pattern": "^اللص\\ كان\\ في\\ الطابق\\ (.*?)\\.$",
     "template": "The thief was on floor {0}.",
     "roles": [
-      "text"
+      "ordinal"
     ]
   },
   {
@@ -3005,8 +3005,8 @@
     "pattern": "^الجولة (.*?)\\. اللص في الطابق (.*?)\\.$",
     "template": "Round {0}. The thief was on floor {1}.",
     "roles": [
-      "text",
-      "text"
+      "num",
+      "ordinal"
     ]
   },
   {
