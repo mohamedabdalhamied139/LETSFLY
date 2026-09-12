@@ -213,9 +213,10 @@ class SoundEngine:
             "GAME_STARTED": (),
             "ROUND_START": (),
             "ROUND_STARTED": (),
-            "CARD_PLAYED": ("NINETY_NINE_PLACE", "NINETY_NINE_REVERSE", "NINETY_NINE_SKIP"),
+            "CARD_PLAYED": ("NINETY_NINE_PLACE", "NINETY_NINE_REVERSE", "NINETY_NINE_SKIP", "NINETY_NINE_REACH", "NINETY_NINE_EXCEED"),
             "PENDING_CHOICE": ("NINETY_NINE_PROMPT",),
             "CHOICE_CANCELLED": (),
+            "ROUND_FINISHED": ("NINETY_NINE_REACH", "NINETY_NINE_EXCEED", "ROUND_END"),
         },
     }
 
@@ -355,10 +356,10 @@ class SoundEngine:
             # authorized for this game/event. Common lifecycle cues are global.
             if event in common and server_cue.upper() == common[event][0].upper():
                 return (server_cue,)
-            if len(allowed) > 1:
-                return allowed
             if server_cue in allowed or server_cue.upper() in {c.upper() for c in allowed}:
                 return (server_cue,)
+            if len(allowed) > 1:
+                return allowed
             return allowed
         return allowed
 
