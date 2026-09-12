@@ -1019,9 +1019,8 @@ def test_scopa_custom_teams_and_dynamic_ampersand_naming():
 
 
 def test_table_team_selection_dialog(qapp):
-    """Verify TableTeamSelectionDialog balances teams and toggles players."""
+    """Verify TableTeamSelectionDialog shows candidate players and sets teams on selection."""
     from client.views.table_players_dialog import TableTeamSelectionDialog
-    from PySide6.QtWidgets import QListWidgetItem
 
     players = [
         (1, "محمد"),
@@ -1029,26 +1028,20 @@ def test_table_team_selection_dialog(qapp):
         (3, "أحمد"),
         (4, "محمود"),
     ]
+    # Current user is محمد (id: 1)
     dlg = TableTeamSelectionDialog(players, current_user_id=1)
     
-    # Default alternating teams: 1 -> Team 0, 2 -> Team 1, 3 -> Team 0, 4 -> Team 1
-    assert dlg.team_assignments[1] == 0
-    assert dlg.team_assignments[2] == 1
+    # Dialog list contains the other 3 players without team tags
+    assert dlg.list.count() == 3
+    assert dlg.list.item(0).text() == "جوري"
+    assert dlg.list.item(1).text() == "أحمد"
+    assert dlg.list.item(2).text() == "محمود"
 
-    # Toggle player 2 (جوري) from Team 1 to Team 0
-    item2 = dlg.list.item(1)
-    dlg._activate(item2)
-    assert dlg.team_assignments[2] == 0
-
-    # Toggle player 3 (أحمد) from Team 0 to Team 1
-    item3 = dlg.list.item(2)
-    dlg._activate(item3)
-    assert dlg.team_assignments[3] == 1
-
-    # Now Team 0 has (1, 2) and Team 1 has (3, 4)
-    c0, c1 = dlg._get_team_counts()
-    assert c0 == 2 and c1 == 2
+    # Host chooses جوري (item 0) -> immediately accepts and creates teams
+    item0 = dlg.list.item(0)
+    dlg._activate(item0)
     
+    # Team 0: محمد & جوري, Team 1: أحمد & محمود
     teams = dlg.get_custom_teams()
     assert teams == {"1": 0, "2": 0, "3": 1, "4": 1}
 

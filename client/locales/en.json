@@ -1,5 +1,6 @@
 {
   "TableVerse": "TableVerse",
+  "اختيار الفريق": "Select Team",
   "تحديد الفرق": "Team Selection",
   "تأكيد الفرق وبدء اللعبة": "Confirm Teams and Start Game",
   "تأكيد الفرق (يجب أن يكون كل فريق مكوناً من {count} لاعبين)": "Confirm Teams (each team must have {count} players)",
@@ -584,6 +585,7 @@
   "وضع إسكوبا 15 (مجموع 15)": "Escoba 15 Mode (sum 15)",
   "الوضع الكلاسيكي (مطابقة القيمة)": "Classic Mode (match value)",
   "الوضع المعكوس (أقل نقاط يفوز)": "Inverted Mode (lowest score wins)",
+  "وضع الفرق (لـ 4 أو 6 لاعبين)": "Teams Mode (for 4 or 6 players)",
   "سكوبا الكلاسيكية": "Classic Scopa",
   "سكوبا المعكوسة": "Inverted Scopa",
   "سكوبون": "Scopone",
