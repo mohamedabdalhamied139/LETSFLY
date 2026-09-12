@@ -57,6 +57,7 @@ class NinetyNineGame:
         self.event_type = ""
         self.last_action = ""
         self.sound_cue = ""
+        self.sound_cues: List[str] = []
         
         self.start_new_round()
         
@@ -109,6 +110,7 @@ class NinetyNineGame:
         self.event_type = "ROUND_START"
         self.last_action = f"الجولة {self.round_number}"
         self.sound_cue = ""
+        self.sound_cues = []
         
     def _advance_turn(self, steps=1):
         for _ in range(steps):
@@ -247,6 +249,7 @@ class NinetyNineGame:
         
         self.event_id += 1
         self.sound_cue = "NINETY_NINE_PLACE"
+        self.sound_cues = ["NINETY_NINE_PLACE"]
         self.event_type = "CARD_PLAYED"
         
         round_ended = False
@@ -319,11 +322,13 @@ class NinetyNineGame:
                 self.last_action += " تم عكس الاتجاه."
                 if not round_ended:
                     self.sound_cue = "NINETY_NINE_REVERSE"
+                    self.sound_cues = ["NINETY_NINE_PLACE", "NINETY_NINE_REVERSE"]
         elif val == 11:
             steps = 2
             self.last_action += " تخطي الدور."
             if not round_ended:
                 self.sound_cue = "NINETY_NINE_SKIP"
+                self.sound_cues = ["NINETY_NINE_PLACE", "NINETY_NINE_SKIP"]
 
         self._advance_turn(steps)
             
@@ -344,6 +349,7 @@ class NinetyNineGame:
             "event_type": self.event_type,
             "last_action": self.last_action,
             "sound_cue": self.sound_cue,
+            "sound_cues": list(self.sound_cues),
             "active": self.active,
             "winner_id": self.winner_id,
             "pile_value": self.pile_value,

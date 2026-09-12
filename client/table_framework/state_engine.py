@@ -99,7 +99,7 @@ class ClientStateEngine:
                 if final_play_event and hasattr(app, "_announce_scopa_final_play"):
                     app._announce_scopa_final_play(state)
                     final_play_announced = True
-            if game_type == "SNAKES_LADDERS":
+            if game_type in ("SNAKES_LADDERS", "NINETY_NINE"):
                 raw_cues = state.get("sound_cues") or ()
                 valid_sequence = tuple(c for c in raw_cues if sound_engine.has_cue(c))
                 if et not in ("MATCH_WON", "MATCH_FINISHED") and valid_sequence:
@@ -109,7 +109,7 @@ class ClientStateEngine:
             scopa_round_finished = game_type == "SCOPA" and et in ("ROUND_FINISHED", "ROUND_END", "ROUND_WON")
             if scopa_round_finished:
                 event_cues = ()
-            elif game_type == "SCOPA" and len(event_cues) > 1:
+            elif game_type in ("SCOPA", "NINETY_NINE") and len(event_cues) > 1:
                 for delay, event_cue in enumerate(event_cues):
                     if delay == 0:
                         sound_engine.play_event(event_cue)

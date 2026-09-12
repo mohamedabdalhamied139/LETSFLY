@@ -116,10 +116,10 @@ class SoundEngine:
         "NINETY_NINE_MILESTONE": "ninety_nine/ninety_nine_reach.wav",
         # Legacy Ninety-Nine gameplay cues used by the server. These are intentionally
         # retained because they are the historical gameplay sounds for this game.
-        "NINETY_NINE_PLACE": "uno/place.wav",
-        "NINETY_NINE_REVERSE": "uno/reverse.wav",
-        "NINETY_NINE_SKIP": "uno/skip.wav",
-        "NINETY_NINE_PROMPT": "uno/wild_color_prompt.wav",
+        "NINETY_NINE_PLACE": "ninety_nine/place.wav",
+        "NINETY_NINE_REVERSE": "ninety_nine/reverse.wav",
+        "NINETY_NINE_SKIP": "ninety_nine/skip.wav",
+        "NINETY_NINE_PROMPT": "ninety_nine/prompt.wav",
     }
 
     # Authoritative semantic event -> cue mapping for game-specific events.
