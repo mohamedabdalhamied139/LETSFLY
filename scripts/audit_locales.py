@@ -2,23 +2,25 @@
 import json
 import sys
 from pathlib import Path
-import tkinter as tk
-from tkinter import ttk
+
+# Add project root to sys.path so client modules can be loaded
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 def perform_audit():
-    base_dir = Path(__file__).resolve().parent.parent
-    loc_dir = base_dir / 'client' / 'locales'
+    loc_dir = project_root / 'client' / 'locales'
     ar_file = loc_dir / 'ar.json'
     en_file = loc_dir / 'en.json'
 
     if not ar_file.is_file() or not en_file.is_file():
-        return "خطأ: لم يتم العثور على ملفات اللغات في:\n" + str(loc_dir)
+        return f"Error: Missing localization files in:\n{loc_dir}"
 
     try:
         ar_data = json.loads(ar_file.read_text(encoding='utf-8'))
         en_data = json.loads(en_file.read_text(encoding='utf-8'))
     except Exception as e:
-        return f"خطأ أثناء قراءة ملفات الترجمة:\n{e}"
+        return f"Error reading locale JSON files:\n{e}"
 
     ar_keys = set(ar_data.keys())
     en_keys = set(en_data.keys())
@@ -27,25 +29,26 @@ def perform_audit():
     missing_in_ar = en_keys - ar_keys
 
     report = []
-    report.append("=" * 50)
-    report.append("  تقرير فحص وتدقيق ملفات الترجمة (Locale Audit)")
-    report.append("=" * 50)
-    report.append(f"إجمالي المفاتيح في اللغة العربية (AR): {len(ar_keys)}")
-    report.append(f"إجمالي المفاتيح في اللغة الإنجليزية (EN): {len(en_keys)}")
-    report.append("-" * 50)
+    report.append("=" * 60)
+    report.append("            LOCALE PARITY AUDIT REPORT")
+    report.append("=" * 60)
+    report.append(f"Total Arabic (AR) keys   : {len(ar_keys)}")
+    report.append(f"Total English (EN) keys  : {len(en_keys)}")
+    report.append("-" * 60)
 
     if not missing_in_en and not missing_in_ar:
-        report.append("النتيجة: ممتاز! تطابق كامل 100% بين اللغتين بدون أي مفاتيح مفقودة.")
+        report.append("RESULT: Excellent! 100% complete parity. Zero missing keys.")
     else:
-        report.append(f"مفاتيح موجودة في العربية ومفقودة في الإنجليزية: {len(missing_in_en)}")
+        report.append(f"Keys present in Arabic but missing in English: {len(missing_in_en)}")
         for k in sorted(missing_in_en):
             report.append(f"  - [AR -> Missing in EN]: {k}")
 
         report.append("")
-        report.append(f"مفاتيح موجودة في الإنجليزية ومفقودة في العربية: {len(missing_in_ar)}")
+        report.append(f"Keys present in English but missing in Arabic: {len(missing_in_ar)}")
         for k in sorted(missing_in_ar):
             report.append(f"  - [EN -> Missing in AR]: {k}")
 
+    # Check other languages if added in the future
     other_files = [f for f in loc_dir.glob("*.json") if f.name not in ('ar.json', 'en.json', 'patterns.json')]
     for other in other_files:
         lang_code = other.stem
@@ -55,45 +58,71 @@ def perform_audit():
                 continue
             other_keys = set(other_data.keys())
             missing = ar_keys - other_keys
-            report.append("-" * 50)
-            report.append(f"اللغة الإضافية: {other.name} (إجمالي المفاتيح: {len(other_keys)})")
-            report.append(f"مفاتيح مفقودة مقارنة بالعربية: {len(missing)}")
+            report.append("-" * 60)
+            report.append(f"Additional Locale: {other.name} (Total keys: {len(other_keys)})")
+            report.append(f"Missing keys compared to Arabic: {len(missing)}")
             for k in sorted(missing):
                 report.append(f"  - [Missing in {lang_code}]: {k}")
         except Exception as ex:
-            report.append(f"تعذر فحص {other.name}: {ex}")
+            report.append(f"Could not audit {other.name}: {ex}")
 
-    report.append("=" * 50)
+    report.append("=" * 60)
     return "\n".join(report)
 
 def run_gui():
-    root = tk.Tk()
-    root.title("أداة فحص وتدقيق ملفات الترجمة - LetsFly")
-    root.geometry("680x520")
+    from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QTextCursor
 
-    frame_top = ttk.Frame(root, padding=10)
-    frame_top.pack(fill=tk.X)
+    try:
+        from client.accessibility.reader import reader
+    except Exception:
+        reader = None
 
-    btn_scan = ttk.Button(frame_top, text="بدء الفحص (Scan)", command=lambda: on_scan())
-    btn_scan.pack(side=tk.LEFT, padx=5, pady=5)
+    app = QApplication(sys.argv)
+    window = QMainWindow()
+    window.setWindowTitle("Localization Audit Tool - LetsFly")
+    window.resize(750, 520)
 
-    lbl_info = ttk.Label(
-        frame_top, 
-        text="اضغط 'بدء الفحص' لمطابقة ملفات اللغات وعرض المفاتيح المفقودة."
-    )
-    lbl_info.pack(side=tk.LEFT, padx=5, pady=5)
+    central = QWidget(window)
+    window.setCentralWidget(central)
+    layout = QVBoxLayout(central)
+    layout.setContentsMargins(12, 12, 12, 12)
+    layout.setSpacing(10)
 
-    txt_report = tk.Text(root, wrap=tk.WORD, font=("Consolas", 10), padx=10, pady=10)
-    txt_report.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+    top_layout = QHBoxLayout()
+    btn_scan = QPushButton("Scan Locales")
+    btn_scan.setAccessibleName("Scan Locales button")
+    btn_scan.setAccessibleDescription("Click to scan and audit all locale files for parity and missing keys")
+    top_layout.addWidget(btn_scan)
+    top_layout.addStretch()
+    layout.addLayout(top_layout)
 
-    def on_scan():
-        report_text = perform_audit()
-        txt_report.delete("1.0", tk.END)
-        txt_report.insert(tk.END, report_text)
-        txt_report.focus_set()
+    txt_report = QPlainTextEdit()
+    txt_report.setReadOnly(True)
+    txt_report.setAccessibleName("Audit Report")
+    txt_report.setAccessibleDescription("Displays locale audit results and missing keys")
+    txt_report.setTextInteractionFlags(Qt.TextSelectableByKeyboard | Qt.TextSelectableByMouse)
+    layout.addWidget(txt_report)
 
-    on_scan()
-    root.mainloop()
+    def do_scan():
+        res = perform_audit()
+        txt_report.setPlainText(res)
+        txt_report.moveCursor(QTextCursor.Start)
+        txt_report.setFocus()
+        if reader and reader.nvda_available:
+            first_summary = "Scan completed. "
+            if "100% complete parity" in res:
+                first_summary += "100 percent complete parity between Arabic and English."
+            else:
+                first_summary += "Issues found. Check report."
+            reader.speak(first_summary, interrupt=True)
+
+    btn_scan.clicked.connect(do_scan)
+
+    window.show()
+    do_scan()
+    sys.exit(app.exec())
 
 if __name__ == '__main__':
     if '--cli' in sys.argv:
