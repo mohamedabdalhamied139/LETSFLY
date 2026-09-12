@@ -79,8 +79,9 @@ class SettingsDialog(QDialog):
         self.language_combo.addItem(tr("لغة الجهاز"), "system")
         self.language_combo.addItem(tr("العربية"), "ar")
         self.language_combo.addItem(tr("English"), "en")
+        self.language_combo.addItem(tr("Français"), "fr")
         current_lang = str(gen.get("language", "system") or "system")
-        self.language_combo.setCurrentIndex({"system": 0, "ar": 1, "en": 2}.get(current_lang, 0))
+        self.language_combo.setCurrentIndex({"system": 0, "ar": 1, "en": 2, "fr": 3}.get(current_lang, 0))
         lang_row.addWidget(self.language_combo)
 
         l.addWidget(self.chk_auto_login)

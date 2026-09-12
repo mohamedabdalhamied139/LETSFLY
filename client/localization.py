@@ -38,6 +38,7 @@ class TranslationManager:
             return
         self._initialized = True
         self._callbacks: List[TranslationCallback] = []
+        self._catalogs: Dict[str, Dict[str, str]] = {}
         self._ar_catalog: Dict[str, str] = {}
         self._en_catalog: Dict[str, str] = {}
         self._en_to_ar_reverse: Dict[str, str] = {}
@@ -58,22 +59,19 @@ class TranslationManager:
 
     def _load_catalogs(self) -> None:
         loc_dir = self._locales_dir()
-        en_file = loc_dir / "en.json"
-        ar_file = loc_dir / "ar.json"
+        self._catalogs = {}
+        if loc_dir.is_dir():
+            for p in loc_dir.glob("*.json"):
+                if p.stem.lower() == "patterns":
+                    continue
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        self._catalogs[p.stem.lower()] = json.load(f)
+                except Exception:
+                    logger.exception("Failed to load catalog from %s", p)
 
-        if en_file.is_file():
-            try:
-                with open(en_file, "r", encoding="utf-8") as f:
-                    self._en_catalog = json.load(f)
-            except Exception:
-                self._en_catalog = {}
-
-        if ar_file.is_file():
-            try:
-                with open(ar_file, "r", encoding="utf-8") as f:
-                    self._ar_catalog = json.load(f)
-            except Exception:
-                self._ar_catalog = {}
+        self._ar_catalog = self._catalogs.get("ar", {})
+        self._en_catalog = self._catalogs.get("en", {})
 
         self._en_to_ar_reverse = {}
         for ar_key, en_val in self._en_catalog.items():
@@ -180,7 +178,7 @@ class TranslationManager:
         return "en"
 
     def language(self) -> str:
-        """Return effective active language code ('ar' or 'en')."""
+        """Return effective active language code ('ar', 'en', 'fr', etc.)."""
         try:
             settings = settings_store.load_settings()
             pref = str(settings.get("general", {}).get("language", "system") or "system").lower().strip()
@@ -188,7 +186,10 @@ class TranslationManager:
             pref = "system"
 
         if pref == "system":
-            return self.system_language()
+            sys_lang = self.system_language()
+            return sys_lang if sys_lang in self._catalogs or sys_lang == "ar" else "en"
+        if pref in self._catalogs:
+            return pref
         if pref.startswith("ar"):
             return "ar"
         return "en"
@@ -200,7 +201,7 @@ class TranslationManager:
     def set_language(self, value: str) -> str:
         """Change language preference and update the UI immediately without restart."""
         val = str(value or "system").lower().strip()
-        if val not in ("system", "ar", "en"):
+        if val != "system" and val not in self._catalogs:
             val = "system"
 
         settings = settings_store.load_settings()
@@ -302,15 +303,17 @@ class TranslationManager:
                         return f"{leading}{trans_core}{ar_punct}"
             return s
 
-        # English mode
+        # Target language catalog (English, French, etc.)
+        catalog = self._catalogs.get(active, self._en_catalog)
+
         # 1. Exact catalog match
-        if s in self._en_catalog:
-            return self._en_catalog[s]
+        if s in catalog:
+            return catalog[s]
 
         # Stripped match (preserving whitespace)
         stripped = s.strip()
-        if stripped in self._en_catalog:
-            translated = self._en_catalog[stripped]
+        if stripped in catalog:
+            translated = catalog[stripped]
             leading = s[:len(s) - len(s.lstrip())]
             trailing = s[len(s.rstrip()):]
             return f"{leading}{translated}{trailing}"
@@ -319,15 +322,15 @@ class TranslationManager:
         for punct in ("...", ".", "!", "؟", "?", ":", "،", ","):
             if stripped.endswith(punct):
                 core = stripped[:-len(punct)].rstrip()
-                if core in self._en_catalog:
-                    translated_core = self._en_catalog[core]
+                if core in catalog:
+                    translated_core = catalog[core]
                     leading = s[:len(s) - len(s.lstrip())]
                     trailing_punct = "." if punct == "." else ("?" if punct == "؟" else punct)
                     return f"{leading}{translated_core}{trailing_punct}"
 
         # If catalog has entry with a period, but stripped doesn't have it:
-        if f"{stripped}." in self._en_catalog:
-            trans = self._en_catalog[f"{stripped}."]
+        if f"{stripped}." in catalog:
+            trans = catalog[f"{stripped}."]
             if trans.endswith("."):
                 trans = trans[:-1]
             leading = s[:len(s) - len(s.lstrip())]
@@ -340,7 +343,7 @@ class TranslationManager:
         for sep in ("، ", ", ", " و ", " و", " and "):
             if sep in stripped:
                 parts = stripped.split(sep)
-                translated_parts = [self._en_catalog.get(part, part) for part in parts]
+                translated_parts = [catalog.get(part, part) for part in parts]
                 if all(tp != part for tp, part in zip(translated_parts, parts)):
                     leading = s[:len(s) - len(s.lstrip())]
                     trailing = s[len(s.rstrip()):]
