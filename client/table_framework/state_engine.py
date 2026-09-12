@@ -169,7 +169,8 @@ class ClientStateEngine:
                     if et in ("CARD_DRAWN", "CARD_DRAWN_AND_PASSED", "DRAW_PENALTY",
                               "CARD_PLAYED", "SPECIAL_CARD_PLAYED", "BLUFF_CAUGHT",
                               "BLUFF_FALSE", "UNO_CAUGHT", "SEVEN_EXCHANGE",
-                              "BUZZER_PENALTY", "PLAYER_ELIMINATED"):
+                              "BUZZER_PENALTY", "PLAYER_ELIMINATED",
+                              "PENDING_CHOICE", "CHOICE_CANCELLED"):
                         announce_game_event(action_text, interrupt=True)
                         spoke_event = True
                     elif et == "UNO_CALLED":

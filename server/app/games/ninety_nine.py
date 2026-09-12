@@ -256,6 +256,7 @@ class NinetyNineGame:
         
         if new_total == 99:
             self.sound_cue = "ROUND_END"
+            self.sound_cues = ["NINETY_NINE_PLACE", "ROUND_END"]
             for p in list(self.active_players):
                 if p != uid:
                     self._deduct_token(p, 2)
@@ -266,6 +267,7 @@ class NinetyNineGame:
             
         elif new_total > 99:
             self.sound_cue = "ROUND_END"
+            self.sound_cues = ["NINETY_NINE_PLACE", "ROUND_END"]
             loss_amount = 3 if val == 2 else 2
             self._deduct_token(uid, loss_amount)
             scores_summary = "، ".join(f"{self.player_names.get(p, 'لاعب')}: {self.tokens.get(p, 0)}" for p in self.player_ids)
@@ -276,6 +278,7 @@ class NinetyNineGame:
         else:
             if new_total in (33, 66):
                 self.sound_cue = "NINETY_NINE_REACH"
+                self.sound_cues = ["NINETY_NINE_PLACE", "NINETY_NINE_REACH"]
                 for p in list(self.active_players):
                     if p != uid:
                         self._deduct_token(p, 1)
@@ -283,10 +286,12 @@ class NinetyNineGame:
             else:
                 if prev_total < 33 and new_total > 33:
                     self.sound_cue = "NINETY_NINE_EXCEED"
+                    self.sound_cues = ["NINETY_NINE_PLACE", "NINETY_NINE_EXCEED"]
                     self._deduct_token(uid, 1)
                     action_text += f" {self.player_names[uid]} خسر نقطة."
                 elif prev_total < 66 and new_total > 66:
                     self.sound_cue = "NINETY_NINE_EXCEED"
+                    self.sound_cues = ["NINETY_NINE_PLACE", "NINETY_NINE_EXCEED"]
                     self._deduct_token(uid, 1)
                     action_text += f" {self.player_names[uid]} خسر نقطة."
                     

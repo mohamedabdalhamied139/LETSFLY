@@ -567,6 +567,7 @@ class TableVerseApp(QMainWindow):
 
     def _handle_register(self, u, d, p):
         sound_engine.play_looping("CONNECTING")
+        self.stack.setCurrentWidget(self.login_loading_view)
         def done(res):
             sound_engine.stop_looping("CONNECTING")
             sound_engine.play_event("CONNECTED")
@@ -585,6 +586,7 @@ class TableVerseApp(QMainWindow):
             self._start_session_clean(dname)
         def fail(err):
             sound_engine.stop_looping("CONNECTING")
+            self.stack.setCurrentIndex(0)
             self._show_error(err)
         self._run_async(lambda: self.api.register(u, d, p), done, fail)
 
@@ -645,6 +647,7 @@ class TableVerseApp(QMainWindow):
             token = load_token()
             if token:
                 sound_engine.play_looping("CONNECTING")
+                self.stack.setCurrentWidget(self.login_loading_view)
                 self.api.token = token
                 def done(res):
                     sound_engine.stop_looping("CONNECTING")
