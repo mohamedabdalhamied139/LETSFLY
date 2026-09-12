@@ -2457,7 +2457,8 @@ class TableVerseApp(QMainWindow):
                 return
             elif et in ("player_joined", "bot_added"):
                 name = event.get('name', 'لاعب')
-                self.table_view.add_log(tr("{name} انضم للطاولة", name=name), category="FRIENDS")
+                cat = "ALL" if et == "bot_added" else "FRIENDS"
+                self.table_view.add_log(tr("{name} انضم للطاولة", name=name), category=cat)
                 # The local create/join path already plays TABLE_JOIN because
                 # its own broadcast can race with room-WebSocket startup.
                 # Ignore the user's own echoed event to prevent duplicate SFX.
@@ -2482,7 +2483,8 @@ class TableVerseApp(QMainWindow):
                             pass
             elif et in ("player_left", "bot_removed"):
                 name = event.get('name', 'لاعب')
-                self.table_view.add_log(tr("{name} غادر الطاولة", name=name), category="FRIENDS")
+                cat = "ALL" if et == "bot_removed" else "FRIENDS"
+                self.table_view.add_log(tr("{name} غادر الطاولة", name=name), category=cat)
                 if str(event.get("user_id")) != str((self.user or {}).get("id")):
                     handle_template_event("game_events", "{name} غادر الطاولة", "TABLE_LEAVE", interrupt=False, name=name)
                 if self.current_room:

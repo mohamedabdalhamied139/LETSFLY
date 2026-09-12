@@ -252,7 +252,7 @@ class NinetyNineGame:
         round_ended = False
         
         if new_total == 99:
-            self.sound_cue = "NINETY_NINE_REACH"
+            self.sound_cue = "ROUND_END"
             for p in list(self.active_players):
                 if p != uid:
                     self._deduct_token(p, 2)
@@ -262,7 +262,7 @@ class NinetyNineGame:
             self.event_type = "ROUND_FINISHED"
             
         elif new_total > 99:
-            self.sound_cue = "NINETY_NINE_EXCEED"
+            self.sound_cue = "ROUND_END"
             loss_amount = 3 if val == 2 else 2
             self._deduct_token(uid, loss_amount)
             scores_summary = "، ".join(f"{self.player_names.get(p, 'لاعب')}: {self.tokens.get(p, 0)}" for p in self.player_ids)
