@@ -2170,7 +2170,7 @@ class TableVerseApp(QMainWindow):
                     self.current_room["rules"] = {}
                 self.current_room["rules"]["private"] = is_priv
             msg = "تم تغيير الطاولة إلى خاصة." if is_priv else "تم تغيير الطاولة إلى عامة."
-            self.table_view.add_log(tr(msg), category="FRIENDS")
+            self.table_view.add_log(tr(msg), category="ALL")
             reader.speak(tr(msg), interrupt=True)
         def fail(e):
             reader.speak(tr("تعذر تغيير خصوصية الطاولة: {error}", error=tr(str(e))), interrupt=True)
@@ -2450,15 +2450,14 @@ class TableVerseApp(QMainWindow):
                 return
             elif et == "player_reconnected":
                 name = event.get('name', 'لاعب')
-                self.table_view.add_log(tr("{name} أعاد الاتصال مجددا", name=name), category="FRIENDS")
+                self.table_view.add_log(tr("{name} أعاد الاتصال مجددا", name=name), category="ALL")
                 if str(event.get("user_id")) != str((self.user or {}).get("id")):
                     sound_engine.play_event("CONNECTED")
                     reader.speak(tr("{name} أعاد الاتصال مجددا", name=name), interrupt=False)
                 return
             elif et in ("player_joined", "bot_added"):
                 name = event.get('name', 'لاعب')
-                cat = "ALL" if et == "bot_added" else "FRIENDS"
-                self.table_view.add_log(tr("{name} انضم للطاولة", name=name), category=cat)
+                self.table_view.add_log(tr("{name} انضم للطاولة", name=name), category="ALL")
                 # The local create/join path already plays TABLE_JOIN because
                 # its own broadcast can race with room-WebSocket startup.
                 # Ignore the user's own echoed event to prevent duplicate SFX.
@@ -2483,8 +2482,7 @@ class TableVerseApp(QMainWindow):
                             pass
             elif et in ("player_left", "bot_removed"):
                 name = event.get('name', 'لاعب')
-                cat = "ALL" if et == "bot_removed" else "FRIENDS"
-                self.table_view.add_log(tr("{name} غادر الطاولة", name=name), category=cat)
+                self.table_view.add_log(tr("{name} غادر الطاولة", name=name), category="ALL")
                 if str(event.get("user_id")) != str((self.user or {}).get("id")):
                     handle_template_event("game_events", "{name} غادر الطاولة", "TABLE_LEAVE", interrupt=False, name=name)
                 if self.current_room:
@@ -2496,7 +2494,7 @@ class TableVerseApp(QMainWindow):
                         self.current_room["players_dict"] = event["players_dict"]
             elif et == "player_kicked":
                 name = event.get('name', 'لاعب')
-                self.table_view.add_log(tr("تم طرد {name} من الطاولة بواسطة القائد.", name=name), category="FRIENDS")
+                self.table_view.add_log(tr("تم طرد {name} من الطاولة بواسطة القائد.", name=name), category="ALL")
                 if str(event.get("user_id")) != str((self.user or {}).get("id")):
                     reader.speak(tr("تم طرد {name} من الطاولة بواسطة القائد.", name=name), interrupt=False)
                 if self.current_room:
@@ -2508,7 +2506,7 @@ class TableVerseApp(QMainWindow):
                         self.current_room["players_dict"] = event["players_dict"]
             elif et == "player_banned":
                 name = event.get('name', 'لاعب')
-                self.table_view.add_log(tr("تم حظر {name} من الطاولة بواسطة القائد.", name=name), category="FRIENDS")
+                self.table_view.add_log(tr("تم حظر {name} من الطاولة بواسطة القائد.", name=name), category="ALL")
                 if str(event.get("user_id")) != str((self.user or {}).get("id")):
                     reader.speak(tr("تم حظر {name} من الطاولة بواسطة القائد.", name=name), interrupt=False)
                 if self.current_room:
@@ -2534,7 +2532,7 @@ class TableVerseApp(QMainWindow):
                 name = event.get('name', 'لاعب')
                 is_spec = bool(event.get('is_spectator'))
                 status_text = "متفرج" if is_spec else "لاعب"
-                self.table_view.add_log(tr("{name} الآن في وضع {status}.", name=name, status=tr(status_text)), category="FRIENDS")
+                self.table_view.add_log(tr("{name} الآن في وضع {status}.", name=name, status=tr(status_text)), category="ALL")
                 if str(event.get("user_id")) != str((self.user or {}).get("id")):
                     reader.speak(tr("{name} الآن في وضع {status}.", name=name, status=tr(status_text)), interrupt=False)
                 # Refresh room players & spectators in memory
@@ -2555,7 +2553,7 @@ class TableVerseApp(QMainWindow):
                 name = event.get('name', 'لاعب')
                 is_muted = bool(event.get('is_muted'))
                 txt = "تم كتم ميكروفون {name}." if is_muted else "تم إلغاء كتم ميكروفون {name}."
-                self.table_view.add_log(tr(txt, name=name), category="FRIENDS")
+                self.table_view.add_log(tr(txt, name=name), category="ALL")
                 reader.speak(tr(txt, name=name), interrupt=False)
                 if self.current_room:
                     vm = set(self.current_room.get("voice_muted") or [])
@@ -2567,15 +2565,15 @@ class TableVerseApp(QMainWindow):
                     self.current_room["voice_muted"] = list(vm)
             elif et == "voice_user_kicked":
                 name = event.get('name', 'لاعب')
-                self.table_view.add_log(tr("تمت إزالة {name} من المحادثة الصوتية.", name=name), category="FRIENDS")
+                self.table_view.add_log(tr("تمت إزالة {name} من المحادثة الصوتية.", name=name), category="ALL")
                 reader.speak(tr("تمت إزالة {name} من المحادثة الصوتية.", name=name), interrupt=False)
             elif et == "voice_user_banned":
                 name = event.get('name', 'لاعب')
-                self.table_view.add_log(tr("تم حظر {name} من المحادثة الصوتية.", name=name), category="FRIENDS")
+                self.table_view.add_log(tr("تم حظر {name} من المحادثة الصوتية.", name=name), category="ALL")
                 reader.speak(tr("تم حظر {name} من المحادثة الصوتية.", name=name), interrupt=False)
             elif et == "captain_changed":
                 name = event.get('name', 'لاعب')
-                self.table_view.add_log(tr("{name} أصبح كابتن الطاولة", name=name), category="FRIENDS")
+                self.table_view.add_log(tr("{name} أصبح كابتن الطاولة", name=name), category="ALL")
                 handle_template_event("game_events", "{name} أصبح كابتن الطاولة", "", interrupt=False, name=name)
                 if self.current_room:
                     self.current_room["host_id"] = event.get("user_id")
@@ -2589,10 +2587,10 @@ class TableVerseApp(QMainWindow):
                 name = event.get('name', '')
                 is_co = bool(event.get('is_co_host'))
                 if is_co and name:
-                    self.table_view.add_log(tr("{name} أصبح نائب كابتن الطاولة", name=name), category="FRIENDS")
+                    self.table_view.add_log(tr("{name} أصبح نائب كابتن الطاولة", name=name), category="ALL")
                     handle_template_event("game_events", "{name} أصبح نائب كابتن الطاولة", "", interrupt=False, name=name)
                 else:
-                    self.table_view.add_log(tr("تم إلغاء نائب كابتن الطاولة"), category="FRIENDS")
+                    self.table_view.add_log(tr("تم إلغاء نائب كابتن الطاولة"), category="ALL")
                 if self.current_room:
                     self.current_room["co_host_id"] = event.get("co_host_id")
                     my_id = int((self.user or {}).get("id") or 0)
@@ -2604,7 +2602,7 @@ class TableVerseApp(QMainWindow):
                     rep_name = event.get('bot_name', 'بوت')
                 else:
                     rep_name = event.get('replacement_name', 'لاعب')
-                self.table_view.add_log(tr("تم استبدال {name} بـ {rep}", name=name, rep=rep_name), category="FRIENDS")
+                self.table_view.add_log(tr("تم استبدال {name} بـ {rep}", name=name, rep=rep_name), category="ALL")
                 if str(event.get("user_id")) != str((self.user or {}).get("id")):
                     reader.speak(tr("تم استبدال {name} بـ {rep}", name=name, rep=rep_name), interrupt=False)
                 if self.current_room:
