@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -12,24 +12,29 @@
 
     <header role="banner">
         <div class="nav-container">
+            <div class="lang-selector">
+                <label for="language-select" class="visually-hidden" data-lang-content="ar">اختر اللغة:</label>
+                <label for="language-select" class="visually-hidden" data-lang-content="en" style="display:none;" aria-hidden="true">Choose Language:</label>
+                <label for="language-select" class="visually-hidden" data-lang-content="fr" style="display:none;" aria-hidden="true">Choisir la langue :</label>
+                <select id="language-select" class="lang-select" aria-label="اختر اللغة / Select Language">
+                    <option value="ar">العربية (Arabic)</option>
+                    <option value="en">English</option>
+                    <option value="fr">Français (French)</option>
+                </select>
+            </div>
+
             <a href="index.html" class="brand" aria-label="LetsFly الرئيسية">
                 🎮 LetsFly <span class="highlight">TableVerse</span>
             </a>
             
             <nav role="navigation" aria-label="القائمة الرئيسية">
                 <ul>
-                    <li><a href="index.html" aria-current="page" data-lang-content="ar">الرئيسية</a><a href="index.html" aria-current="page" data-lang-content="en">Home</a><a href="index.html" aria-current="page" data-lang-content="fr">Accueil</a></li>
-                    <li><a href="#games" data-lang-content="ar">الألعاب</a><a href="#games" data-lang-content="en">Games</a><a href="#games" data-lang-content="fr">Jeux</a></li>
-                    <li><a href="#features" data-lang-content="ar">المميزات</a><a href="#features" data-lang-content="en">Features</a><a href="#features" data-lang-content="fr">Caractéristiques</a></li>
-                    <li><a href="help/uno.html" data-lang-content="ar">مركز الشروحات</a><a href="help/uno.html" data-lang-content="en">Help Center</a><a href="help/uno.html" data-lang-content="fr">Centre d'aide</a></li>
+                    <li><a href="index.html" aria-current="page" data-lang-content="ar">الرئيسية</a><a href="index.html" aria-current="page" data-lang-content="en" style="display:none;">Home</a><a href="index.html" aria-current="page" data-lang-content="fr" style="display:none;">Accueil</a></li>
+                    <li><a href="#games" data-lang-content="ar">الألعاب</a><a href="#games" data-lang-content="en" style="display:none;">Games</a><a href="#games" data-lang-content="fr" style="display:none;">Jeux</a></li>
+                    <li><a href="#features" data-lang-content="ar">المميزات</a><a href="#features" data-lang-content="en" style="display:none;">Features</a><a href="#features" data-lang-content="fr" style="display:none;">Caractéristiques</a></li>
+                    <li><a href="help/uno.html" data-lang-content="ar">مركز الشروحات</a><a href="help/uno.html" data-lang-content="en" style="display:none;">Help Center</a><a href="help/uno.html" data-lang-content="fr" style="display:none;">Centre d'aide</a></li>
                 </ul>
             </nav>
-
-            <div class="lang-selector" role="group" aria-label="اختيار اللغة / Language selection">
-                <button type="button" class="lang-btn active" data-lang="ar" aria-pressed="true">العربية</button>
-                <button type="button" class="lang-btn" data-lang="en" aria-pressed="false">English</button>
-                <button type="button" class="lang-btn" data-lang="fr" aria-pressed="false">Français</button>
-            </div>
         </div>
     </header>
 

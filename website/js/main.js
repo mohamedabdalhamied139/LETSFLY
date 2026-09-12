@@ -1,13 +1,14 @@
-﻿// Accessibility & Language Switcher Logic for LetsFly Web & Help Center
+// Accessibility & Language Switcher Logic for LetsFly Web & Help Center
 document.addEventListener("DOMContentLoaded", () => {
     // Check saved language or default to Arabic
     const savedLang = localStorage.getItem("letsfly_lang") || "ar";
     switchLanguage(savedLang);
 
-    // Bind lang buttons
-    document.querySelectorAll(".lang-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const lang = btn.getAttribute("data-lang");
+    // Bind lang select combo-box
+    document.querySelectorAll(".lang-select").forEach(select => {
+        select.value = savedLang;
+        select.addEventListener("change", (e) => {
+            const lang = e.target.value;
             if (lang) {
                 switchLanguage(lang);
                 localStorage.setItem("letsfly_lang", lang);
@@ -21,11 +22,9 @@ function switchLanguage(lang) {
     htmlTag.setAttribute("lang", lang);
     htmlTag.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
 
-    // Update active button state
-    document.querySelectorAll(".lang-btn").forEach(btn => {
-        const isCurrent = btn.getAttribute("data-lang") === lang;
-        btn.classList.toggle("active", isCurrent);
-        btn.setAttribute("aria-pressed", isCurrent ? "true" : "false");
+    // Update all select dropdowns
+    document.querySelectorAll(".lang-select").forEach(select => {
+        select.value = lang;
     });
 
     // Show/hide multilingual sections
