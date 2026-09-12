@@ -565,6 +565,10 @@ class TableVerseApp(QMainWindow):
         def fail(err):
             sound_engine.stop_looping("CONNECTING")
             self.stack.setCurrentIndex(0)
+            if u:
+                self.auth_view.username_input.setText(u)
+            if p:
+                self.auth_view.password_input.setText(p)
             self._show_error(err)
         self._run_async(lambda: self.api.login(u, p), done, fail)
 
@@ -644,6 +648,9 @@ class TableVerseApp(QMainWindow):
 
         # keep_credentials is on — always pre-fill
         saved_u, saved_p = load_credentials()
+        if saved_u and saved_p:
+            self.auth_view.username_input.setText(saved_u)
+            self.auth_view.password_input.setText(saved_p)
 
         if auto:
             # Try token-based auto login first
