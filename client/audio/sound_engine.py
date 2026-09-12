@@ -116,6 +116,7 @@ class SoundEngine:
         "NINETY_NINE_MILESTONE": "ninety_nine/ninety_nine_reach.wav",
         # Legacy Ninety-Nine gameplay cues used by the server. These are intentionally
         # retained because they are the historical gameplay sounds for this game.
+        "NINETY_NINE_DEAL": "ninety_nine/deal.wav",
         "NINETY_NINE_PLACE": "ninety_nine/place.wav",
         "NINETY_NINE_REVERSE": "ninety_nine/reverse.wav",
         "NINETY_NINE_SKIP": "ninety_nine/skip.wav",
@@ -210,9 +211,9 @@ class SoundEngine:
         "NINETY_NINE": {
             # Preserve the historical Ninety-Nine gameplay cues without allowing
             # them to affect any other game.
-            "GAME_STARTED": (),
-            "ROUND_START": (),
-            "ROUND_STARTED": (),
+            "GAME_STARTED": ("NINETY_NINE_DEAL",),
+            "ROUND_START": ("NINETY_NINE_DEAL",),
+            "ROUND_STARTED": ("NINETY_NINE_DEAL",),
             "CARD_PLAYED": ("NINETY_NINE_PLACE", "NINETY_NINE_REVERSE", "NINETY_NINE_SKIP", "NINETY_NINE_REACH", "NINETY_NINE_EXCEED"),
             "PENDING_CHOICE": ("NINETY_NINE_PROMPT",),
             "CHOICE_CANCELLED": (),

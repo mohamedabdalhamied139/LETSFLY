@@ -109,8 +109,8 @@ class NinetyNineGame:
         self.event_id += 1
         self.event_type = "ROUND_START"
         self.last_action = f"الجولة {self.round_number}"
-        self.sound_cue = ""
-        self.sound_cues = []
+        self.sound_cue = "NINETY_NINE_DEAL"
+        self.sound_cues = ["NINETY_NINE_DEAL"]
         
     def _advance_turn(self, steps=1):
         for _ in range(steps):
