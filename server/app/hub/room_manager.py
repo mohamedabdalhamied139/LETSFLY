@@ -39,6 +39,7 @@ class Room:
         self.match_key = None
         self.player_joined_at: Dict[int, str] = {host_id: now}
         self._bot_task = None
+        self._deal_batch_task = None
         self._mutation_lock = asyncio.Lock()
         self.players: List[int] = [host_id]
         self.player_names: Dict[int, str] = {host_id: host_name}
@@ -163,7 +164,7 @@ class Room:
             current = asyncio.current_task()
         except RuntimeError:
             current = None
-        for attr in ("_bot_task", "_round_transition_task"):
+        for attr in ("_bot_task", "_round_transition_task", "_deal_batch_task"):
             task = getattr(self, attr, None)
             if task is not None and not task.done() and task is not current:
                 task.cancel()

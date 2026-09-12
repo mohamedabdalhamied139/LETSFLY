@@ -26,7 +26,7 @@ from server.app.games.american_domino_lifecycle import check_and_finalize_americ
 from server.app.games.snakes_bot import run_snakes_bots
 from server.app.games.snakes_lifecycle import finalize_snakes_match
 from server.app.games.scopa_bot import run_scopa_bots
-from server.app.games.scopa_lifecycle import check_and_finalize_scopa_round, broadcast_scopa_state
+from server.app.games.scopa_lifecycle import check_and_finalize_scopa_round, broadcast_scopa_state, schedule_scopa_deal_batch
 from server.app.games.tennis_bot import run_tennis_bots
 from server.app.games.tennis_lifecycle import finalize_tennis_match
 from server.app.games.ninety_nine_bot import run_ninety_nine_bots
@@ -462,8 +462,7 @@ async def scopa_action(room, user_id, req):
     if game.pending_deal_batch:
         game.pending_deal_batch = False
         if room.scopa_game and room.scopa_game.active:
-            room.scopa_game._deal_next_batch()
-            broadcast_scopa_state(room, room.scopa_game)
+            schedule_scopa_deal_batch(room, delay_seconds=3.0)
     if game.pending_round_finalize:
         game.pending_round_finalize = False
         if room.scopa_game and room.scopa_game.active:

@@ -159,3 +159,27 @@ async def _start_next_scopa_round_after_delay(room: Room):
         if room._round_transition_task is current:
             room._round_transition_task = None
 
+
+def schedule_scopa_deal_batch(room: Room, delay_seconds: float = 3.0):
+    """Schedule dealing the next batch of cards after a delay, allowing last card speech to finish."""
+    if getattr(room, "_deal_batch_task", None) is None or room._deal_batch_task.done():
+        room._deal_batch_task = asyncio.create_task(_deal_next_batch_after_delay(room, delay_seconds))
+
+
+async def _deal_next_batch_after_delay(room: Room, delay_seconds: float):
+    from server.app.games.scopa_bot import run_scopa_bots
+    try:
+        await asyncio.sleep(delay_seconds)
+        async with room._mutation_lock:
+            if not room.scopa_game or not room.scopa_game.active:
+                return
+            room.scopa_game._deal_next_batch()
+            broadcast_scopa_state(room, room.scopa_game)
+        if room._bot_task is None or room._bot_task.done():
+            room._bot_task = asyncio.create_task(run_scopa_bots(room))
+    except asyncio.CancelledError:
+        raise
+    finally:
+        current = asyncio.current_task()
+        if getattr(room, "_deal_batch_task", None) is current:
+            room._deal_batch_task = None

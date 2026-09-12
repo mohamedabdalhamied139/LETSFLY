@@ -430,7 +430,7 @@ class TableView(QWidget):
 
         # 4. Chat Input
         self.chat_input = QLineEdit()
-        self.chat_input.setFocusPolicy(Qt.ClickFocus)
+        self.chat_input.setFocusPolicy(Qt.StrongFocus)
         self.chat_input.setPlaceholderText(tr("الدردشة..."))
         self.chat_input.setAccessibleName(tr("الدردشة"))
         self.chat_input.setAccessibleDescription("")
@@ -779,7 +779,14 @@ class TableView(QWidget):
             except Exception:
                 first_widget = self.main_table_widget
         
-        if current == self.chat_input:
+        is_in_activity_log = (
+            current == self.activity_log
+            or (hasattr(self, "activity_log") and hasattr(self.activity_log, "viewport") and current == self.activity_log.viewport())
+            or (hasattr(self, "activity_panel") and (current == self.activity_panel or current.parent() == self.activity_panel))
+        )
+        is_in_chat = (current == self.chat_input)
+
+        if is_in_chat:
             if next_focus:
                 self._focus_target = "activity_log"
                 self.activity_log.setFocus()
@@ -788,7 +795,7 @@ class TableView(QWidget):
                 first_widget.setFocus()
             return True
 
-        elif current == self.activity_log:
+        elif is_in_activity_log:
             if next_focus:
                 self._focus_target = "gameplay"
                 first_widget.setFocus()
