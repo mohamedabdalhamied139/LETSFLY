@@ -155,8 +155,8 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                 return True, 0
 
             function_actions = {
-                0x71: ("on_f2_wallet", "الرصيد"),
-                0x72: ("on_f3_ping", "اختبار الاتصال"),
+                0x71: "on_f2_wallet",
+                0x72: "on_f3_ping",
             }
             if vk == 0x73 and not alt:
                 # F4 alone: Dedicated spectator shortcut across all screens in the game
@@ -164,10 +164,8 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                 return True, 0
 
             if vk in function_actions:
-                method, spoken = function_actions[vk]
+                method = function_actions[vk]
                 if self._call(method):
-                    if spoken:
-                        self._speak(spoken)
                     return True, 0
 
             # Final gameplay shortcuts (active when in room and not typing).
