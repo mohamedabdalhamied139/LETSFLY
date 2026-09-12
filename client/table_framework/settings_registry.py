@@ -104,6 +104,7 @@ def scopa_mapper(values):
         "asso_piglia_tutto": scopa_mode == "asso_piglia_tutto",
         "scopone": scopa_mode == "scopone",
         "inverted": bool(values.get("mode_inverted", False)),
+        "teams_enabled": bool(values.get("teams_enabled", False)),
     }
     return target, rules
 
@@ -194,6 +195,7 @@ GAME_SETTINGS_REGISTRY = {
             "asso_piglia_tutto": False,
             "scopone": False,
             "inverted": False,
+            "teams_enabled": False,
         },
         state_getter="scopa_state",
         state_applier="_apply_scopa_state",
@@ -204,6 +206,7 @@ GAME_SETTINGS_REGISTRY = {
             SettingField("mode_asso", "قاعدة الآس يمسح الكل (Asso piglia tutto)", kind="bool", default_value=False),
             SettingField("mode_scopone", "وضع إسكوبوني (توزيع كل الكروت)", kind="bool", default_value=False),
             SettingField("mode_inverted", "الوضع المعكوس (أقل نقاط يفوز)", kind="bool", default_value=False),
+            SettingField("teams_enabled", "وضع الفرق (لـ 4 أو 6 لاعبين)", kind="bool", default_value=False),
         ],
         rule_mapper=scopa_mapper
     ),

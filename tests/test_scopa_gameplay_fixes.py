@@ -414,8 +414,8 @@ def test_deal_batch_announces_new_turn_for_player():
         assert mock_announce.call_args[1].get("interrupt") is False
 
 
-def test_deal_batch_announces_new_turn_for_opponent():
-    """Verify that when a new batch is dealt, the opponent's turn is announced (not suppressed)."""
+def test_deal_batch_suppresses_opponent_turn_announcement():
+    """Verify that when a new batch is dealt, the opponent's turn speech ('دور فلان') is suppressed per user request."""
     from client.table_framework.state_engine import ClientStateEngine
 
     app = MagicMock()
@@ -437,9 +437,7 @@ def test_deal_batch_announces_new_turn_for_opponent():
 
     with patch("client.table_framework.state_engine.announce_game_event") as mock_announce:
         ClientStateEngine.process_common_state(app, "SCOPA", state, lambda a, b: None)
-        assert mock_announce.called
-        assert "Player 2" in mock_announce.call_args[0][0]
-        assert mock_announce.call_args[1].get("interrupt") is False
+        assert not mock_announce.called
 
 
 def test_is_my_turn_guards_against_none_user_and_turn_id(qapp):

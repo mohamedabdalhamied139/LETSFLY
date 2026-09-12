@@ -51,7 +51,7 @@ class ScopaGame:
         self.game_mode = self.rules.get("scopa_mode", "classic")  # classic, escoba_15, asso_piglia_tutto, scopone, inverted
 
         # Team setup: 4 or 6 players are 2 teams (Team 0 and Team 1)
-        self.is_team_game = len(self.players) in (4, 6)
+        self.is_team_game = bool(self.rules.get('teams_enabled', False)) and len(self.players) in (4, 6)
         self.teams: Dict[int, int] = {}
         for idx, (uid, _) in enumerate(self.players):
             self.teams[uid] = (idx % 2) if self.is_team_game else uid

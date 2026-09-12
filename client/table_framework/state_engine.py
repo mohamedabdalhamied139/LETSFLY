@@ -221,12 +221,12 @@ class ClientStateEngine:
                 setattr(app, f"_last_turn_{game_type.lower()}", curr_id_str)
                 setattr(app, was_my_turn_attr, is_my_turn)
                 if is_my_turn:
-                    if not event_cues:
-                        sound_engine.play_event("TURN_START")
+                    sound_engine.play_event("TURN_START")
                     if not spoke_event:
                         announce_game_event("دورك", interrupt=False)
                 else:
-                    if not spoke_event:
+                    is_new_deal_batch = (game_type == "SCOPA" and et == "DEAL_BATCH")
+                    if not spoke_event and not is_new_deal_batch:
                         announce_game_event(f"دور {current_name}", interrupt=False)
         elif state.get("event_type") in ("MATCH_WON", "MATCH_FINISHED", "ROUND_FINISHED", "ROUND_END"):
             setattr(app, was_my_turn_attr, False)
