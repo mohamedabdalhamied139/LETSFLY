@@ -1,4 +1,5 @@
 import random
+import time
 import uuid
 from typing import List, Dict, Optional, Tuple, Any
 
@@ -57,6 +58,13 @@ class NinetyNineGame:
         self.event_type = ""
         self.last_action = ""
         self.sound_cue = ""
+        self.turn_timer: Optional[int] = None
+        if rules and "turn_timer" in rules:
+            raw_tt = str(rules["turn_timer"]).strip()
+            if raw_tt.isdigit() and int(raw_tt) > 0:
+                self.turn_timer = int(raw_tt)
+        self.turn_started_at: float = time.monotonic()
+
         self.sound_cues: List[str] = []
         
         self.start_new_round()
@@ -111,12 +119,44 @@ class NinetyNineGame:
         self.last_action = f"الجولة {self.round_number}"
         self.sound_cue = "NINETY_NINE_DEAL"
         self.sound_cues = ["NINETY_NINE_DEAL"]
+        self.turn_started_at = time.monotonic()
         
     def _advance_turn(self, steps=1):
         for _ in range(steps):
             self.current_turn_index = (self.current_turn_index + self.direction) % len(self.player_ids)
             while self.player_ids[self.current_turn_index] in self.eliminated:
                 self.current_turn_index = (self.current_turn_index + self.direction) % len(self.player_ids)
+        self.turn_started_at = time.monotonic()
+
+    def handle_timeout(self) -> bool:
+        """Called when a player exceeds their turn timer.
+        Deducts 1 token from the player and plays the milestone exceed sound cue.
+        """
+        if not self.active or self.round_finished:
+            return False
+        curr_id = self.player_ids[self.current_turn_index]
+        if curr_id in self.eliminated:
+            return False
+
+        self._deduct_token(curr_id, 1)
+        player_name = self.player_names.get(curr_id, "لاعب")
+        action_text = f"انتهى وقت الدور! {player_name} خسر نقطة لتجاوز الوقت."
+        if curr_id in self.eliminated:
+            action_text += f" خرج {player_name} من اللعبة."
+
+        self.sound_cue = "NINETY_NINE_EXCEED"
+        self.sound_cues = ["NINETY_NINE_EXCEED"]
+        self.event_type = "CARD_PLAYED"
+        self.event_id += 1
+        self.last_action = action_text
+        self.pending_choice = None
+
+        self._check_eliminations()
+        if not self.active:
+            return True
+
+        self._advance_turn(1)
+        return True
                 
     def _deduct_token(self, uid: int, amount: int):
         if uid in self.eliminated:
@@ -365,6 +405,8 @@ class NinetyNineGame:
             "current_player_name": curr_name,
             "direction": self.direction,
             "tokens": self.tokens,
+            "turn_timer": self.turn_timer,
+            "turn_started_at": self.turn_started_at,
             "eliminated": list(self.eliminated),
             "pending_choice": self.pending_choice,
             "players": [{"id": p, "name": self.player_names[p]} for p in self.player_ids]

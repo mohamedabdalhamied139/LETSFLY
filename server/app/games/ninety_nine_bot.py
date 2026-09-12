@@ -157,13 +157,76 @@ async def run_ninety_nine_bots(room: "Room"):
         return
     import asyncio
     import random
+    import time
     from server.app.hub.ws_manager import ws_manager
     from server.app.games.ninety_nine_bot import NinetyNineBot
     bot_ids = {uid for uid in room.players if uid < 0}
     while game.active:
         curr = game.player_ids[game.current_turn_index]
         if curr not in bot_ids:
-            break
+            if not game.turn_timer:
+                break
+            # Human player's turn with an active timer: wait until timeout or player move
+            elapsed = time.monotonic() - game.turn_started_at
+            remain = game.turn_timer - elapsed
+            if remain > 0:
+                await asyncio.sleep(min(remain, 0.5))
+                continue
+            
+            # Timer expired for human player
+            async with room._mutation_lock:
+                if not game.active or game.player_ids[game.current_turn_index] != curr:
+                    continue
+                if (time.monotonic() - game.turn_started_at) < game.turn_timer:
+                    continue
+                game.handle_timeout()
+                room.scores = dict(game.tokens)
+                ws_manager.broadcast_room(room.room_id, {"type": "game_state_changed", "room_id": room.room_id})
+                if game.match_finished:
+                    wid = game.winner_id
+                    wname = room.player_names.get(wid, "لاعب")
+                    room.status = "match_finished"
+                    from server.app.db.database import SessionLocal
+                    from server.app.social_services import record_match
+                    def persist_match():
+                        db = SessionLocal()
+                        try:
+                            record_match(db, "NINETY_NINE", room.room_id, room.players, [wid])
+                            db.commit()
+                        except Exception:
+                            db.rollback()
+                            raise
+                        finally:
+                            db.close()
+                    await asyncio.to_thread(persist_match)
+                    ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
+                    ws_manager.broadcast_room(room.room_id, {
+                        "type": "match_finished",
+                        "winner_name": wname,
+                        "winner_id": wid,
+                        "total": game.tokens.get(wid, 0),
+                        "scores": {str(uid): game.tokens.get(uid, 0) for uid in room.players}
+                    })
+                    room.ninety_nine_game = None
+                    room.status = "waiting"
+                    room.round_started_at = None
+                    room.rules = {}
+                    ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
+                    ws_manager.broadcast_room(room.room_id, {"type": "game_finished", "game": "NINETY_NINE"})
+                    break
+                elif game.round_finished:
+                    room.status = "round_finished"
+                    ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
+                    ws_manager.broadcast_room(room.room_id, {
+                        "type": "ninety_nine_round_finished",
+                        "delay_seconds": 5,
+                        "last_action": game.last_action,
+                        "tokens": game.tokens
+                    })
+                    if room._round_transition_task is None or room._round_transition_task.done():
+                        room._round_transition_task = asyncio.create_task(_start_next_ninety_nine_round_after_delay(room))
+                    break
+            continue
             
         # Realistic human-like thinking delay (1.3 to 1.7s) matching Uno and Scopa bots
         await asyncio.sleep(random.uniform(1.3, 1.7))
