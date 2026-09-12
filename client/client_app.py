@@ -220,6 +220,9 @@ class TableVerseApp(QMainWindow):
             if self.is_in_room():
                 getattr(self, method)()
             return
+        if method in ("on_f1_help", "on_ctrl_f1_help"):
+            getattr(self, method)()
+            return
         if not self.is_in_room():
             return
         focus = QApplication.focusWidget()
@@ -3449,19 +3452,57 @@ class TableVerseApp(QMainWindow):
         reader.speak(self._format_score_announcement(parts, target), interrupt=True)
 
     def on_f1_help(self):
+        if not self.is_in_room():
+            from pathlib import Path
+            from client.localization import language, tr
+            filename = "game_shortcuts_accessible.txt" if language() != "en" else "game_shortcuts_accessible_en.txt"
+            candidates = [Path(__file__).resolve().parent / "help" / filename]
+            meipass = getattr(sys, "_MEIPASS", None)
+            if meipass:
+                base = Path(meipass)
+                candidates.extend([base / "client" / "help" / filename, base / "help" / filename])
+            path = next((c for c in candidates if c.is_file()), None)
+            if path:
+                try:
+                    text = path.read_text(encoding="utf-8-sig")
+                    reader.speak(text, interrupt=True)
+                    return
+                except Exception:
+                    pass
+            reader.speak(tr("الاختصارات العامة للعبة"), interrupt=True)
+            return
         self._show_rules_help("shortcuts")
 
     def on_ctrl_f1_help(self):
+        if not self.is_in_room():
+            from client.localization import tr
+            from client.views.list_menu import choose
+            games = [
+                (tr("أونو"), "UNO"),
+                (tr("إسكوبا"), "SCOPA"),
+                (tr("تسعة وتسعون"), "NINETY_NINE"),
+                (tr("فاركل"), "FARKLE"),
+                (tr("السلم والثعبان"), "SNAKES_LADDERS"),
+                (tr("الدومينو الكلاسيك"), "DOMINO"),
+                (tr("الدومينو الأمريكاني"), "AMERICAN_DOMINO"),
+                (tr("مطاردة اللص"), "THIEF_HUNT"),
+                (tr("تنس"), "TENNIS"),
+            ]
+            chosen = choose(self, tr("قائمة الألعاب"), games)
+            if chosen:
+                self._show_rules_help("rules", game=chosen)
+            return
         self._show_rules_help("rules")
 
-    def _show_rules_help(self, mode="rules"):
+    def _show_rules_help(self, mode="rules", game=None):
         """Show accessible in-game Notepad-style text help viewer."""
         from pathlib import Path
         from client.views.text_help_viewer import TextHelpViewerDialog
 
         from client.localization import language, tr
 
-        game = str((self.current_room or {}).get("game", "")).upper()
+        if not game:
+            game = str((self.current_room or {}).get("game", "")).upper()
         if game == "THIEF_HUNT":
             help_name = "thief_hunt_shortcuts_accessible.txt" if mode == "shortcuts" else "thief_hunt_rules_accessible.txt"
             title = "اختصارات مطاردة اللص" if mode == "shortcuts" else "شرح لعبة مطاردة اللص"

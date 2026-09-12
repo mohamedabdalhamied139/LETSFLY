@@ -99,8 +99,6 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
             # F1 / Ctrl+F1 are shared help commands and must work even when
             # the focus is inside a text input (including a game's answer box).
             if vk == 0x70:
-                if not self.window.is_in_room():
-                    return False, 0
                 user32 = ctypes.windll.user32
                 ctrl = bool(user32.GetKeyState(0x11) & 0x8000)
                 method = "on_ctrl_f1_help" if ctrl else "on_f1_help"
