@@ -33,6 +33,7 @@ class SoundEngine:
         "TABLE_JOIN": "player_joined.wav",
         "TABLE_LEAVE": "player_left.wav",
         "TURN_START": "turn_start.wav",
+        "ROUND_START": "round_start.wav",
         "ROUND_END": "round_end.wav",
         "MATCH_WIN": "match_win.wav",
         "MATCH_LOSS": "match_loss.wav",
@@ -344,6 +345,9 @@ class SoundEngine:
             return ()
 
         common = {
+            "ROUND_START": ("ROUND_START",),
+            "ROUND_STARTED": ("ROUND_START",),
+            "GAME_STARTED": ("ROUND_START",),
             "ROUND_END": ("ROUND_END",),
             "ROUND_FINISHED": ("ROUND_END",),
             "ROUND_WON": ("ROUND_END",),

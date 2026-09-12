@@ -53,7 +53,7 @@ class ClientStateEngine:
         
         # Only reset last_id if the server actually started a new game/round and the event_id wrapped around to 1,
         # OR if we explicitly need to handle a fresh start. Do NOT reset last_id on every single state update!
-        if event_id == 1 and last_id > 1:
+        if (event_id == 1 and last_id > 1) or (et in ("GAME_STARTED", "ROUND_START", "ROUND_STARTED") and last_id > 0 and event_id <= last_id):
             last_id = 0
             app._match_result_sound_played = False
 
@@ -109,7 +109,7 @@ class ClientStateEngine:
             scopa_round_finished = game_type == "SCOPA" and et in ("ROUND_FINISHED", "ROUND_END", "ROUND_WON")
             if scopa_round_finished:
                 event_cues = ()
-            elif game_type in ("SCOPA", "NINETY_NINE") and len(event_cues) > 1:
+            elif game_type in ("SCOPA", "NINETY_NINE", "DOMINO") and len(event_cues) > 1:
                 for delay, event_cue in enumerate(event_cues):
                     if delay == 0:
                         sound_engine.play_event(event_cue)
@@ -162,6 +162,8 @@ class ClientStateEngine:
                 if hasattr(app, "table_view") and app.table_view:
                     app.table_view._focus_target = "gameplay"
                     app.table_view.focus_initial()
+                if not event_cues:
+                    sound_engine.play_event("ROUND_START")
                 announce_game_event(action_text, interrupt=True)
                 spoke_event = True
             else:
