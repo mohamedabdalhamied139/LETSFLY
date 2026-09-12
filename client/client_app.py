@@ -3460,23 +3460,7 @@ class TableVerseApp(QMainWindow):
 
     def on_f1_help(self):
         if not self.is_in_room():
-            from pathlib import Path
-            from client.localization import language, tr
-            filename = "game_shortcuts_accessible.txt" if language() != "en" else "game_shortcuts_accessible_en.txt"
-            candidates = [Path(__file__).resolve().parent / "help" / filename]
-            meipass = getattr(sys, "_MEIPASS", None)
-            if meipass:
-                base = Path(meipass)
-                candidates.extend([base / "client" / "help" / filename, base / "help" / filename])
-            path = next((c for c in candidates if c.is_file()), None)
-            if path:
-                try:
-                    text = path.read_text(encoding="utf-8-sig")
-                    reader.speak(text, interrupt=True)
-                    return
-                except Exception:
-                    pass
-            reader.speak(tr("الاختصارات العامة للعبة"), interrupt=True)
+            self._show_rules_help("shortcuts", game="GENERAL")
             return
         self._show_rules_help("shortcuts")
 
@@ -3539,7 +3523,7 @@ class TableVerseApp(QMainWindow):
             title = "اختصارات تسعة وتسعون" if mode == "shortcuts" else "شرح لعبة تسعة وتسعون"
         else:
             help_name = "game_shortcuts_accessible.txt" if mode == "shortcuts" else "game_rules_accessible.txt"
-            title = "اختصارات اللعبة" if mode == "shortcuts" else "شرح اللعبة"
+            title = "الاختصارات العامة للعبة" if mode == "shortcuts" else "شرح اللعبة"
 
         help_name_en = help_name.replace(".txt", "_en.txt")
 

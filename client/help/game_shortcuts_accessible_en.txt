@@ -1,11 +1,41 @@
-TableVerse — General Shortcuts for the Current Game
-F1
-Open the shortcuts list for the current game.
-Ctrl+F1
-Run the explanation and rules of the current game.
-S
-Display the current score, if the game supports displaying the score with this shortcut.
-Q
-Exit the table after confirmation.
+TableVerse — General Common Shortcuts Guide
+
+1. Help & System Shortcuts:
+• F1: Open shortcuts viewer window.
+• Ctrl+F1: Open game rules viewer (or games list on main screen).
+• F2: Announce coins and wallet balance.
+• F3: Check connection ping to server.
+• F4: Toggle between player mode and spectator mode.
+• F5: Reconnect manually to server.
+• Shift+T: Announce elapsed table play time.
+
+2. Table & Player Query Shortcuts:
+• P: Announce players list and count on table.
+• Shift+P: Open interactive table players list.
+• T: Announce player whose turn it is.
+• S: Announce current score, round points, or target score.
+• R: Announce current top played card, dice, or domino board ends.
+• Shift+R: Announce room rules and active table settings.
+• C: Announce quick game context (round score, remaining bank, etc.).
+• V: Announce remaining cards count in players hands or board tiles.
+
+3. Table Host & Management Shortcuts:
+• Enter: Start game when focused on table item in waiting room.
+• Shift+X: Terminate current game and return to waiting room.
+• B: Add robot bot player to room.
+• Shift+B: Remove last added bot player.
+• Ctrl+H: Toggle table privacy between public and private.
+
+4. Voice & Chat Shortcuts:
+• M: Mute or unmute microphone in voice chat.
+• Alt+Shift+V: Toggle room voice chat on or off.
+
+5. General Navigation & Menus:
+• Ctrl+F: Open friends list.
+• Ctrl+W: Open online users list.
+• Apps or Shift+F10: Open context menu.
+• Q: Leave table or room after confirmation.
+• Escape: Close popup dialogs and menus.
+
 Note:
-Each game may contain its own additional shortcuts. When adding a new game, its specific shortcuts file is placed inside the help folder while maintaining the same F1 and Ctrl+F1 system.
+Each game has additional gameplay shortcuts (such as Arrow keys, Enter to play, and Space to draw or hit), press F1 inside any table to view its full game-specific shortcuts.
