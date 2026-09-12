@@ -3532,6 +3532,8 @@ class TableVerseApp(QMainWindow):
             help_name = "game_shortcuts_accessible.txt" if mode == "shortcuts" else "game_rules_accessible.txt"
             title = "الاختصارات العامة للعبة" if mode == "shortcuts" else "شرح اللعبة"
 
+        cur_lang = language()
+        help_name_localized = help_name.replace(".txt", f"_{cur_lang}.txt") if cur_lang != "ar" else help_name
         help_name_en = help_name.replace(".txt", "_en.txt")
 
         def resolve_help_path(filename: str):
@@ -3542,20 +3544,24 @@ class TableVerseApp(QMainWindow):
                 candidates.extend([base / "client" / "help" / filename, base / "help" / filename])
             return next((candidate for candidate in candidates if candidate.is_file()), None)
 
-        ar_path = resolve_help_path(help_name)
-        en_path = resolve_help_path(help_name_en)
-        if ar_path is None and en_path is None:
-            reader.speak(tr("تعذر العثور على ملف الشرح"), interrupt=True)
-            return
-
         def read_help(path):
             try:
                 return path.read_text(encoding="utf-8-sig") if path else ""
             except Exception:
                 return ""
 
-        sources = {"ar": read_help(ar_path), "en": read_help(en_path)}
-        active_source = sources.get(language(), "") or sources.get("en", "") or sources.get("ar", "")
+        ar_path = resolve_help_path(help_name)
+        en_path = resolve_help_path(help_name_en)
+        cur_path = resolve_help_path(help_name_localized)
+
+        sources = {
+            "ar": read_help(ar_path),
+            "en": read_help(en_path),
+        }
+        if cur_lang not in sources and cur_path:
+            sources[cur_lang] = read_help(cur_path)
+
+        active_source = sources.get(cur_lang, "") or sources.get("en", "") or sources.get("ar", "")
         if not active_source:
             reader.speak(tr("تعذر تحميل الشرح."), interrupt=True)
             return
