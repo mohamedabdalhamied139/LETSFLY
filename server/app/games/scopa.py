@@ -53,8 +53,15 @@ class ScopaGame:
         # Team setup: 4 or 6 players are 2 teams (Team 0 and Team 1)
         self.is_team_game = bool(self.rules.get('teams_enabled', False)) and len(self.players) in (4, 6)
         self.teams: Dict[int, int] = {}
-        for idx, (uid, _) in enumerate(self.players):
-            self.teams[uid] = (idx % 2) if self.is_team_game else uid
+        custom_teams = self.rules.get("custom_teams")
+        if self.is_team_game and isinstance(custom_teams, dict) and len(custom_teams) == len(self.players):
+            self.teams = {
+                uid: int(custom_teams.get(str(uid), custom_teams.get(uid, idx % 2)))
+                for idx, (uid, _) in enumerate(self.players)
+            }
+        else:
+            for idx, (uid, _) in enumerate(self.players):
+                self.teams[uid] = (idx % 2) if self.is_team_game else uid
 
         # Persistent match state
         self.scores: Dict[int, int] = {p[0]: 0 for p in self.players}
@@ -96,7 +103,7 @@ class ScopaGame:
     @property
     def winner_name(self) -> str:
         if self.is_team_game and self.winning_team is not None:
-            return f"فريق {self.winning_team + 1}"
+            return self._team_label(self.winning_team)
         if self.winner_id is not None:
             return self.player_names.get(self.winner_id, "الفائز")
         return ""
@@ -598,8 +605,8 @@ class ScopaGame:
 
     def _team_label(self, tid: int) -> str:
         if self.is_team_game:
-            members = [name for uid, name in self.players if self.teams[uid] == tid]
-            return f"فريق {tid + 1} ({' و '.join(members)})"
+            members = [name for uid, name in self.players if self.teams.get(uid) == tid]
+            return " & ".join(members)
         return self.player_names.get(tid, f"لاعب {tid}")
 
     def _set_event(self, text: str, event_type: str, sound_cue: str = ""):

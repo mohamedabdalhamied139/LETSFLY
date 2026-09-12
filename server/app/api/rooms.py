@@ -536,7 +536,7 @@ def _validate_game_configuration(game: str, target_score: int, rules: dict) -> t
         "DOMINO": ({"mode": ("choice", {"draw", "block"}), "hand_size": ("int", 1, 7)}, (1, 10000)),
         "AMERICAN_DOMINO": ({"hand_size": ("int", 1, 7), "scoring_mode": ("choice", {"standard", "unit"})}, (1, 10000)),
         "SNAKES_LADDERS": ({"knockout": "bool", "mystery_tiles": "bool"}, (100, 100)),
-        "SCOPA": ({"scopa_mode": ("choice", {"classic", "escoba_15", "asso_piglia_tutto", "scopone"}), "classic": "bool", "escoba_15": "bool", "asso_piglia_tutto": "bool", "scopone": "bool", "inverted": "bool", "teams_enabled": "bool"}, (1, 1000)),
+        "SCOPA": ({"scopa_mode": ("choice", {"classic", "escoba_15", "asso_piglia_tutto", "scopone"}), "classic": "bool", "escoba_15": "bool", "asso_piglia_tutto": "bool", "scopone": "bool", "inverted": "bool", "teams_enabled": "bool", "custom_teams": "dict"}, (1, 1000)),
         "TENNIS": ({"bot_difficulty": ("choice", {"EASY", "NORMAL", "HARD", "EXPERT"})}, (1, 5)),
         "NINETY_NINE": ({"starting_tokens": ("int", 1, 99)}, (1, 99)),
     }
@@ -552,6 +552,9 @@ def _validate_game_configuration(game: str, target_score: int, rules: dict) -> t
         elif isinstance(spec, tuple) and spec[0] == "int":
             if type(value) is not int or not (spec[1] <= value <= spec[2]):
                 raise HTTPException(400, f"قيمة الإعداد {key} خارج النطاق المسموح.")
+        elif spec == "dict":
+            if not isinstance(value, dict):
+                raise HTTPException(400, f"قيمة الإعداد {key} يجب أن تكون قاموساً.")
         elif isinstance(spec, tuple) and spec[0] == "choice":
             if type(value) is not str or value not in spec[1]:
                 raise HTTPException(400, f"قيمة الإعداد {key} غير صالحة.")

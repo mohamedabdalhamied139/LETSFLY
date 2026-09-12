@@ -484,3 +484,108 @@ class TablePlayersDialog(QDialog):
             return True
 
         return False
+
+
+class TableTeamSelectionDialog(QDialog):
+    """Accessible dialog for host to configure teams before starting a match."""
+
+    def __init__(self, players: List[Tuple[int, str]], current_user_id: int, parent=None):
+        super().__init__(parent)
+        self.players = list(players)
+        self.current_user_id = current_user_id
+        self.num_players = len(self.players)
+        self.team_size = self.num_players // 2
+
+        # Initial assignments: alternating (0, 1, 0, 1...)
+        self.team_assignments: Dict[int, int] = {}
+        for idx, (uid, _) in enumerate(self.players):
+            self.team_assignments[uid] = idx % 2
+
+        title = tr("تحديد الفرق")
+        self.setWindowTitle(title)
+        self.setAccessibleName(title)
+        self.setModal(True)
+        self.setMinimumSize(420, 320)
+
+        layout = QVBoxLayout(self)
+        self.list = _AccessibleListWidget(self)
+        self.list.setAccessibleName(tr("تحديد الفرق"))
+        layout.addWidget(self.list)
+
+        self._refresh_list()
+        self.list.setCurrentRow(0)
+        self.list.setFocus()
+
+    def _get_team_counts(self) -> Tuple[int, int]:
+        c0 = sum(1 for tid in self.team_assignments.values() if tid == 0)
+        c1 = sum(1 for tid in self.team_assignments.values() if tid == 1)
+        return c0, c1
+
+    def _refresh_list(self):
+        cur_row = self.list.currentRow()
+        self.list.clear()
+
+        # Add players
+        for uid, name in self.players:
+            tid = self.team_assignments[uid]
+            team_label = tr("فريق 1") if tid == 0 else tr("فريق 2")
+            text = f"{name}: {team_label}"
+            it = QListWidgetItem(text)
+            it.setData(Qt.UserRole, uid)
+            self.list.addItem(it)
+
+        # Add Confirm button
+        c0, c1 = self._get_team_counts()
+        is_balanced = (c0 == self.team_size and c1 == self.team_size)
+
+        if is_balanced:
+            confirm_text = tr("تأكيد الفرق وبدء اللعبة")
+        else:
+            confirm_text = tr("تأكيد الفرق (يجب أن يكون كل فريق مكوناً من {count} لاعبين)", count=self.team_size)
+
+        confirm_item = QListWidgetItem(confirm_text)
+        confirm_item.setData(Qt.UserRole, "__CONFIRM__")
+        if not is_balanced:
+            confirm_item.setFlags(confirm_item.flags() & ~Qt.ItemIsEnabled)
+        self.list.addItem(confirm_item)
+
+        # Add Cancel button
+        cancel_item = QListWidgetItem(tr("إلغاء"))
+        cancel_item.setData(Qt.UserRole, "__CANCEL__")
+        self.list.addItem(cancel_item)
+
+        if 0 <= cur_row < self.list.count():
+            self.list.setCurrentRow(cur_row)
+
+    def _activate(self, item):
+        data = item.data(Qt.UserRole)
+        if data == "__CONFIRM__":
+            c0, c1 = self._get_team_counts()
+            if c0 == self.team_size and c1 == self.team_size:
+                self.accept()
+            else:
+                reader.speak(tr("يجب أن يحتوي كل فريق على {count} لاعبين بالتساوي.", count=self.team_size), interrupt=True)
+            return
+
+        if data == "__CANCEL__":
+            self.reject()
+            return
+
+        # Player toggling
+        uid = data
+        if uid in self.team_assignments:
+            cur_team = self.team_assignments[uid]
+            new_team = 1 if cur_team == 0 else 0
+            self.team_assignments[uid] = new_team
+
+            # Speak announcement
+            pname = next((name for u, name in self.players if u == uid), "لاعب")
+            new_team_label = tr("فريق 1") if new_team == 0 else tr("فريق 2")
+            reader.speak(f"{pname}: {new_team_label}", interrupt=True)
+
+            self._refresh_list()
+
+    def get_custom_teams(self) -> Dict[str, int]:
+        """Return mapping of str(user_id) -> team_id."""
+        return {str(uid): tid for uid, tid in self.team_assignments.items()}
+

@@ -3402,7 +3402,28 @@ class TableVerseApp(QMainWindow):
             scores = state.get("scores") or (self.current_room or {}).get("scores") or {}
             players = state.get("players") or []
             if is_team:
-                parts = [(f"فريق {int(tid)+1}", sc) for tid, sc in sorted(scores.items(), key=lambda x: str(x[0]))]
+                teams_map = state.get("teams") or {}
+                team_members = {}
+                if players:
+                    for p in players:
+                        if isinstance(p, dict):
+                            uid = p.get("id") or p.get("user_id")
+                            tid = teams_map.get(str(uid), teams_map.get(uid))
+                            if tid is not None:
+                                team_members.setdefault(str(tid), []).append(p.get("name", "لاعب"))
+                else:
+                    raw_names = (self.current_room or {}).get("player_names") or []
+                    room_players = (self.current_room or {}).get("players") or []
+                    for idx, uid in enumerate(room_players):
+                        pname = raw_names[idx] if (isinstance(raw_names, list) and idx < len(raw_names)) else str(uid)
+                        tid = teams_map.get(str(uid), teams_map.get(uid))
+                        if tid is not None:
+                            team_members.setdefault(str(tid), []).append(pname)
+                parts = []
+                for tid, sc in sorted(scores.items(), key=lambda x: str(x[0])):
+                    members = team_members.get(str(tid), [])
+                    label = " & ".join(members) if members else f"فريق {int(tid)+1}"
+                    parts.append((label, sc))
             elif players:
                 parts = [(p.get("name", "لاعب"), int(p.get("score", 0))) for p in players if isinstance(p, dict)]
             else:
@@ -3759,28 +3780,35 @@ class TableVerseApp(QMainWindow):
             state_handler = getattr(self, game_def.state_applier)
 
             if mode == "default":
-                if game_type == "UNO":
-                    self._start_game_with_settings(saved_target, dict(saved_rules))
-                else:
-                    self._start_game_and_load_state(
-                        saved_target,
-                        dict(saved_rules),
-                        state_api,
-                        state_handler
-                    )
-                return
+                target, rules = saved_target, dict(saved_rules)
+            else:
+                # Custom Mode: Build fields automatically from registry specification
+                fields = [f.to_dict({"target_score": saved_target, "rules": saved_rules}) for f in game_def.custom_fields]
+                fields += [{"key": "start", "label": "بدء اللعبة", "kind": "action"},
+                           {"key": "cancel", "label": "إلغاء", "kind": "action"}]
 
-            # Custom Mode: Build fields automatically from registry specification
-            fields = [f.to_dict({"target_score": saved_target, "rules": saved_rules}) for f in game_def.custom_fields]
-            fields += [{"key": "start", "label": "بدء اللعبة", "kind": "action"},
-                       {"key": "cancel", "label": "إلغاء", "kind": "action"}]
+                dialog_title = tr("تخصيص {title}", title=tr(game_def.title))
+                values = self._open_settings_list(dialog_title, fields)
+                if values is None:
+                    return
 
-            dialog_title = tr("تخصيص {title}", title=tr(game_def.title))
-            values = self._open_settings_list(dialog_title, fields)
-            if values is None:
-                return
+                target, rules = game_def.extract_target_and_rules(values)
 
-            target, rules = game_def.extract_target_and_rules(values)
+            # Scopa team selection: If teams are enabled and 4 or 6 players, host chooses teams
+            if game_type == "SCOPA" and bool(rules.get("teams_enabled")):
+                players_list = list(self.current_room.get("players") or [])
+                raw_names = self.current_room.get("player_names") or []
+                if len(players_list) in (4, 6):
+                    formatted_players = []
+                    for idx, uid in enumerate(players_list):
+                        pname = raw_names[idx] if (isinstance(raw_names, list) and idx < len(raw_names)) else (raw_names.get(str(uid), f"لاعب {uid}") if isinstance(raw_names, dict) else f"لاعب {uid}")
+                        formatted_players.append((int(uid), str(pname)))
+                    from client.views.table_players_dialog import TableTeamSelectionDialog
+                    team_dlg = TableTeamSelectionDialog(formatted_players, int((self.user or {}).get("id") or 0), parent=self)
+                    if team_dlg.exec() != QDialog.Accepted:
+                        return
+                    rules["custom_teams"] = team_dlg.get_custom_teams()
+
             if game_type == "UNO":
                 self._start_game_with_settings(target, rules)
             else:

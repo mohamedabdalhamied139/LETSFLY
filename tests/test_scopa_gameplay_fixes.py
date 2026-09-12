@@ -901,7 +901,7 @@ def test_state_engine_identifies_team_scopa_victory():
             assert app._match_result_sound_played is True
             assert mock_announce.called
             announced_text = mock_announce.call_args[0][0]
-            assert "مبروك" in announced_text or "فزت" in announced_text
+            assert any(word in announced_text for word in ("مبروك", "فزت", "Congratulations", "won"))
 
 
 def test_terminal_result_string_and_int_id_matching():
@@ -987,4 +987,69 @@ def test_round_summary_not_spoken_twice_on_final_state_and_round_finished():
                             ClientStateEngine.process_common_state(app, "SCOPA", final_state, lambda a, r: None)
                             # Verify still spoken only once!
                             assert spoken.count(summary_text) == 1
+
+
+def test_scopa_custom_teams_and_dynamic_ampersand_naming():
+    """Verify custom team assignments, dynamic '&' labels, and winner announcements."""
+    players = [
+        (1, "محمد"),
+        (2, "جوري"),
+        (3, "أحمد"),
+        (4, "محمود"),
+    ]
+    # Host custom team choice: 1 & 2 in Team 0, 3 & 4 in Team 1
+    custom_teams = {"1": 0, "2": 0, "3": 1, "4": 1}
+    rules = {"teams_enabled": True, "custom_teams": custom_teams}
+
+    game = ScopaGame(players, target_score=11, rules=rules)
+    assert game.is_team_game is True
+    assert game.teams[1] == 0
+    assert game.teams[2] == 0
+    assert game.teams[3] == 1
+    assert game.teams[4] == 1
+
+    # Check team labels use '&' and player names
+    assert game._team_label(0) == "محمد & جوري"
+    assert game._team_label(1) == "أحمد & محمود"
+
+    # Match finish winner name
+    game.winning_team = 0
+    assert game.winner_name == "محمد & جوري"
+    assert game.winner_label == "محمد & جوري"
+
+
+def test_table_team_selection_dialog(qapp):
+    """Verify TableTeamSelectionDialog balances teams and toggles players."""
+    from client.views.table_players_dialog import TableTeamSelectionDialog
+    from PySide6.QtWidgets import QListWidgetItem
+
+    players = [
+        (1, "محمد"),
+        (2, "جوري"),
+        (3, "أحمد"),
+        (4, "محمود"),
+    ]
+    dlg = TableTeamSelectionDialog(players, current_user_id=1)
+    
+    # Default alternating teams: 1 -> Team 0, 2 -> Team 1, 3 -> Team 0, 4 -> Team 1
+    assert dlg.team_assignments[1] == 0
+    assert dlg.team_assignments[2] == 1
+
+    # Toggle player 2 (جوري) from Team 1 to Team 0
+    item2 = dlg.list.item(1)
+    dlg._activate(item2)
+    assert dlg.team_assignments[2] == 0
+
+    # Toggle player 3 (أحمد) from Team 0 to Team 1
+    item3 = dlg.list.item(2)
+    dlg._activate(item3)
+    assert dlg.team_assignments[3] == 1
+
+    # Now Team 0 has (1, 2) and Team 1 has (3, 4)
+    c0, c1 = dlg._get_team_counts()
+    assert c0 == 2 and c1 == 2
+    
+    teams = dlg.get_custom_teams()
+    assert teams == {"1": 0, "2": 0, "3": 1, "4": 1}
+
 

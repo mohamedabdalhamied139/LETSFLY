@@ -1,5 +1,11 @@
 {
   "TableVerse": "TableVerse",
+  "تحديد الفرق": "Team Selection",
+  "تأكيد الفرق وبدء اللعبة": "Confirm Teams and Start Game",
+  "تأكيد الفرق (يجب أن يكون كل فريق مكوناً من {count} لاعبين)": "Confirm Teams (each team must have {count} players)",
+  "يجب أن يحتوي كل فريق على {count} لاعبين بالتساوي.": "Each team must have exactly {count} players.",
+  "فريق 1": "Team 1",
+  "فريق 2": "Team 2",
   "القائمة الرئيسية": "Main Menu",
   "القائمة الرئيسية.": "Main Menu",
   "قائمة": "Menu",
