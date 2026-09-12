@@ -13,7 +13,6 @@ import logging
 import os
 import re
 import sys
-import sre_parse
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 

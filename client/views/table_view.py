@@ -253,8 +253,11 @@ class ScopaCardList(QListWidget):
             )
             if should_hold_focus and event.reason() not in allowed_reasons:
                 if self.count() > 0 and not getattr(parent_table, "_is_modal_active", lambda: False)():
-                    for delay in (0, 30, 80, 150):
-                        QTimer.singleShot(delay, lambda w=self: safe_set_focus(w) if safe_is_valid(w) else None)
+                    def _repin(w=self, pt=parent_table):
+                        if safe_is_valid(w) and not getattr(pt, "_is_modal_active", lambda: False)():
+                            safe_set_focus(w)
+                    for delay in (0, 30):
+                        QTimer.singleShot(delay, _repin)
             elif event.reason() in allowed_reasons:
                 parent_table._scopa_gameplay_focus = False
 
@@ -427,7 +430,7 @@ class TableView(QWidget):
 
         # 4. Chat Input
         self.chat_input = QLineEdit()
-        self.chat_input.setFocusPolicy(Qt.StrongFocus)
+        self.chat_input.setFocusPolicy(Qt.ClickFocus)
         self.chat_input.setPlaceholderText(tr("الدردشة..."))
         self.chat_input.setAccessibleName(tr("الدردشة"))
         self.chat_input.setAccessibleDescription("")
@@ -776,38 +779,31 @@ class TableView(QWidget):
             except Exception:
                 first_widget = self.main_table_widget
         
-        activity_viewport = self.activity_log.viewport()
-        is_activity_focus = current in (
-            self.activity_log,
-            activity_viewport,
-            self.activity_panel,
-        )
-
         if current == self.chat_input:
             if next_focus:
                 self._focus_target = "activity_log"
-                safe_set_focus(self.activity_log)
+                self.activity_log.setFocus()
             else:
                 self._focus_target = "gameplay"
-                safe_set_focus(first_widget)
+                first_widget.setFocus()
             return True
 
-        elif is_activity_focus:
+        elif current == self.activity_log:
             if next_focus:
                 self._focus_target = "gameplay"
-                safe_set_focus(first_widget)
+                first_widget.setFocus()
             else:
                 self._focus_target = "chat"
-                safe_set_focus(self.chat_input)
+                self.chat_input.setFocus()
             return True
         else:
             # Current is some table element (cards, dominoes, dice, etc)
             if next_focus:
                 self._focus_target = "chat"
-                safe_set_focus(self.chat_input)
+                self.chat_input.setFocus()
             else:
                 self._focus_target = "activity_log"
-                safe_set_focus(self.activity_log)
+                self.activity_log.setFocus()
             return True
 
 

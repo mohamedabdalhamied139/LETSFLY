@@ -2719,8 +2719,15 @@ class TableVerseApp(QMainWindow):
             if round_summary:
                 event_id = str(event.get("event_id") or "")
                 key = (str((self.current_room or {}).get("id") or ""), event_id, "ROUND_FINISHED", round_summary)
-                if key not in self._seen_scopa_final_plays:
-                    self._seen_scopa_final_plays.add(key)
+                seen_plays = getattr(self, "_seen_scopa_final_plays", None)
+                if seen_plays is None:
+                    seen_plays = set()
+                    try:
+                        self._seen_scopa_final_plays = seen_plays
+                    except AttributeError:
+                        pass
+                if key not in seen_plays:
+                    seen_plays.add(key)
                     # The final capture may already have been announced by
                     # the private state snapshot, in which case ``announced``
                     # is False only because it was de-duplicated here.
@@ -2795,9 +2802,18 @@ class TableVerseApp(QMainWindow):
             return
 
     def _announce_terminal_result(self, event: dict):
-        winner_id = event.get("winner_id") or event.get("match_winner_id")
-        won = winner_id is not None and str(winner_id) == str((self.user or {}).get("id"))
-        sound_engine.play_event("MATCH_WIN" if won else "MATCH_LOSS")
+        my_id = (self.user or {}).get("id")
+        winning_ids = event.get("winning_ids")
+        if isinstance(winning_ids, (list, tuple, set)) and my_id is not None:
+            won = any(str(w) == str(my_id) for w in winning_ids)
+        elif event.get("winning_team") is not None and my_id is not None and isinstance(event.get("teams"), dict):
+            won = (event.get("teams").get(str(my_id)) == event.get("winning_team"))
+        else:
+            winner_id = event.get("winner_id") or event.get("match_winner_id")
+            won = winner_id is not None and my_id is not None and str(winner_id) == str(my_id)
+        if not getattr(self, "_match_result_sound_played", False):
+            sound_engine.play_event("MATCH_WIN" if won else "MATCH_LOSS")
+            self._match_result_sound_played = True
         reader.speak(tr("فزت بالمباراة." if won else "انتهت المباراة."), interrupt=False)
 
     def _finish_scopa_match(self, event: dict):
