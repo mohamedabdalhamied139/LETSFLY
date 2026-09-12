@@ -1,6 +1,0 @@
-__pycache__/
-*.py[cod]
-.pytest_cache/
-server.log
-server/letsfly_v2.db
-server/letsfly_secret.key
