@@ -157,8 +157,6 @@ class _SettingsListWidget(QListWidget):
             if self.owner.handle_settings_key(event):
                 event.accept()
                 return
-        if handle_list_boundary_navigation(self, event):
-            return
         if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Space):
             item = self.currentItem()
             if item:
@@ -226,9 +224,14 @@ class SettingsListMenu(QDialog):
                 self.edit_buffers[field["key"]] = str(field.get("value", ""))
         self._rebuild()
         self.list_widget.itemActivated.connect(self._activate)
+        self.list_widget.currentRowChanged.connect(self._on_row_changed)
 
     def _on_row_changed(self, row):
         self._typing_number = False
+        if 0 <= row < self.list_widget.count():
+            item = self.list_widget.item(row)
+            if item:
+                item.setData(Qt.AccessibleTextRole, None)
 
     def _display(self, field):
         key = field["key"]
@@ -245,12 +248,16 @@ class SettingsListMenu(QDialog):
             return f"{label}: {value}"
         return label
 
-    def _rebuild(self, keep_key=None):
+    def _rebuild(self, keep_key=None, announcement=None):
         if self.list_widget.count() == len(self.fields):
             for i, field in enumerate(self.fields):
                 item = self.list_widget.item(i)
                 new_text = self._display(field)
                 if item.text() != new_text:
+                    if keep_key is not None and field["key"] == keep_key and announcement is not None:
+                        item.setData(Qt.AccessibleTextRole, tr(str(announcement)))
+                    else:
+                        item.setData(Qt.AccessibleTextRole, None)
                     item.setText(new_text)
             return
 
@@ -304,9 +311,9 @@ class SettingsListMenu(QDialog):
                 new_idx = (idx + 1) % len(options)
                 new_opt = options[new_idx]
                 self.values[key] = new_opt
-                self._rebuild(key)
                 labels = field.get("labels", {})
                 announcement = labels.get(new_opt, str(new_opt))
+                self._rebuild(key, announcement=announcement)
                 reader.speak(tr(announcement), interrupt=True)
             return
         if kind == "bool":
@@ -316,17 +323,19 @@ class SettingsListMenu(QDialog):
                 for conflict_key, alert_msg in conflicts.items():
                     if self.values.get(conflict_key):
                         self.values[conflict_key] = False
-                        self._rebuild(conflict_key)
+                        self._rebuild(conflict_key, announcement="معطل")
                         reader.speak(tr(f"تنبيه: {alert_msg}"), interrupt=True)
             group = field.get("group")
             if group:
                 for f in self.fields:
                     if f.get("group") == group:
-                        self.values[f["key"]] = (f["key"] == key)
+                        is_sel = (f["key"] == key)
+                        self.values[f["key"]] = is_sel
             else:
                 self.values[key] = new_val
-            self._rebuild(key)
-            reader.speak(tr("مفعل" if self.values.get(key) else "معطل"), interrupt=True)
+            announcement = "مفعل" if self.values.get(key) else "معطل"
+            self._rebuild(key, announcement=announcement)
+            reader.speak(tr(announcement), interrupt=True)
             return
 
     def handle_settings_key(self, event):
@@ -382,8 +391,9 @@ class SettingsListMenu(QDialog):
                     val = min(int(maximum), val)
                 self.values[fkey] = val
                 self.edit_buffers[fkey] = str(val)
-                self._rebuild(fkey)
-                reader.speak(tr(f"{val}"), interrupt=True)
+                announcement = f"{val}"
+                self._rebuild(fkey, announcement=announcement)
+                reader.speak(tr(announcement), interrupt=True)
                 return True
             if kind == "choice":
                 options = list(field.get("options", []))
@@ -395,8 +405,10 @@ class SettingsListMenu(QDialog):
                         idx = 0
                     new_idx = (idx + direction) % len(options)
                     self.values[fkey] = options[new_idx]
-                    self._rebuild(fkey)
-                    reader.speak(tr(str(field.get("labels", {}).get(options[new_idx], options[new_idx]))), interrupt=True)
+                    labels = field.get("labels", {})
+                    announcement = labels.get(options[new_idx], str(options[new_idx]))
+                    self._rebuild(fkey, announcement=announcement)
+                    reader.speak(tr(str(announcement)), interrupt=True)
                 return True
             if kind == "bool":
                 self._activate(item)
@@ -415,8 +427,9 @@ class SettingsListMenu(QDialog):
                     val = max(minimum, current - step)
                 self.values[fkey] = val
                 self.edit_buffers[fkey] = str(val)
-                self._rebuild(fkey)
-                reader.speak(tr(f"{val}"), interrupt=True)
+                announcement = f"{val}"
+                self._rebuild(fkey, announcement=announcement)
+                reader.speak(tr(announcement), interrupt=True)
                 return True
             elif kind == "bool":
                 self._activate(item)
@@ -432,9 +445,9 @@ class SettingsListMenu(QDialog):
                     new_idx = (idx + 1) % len(options)
                     new_opt = options[new_idx]
                     self.values[fkey] = new_opt
-                    self._rebuild(fkey)
                     labels = field.get("labels", {})
                     announcement = labels.get(new_opt, str(new_opt))
+                    self._rebuild(fkey, announcement=announcement)
                     reader.speak(tr(announcement), interrupt=True)
                     return True
 
@@ -451,8 +464,9 @@ class SettingsListMenu(QDialog):
             try:
                 val = int(buf)
                 self.values[fkey] = val
-                self._rebuild(fkey)
-                reader.speak(tr(f"{val}"), interrupt=True)
+                announcement = f"{val}"
+                self._rebuild(fkey, announcement=announcement)
+                reader.speak(tr(announcement), interrupt=True)
             except ValueError:
                 pass
             return True
@@ -466,15 +480,17 @@ class SettingsListMenu(QDialog):
                     try:
                         val = int(buf)
                         self.values[fkey] = val
-                        self._rebuild(fkey)
-                        reader.speak(tr(f"{val}"), interrupt=True)
+                        announcement = f"{val}"
+                        self._rebuild(fkey, announcement=announcement)
+                        reader.speak(tr(announcement), interrupt=True)
                     except ValueError:
                         pass
                 else:
                     minimum = int(field.get("minimum", 1))
                     self.values[fkey] = minimum
-                    self._rebuild(fkey)
-                    reader.speak(tr("فارغ"), interrupt=True)
+                    announcement = "فارغ"
+                    self._rebuild(fkey, announcement=announcement)
+                    reader.speak(tr(announcement), interrupt=True)
             return True
 
         # Space key toggles bool / choice fields
@@ -486,19 +502,21 @@ class SettingsListMenu(QDialog):
                     for conflict_key, alert_msg in conflicts.items():
                         if self.values.get(conflict_key):
                             self.values[conflict_key] = False
-                            self._rebuild(conflict_key)
+                            self._rebuild(conflict_key, announcement="معطل")
                             reader.speak(tr(f"تنبيه: {alert_msg}"), interrupt=True)
 
                 group = field.get("group")
                 if group:
                     for f in self.fields:
                         if f.get("group") == group:
-                            self.values[f["key"]] = (f["key"] == fkey)
+                            is_sel = (f["key"] == fkey)
+                            self.values[f["key"]] = is_sel
                 else:
                     self.values[fkey] = new_val
 
-                self._rebuild(fkey)
-                reader.speak(tr("مفعل" if self.values.get(fkey) else "معطل"), interrupt=True)
+                announcement = "مفعل" if self.values.get(fkey) else "معطل"
+                self._rebuild(fkey, announcement=announcement)
+                reader.speak(tr(announcement), interrupt=True)
                 return True
             elif kind == "choice":
                 options = list(field.get("options", []))
@@ -511,9 +529,9 @@ class SettingsListMenu(QDialog):
                     new_idx = (idx + 1) % len(options)
                     new_opt = options[new_idx]
                     self.values[fkey] = new_opt
-                    self._rebuild(fkey)
                     labels = field.get("labels", {})
                     announcement = labels.get(new_opt, str(new_opt))
+                    self._rebuild(fkey, announcement=announcement)
                     reader.speak(tr(announcement), interrupt=True)
                     return True
 
