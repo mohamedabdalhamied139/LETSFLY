@@ -328,17 +328,12 @@ class NinetyNineGame:
         self._advance_turn(steps)
             
     def _card_name(self, card: Dict[str, Any]) -> str:
-        """Return Arabic presentation text while keeping card IDs/suits canonical internally."""
+        """Return English presentation text (e.g. Ace of Hearts) like Scopa."""
         v = int(card.get("value", 0) or 0)
         suit = str(card.get("suit", "")).lower()
-        rank_ar = {1: "آس", 11: "جاك", 12: "كوين", 13: "ملك"}.get(v, str(v))
-        suit_ar = {
-            "diamonds": "ديناري",
-            "hearts": "قلب",
-            "spades": "بستوني",
-            "clubs": "شجرة",
-        }.get(suit, suit)
-        return f"{rank_ar} من {suit_ar}"
+        rank = {1: "Ace", 11: "Jack", 12: "Queen", 13: "King"}.get(v, str(v))
+        suit_cap = suit.capitalize()
+        return f"{rank} of {suit_cap}"
 
     def full_state(self) -> dict:
         curr_turn_id = self.player_ids[self.current_turn_index] if self.active else None

@@ -15,9 +15,9 @@ def card_display_ar(card_dict: dict) -> str:
     suit = card_dict.get("suit")
     
     if suit and not ctype:
-        val_name = {1: "آس", 11: "جاك", 12: "كوين", 13: "ملك"}.get(val, str(val))
-        suit_name = SUIT_NAMES_AR.get(str(suit).lower(), str(suit))
-        return f"{val_name} من {suit_name}"
+        val_name = {1: "Ace", 11: "Jack", 12: "Queen", 13: "King"}.get(val, str(val))
+        suit_cap = str(suit).capitalize()
+        return f"{val_name} of {suit_cap}"
 
     color_ar = COLOR_NAMES_AR.get(color, color or "بدون")
     if ctype == "number":
