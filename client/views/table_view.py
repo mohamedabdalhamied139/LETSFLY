@@ -1323,6 +1323,7 @@ class TableView(QWidget):
             number_buckets = {n: [] for n in range(10)}
             skip_cards, reverse_cards, draw_two_cards, skip_everyone_cards = [], [], [], []
             discard_all_cards, buzzer_cards, flip_cards = [], [], []
+            draw_one_cards, draw_five_cards = [], []
             standard_cards = []
             for card in hand_cards:
                 ctype = str(card.get("type", "")).lower()
@@ -1340,6 +1341,10 @@ class TableView(QWidget):
                     reverse_cards.append(card)
                 elif ctype == "draw_two":
                     draw_two_cards.append(card)
+                elif ctype == "draw_one":
+                    draw_one_cards.append(card)
+                elif ctype == "draw_five":
+                    draw_five_cards.append(card)
                 elif ctype == "skip_everyone":
                     skip_everyone_cards.append(card)
                 elif ctype == "discard_all":
@@ -1364,9 +1369,15 @@ class TableView(QWidget):
             if reverse_cards:
                 reverse_cards.sort(key=lambda c: color_order.get(str(c.get("color", "")).lower(), 99))
                 active_specs.append(("reverse", tr("عكس الاتجاه"), reverse_cards))
+            if draw_one_cards:
+                draw_one_cards.sort(key=lambda c: color_order.get(str(c.get("color", "")).lower(), 99))
+                active_specs.append(("draw_one", tr("سحب 1"), draw_one_cards))
             if draw_two_cards:
                 draw_two_cards.sort(key=lambda c: color_order.get(str(c.get("color", "")).lower(), 99))
                 active_specs.append(("draw_two", tr("سحب 2"), draw_two_cards))
+            if draw_five_cards:
+                draw_five_cards.sort(key=lambda c: color_order.get(str(c.get("color", "")).lower(), 99))
+                active_specs.append(("draw_five", tr("سحب 5"), draw_five_cards))
             if skip_everyone_cards:
                 active_specs.append(("skip_everyone", tr("تخطي الجميع"), skip_everyone_cards))
             if discard_all_cards:
