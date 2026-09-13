@@ -2835,7 +2835,7 @@ class TableVerseApp(QMainWindow):
                     # is False only because it was de-duplicated here.
                     delay = 900 if event.get("final_play_action") else 0
                     QTimer.singleShot(delay, lambda: sound_engine.play_event("ROUND_END"))
-                    QTimer.singleShot(delay, lambda text=round_summary: reader.speak(text, interrupt=False))
+                    QTimer.singleShot(delay, lambda text=round_summary: reader.speak(tr(text), interrupt=False))
             if self.current_room:
                 if isinstance(event.get("scores"), dict):
                     self.current_room["scores"] = event.get("scores")
@@ -3552,7 +3552,7 @@ class TableVerseApp(QMainWindow):
                 parts = []
                 for tid, sc in sorted(scores.items(), key=lambda x: str(x[0])):
                     members = team_members.get(str(tid), [])
-                    label = " & ".join(members) if members else f"فريق {int(tid)+1}"
+                    label = " & ".join(members) if members else tr("فريق {0}", int(tid)+1)
                     parts.append((label, sc))
             elif players:
                 parts = [(p.get("name", "لاعب"), int(p.get("score", 0))) for p in players if isinstance(p, dict)]

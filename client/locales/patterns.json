@@ -1,5 +1,159 @@
 [
   {
+    "pattern": "^لعب\\s+(.+?)\\s+(.+?)\\s+وأكل\\s+بها\\s+\\((.+?)\\)\\s+\\.\\.\\.\\s+إسكوبااااا!\\s+🧹✨\\s+\\(\\+1\\s+نقطة\\s+فوري\\)$",
+    "template": "{0} played {1} and captured ({2}) ... SCOPA! 🧹✨ (+1 point)",
+    "roles": [
+      "user",
+      "card",
+      "card_list"
+    ]
+  },
+  {
+    "pattern": "^لعب\\s+(.+?)\\s+(.+?)\\s+وأكل\\s+بها\\s+\\((.+?)\\)\\s+\\.\\.\\.\\s+إسكوبااااا!\\s+🧹✨\\s+\\(\\+1\\s+نقطة\\s+للمنافس\\)$",
+    "template": "{0} played {1} and captured ({2}) ... SCOPA! 🧹✨ (+1 point to opponent)",
+    "roles": [
+      "user",
+      "card",
+      "card_list"
+    ]
+  },
+  {
+    "pattern": "^لعب\\s+(.+?)\\s+(.+?)\\s+وأكل\\s+بها:\\s*(.+?)\\.$",
+    "template": "{0} played {1} and captured: {2}.",
+    "roles": [
+      "user",
+      "card",
+      "card_list"
+    ]
+  },
+  {
+    "pattern": "^الجولة\\s+(\\d+)[!]\\s+الموزع\\s+(.+?)،\\s+والدور\\s+عند\\s+(.+?)\\.$",
+    "template": "Round {0}! Dealer {1}, turn of {2}.",
+    "roles": [
+      "num",
+      "user",
+      "user"
+    ]
+  },
+  {
+    "pattern": "^أخذ\\s+(.+?)\\s+باقي\\s+الطاولة\\s+\\((.+?)\\)\\.\\s*$",
+    "template": "{0} took the rest of the table ({1}).",
+    "roles": [
+      "user",
+      "card_list"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+الأكثر\\s+كروتاً\\s+\\((\\d+)\\s+كارت\\)\\s+ونال\\s+نقطة$",
+    "template": "{0} most cards ({1} cards) won a point",
+    "roles": [
+      "user",
+      "num"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+الأكثر\\s+كروتاً\\s+\\((\\d+)\\s+كارت\\)\\s+وخسر\\s+نقطة$",
+    "template": "{0} most cards ({1} cards) lost a point",
+    "roles": [
+      "user",
+      "num"
+    ]
+  },
+  {
+    "pattern": "^تعادل\\s+في\\s+الكروت\\s+\\((\\d+)\\s+كارت\\)$",
+    "template": "Tie in cards ({0} cards)",
+    "roles": [
+      "num"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+الأكثر\\s+من\\s+أوراق\\s+Diamonds\\s+\\((\\d+)\\s+ورقة\\)\\s+ونال\\s+نقطة$",
+    "template": "{0} most Diamonds ({1} cards) won a point",
+    "roles": [
+      "user",
+      "num"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+الأكثر\\s+من\\s+أوراق\\s+Diamonds\\s+\\((\\d+)\\s+ورقة\\)\\s+وخسر\\s+نقطة$",
+    "template": "{0} most Diamonds ({1} cards) lost a point",
+    "roles": [
+      "user",
+      "num"
+    ]
+  },
+  {
+    "pattern": "^تعادل\\s+في\\s+أوراق\\s+Diamonds$",
+    "template": "Tie in Diamonds cards",
+    "roles": []
+  },
+  {
+    "pattern": "^(.+?)\\s+صاحب\\s+7\\s+of\\s+Diamonds\\s+ونال\\s+نقطة$",
+    "template": "{0} owner of 7 of Diamonds won a point",
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+صاحب\\s+7\\s+of\\s+Diamonds\\s+وخسر\\s+نقطة$",
+    "template": "{0} owner of 7 of Diamonds lost a point",
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+صاحب\\s+البريميرا\\s+ونال\\s+نقطة$",
+    "template": "{0} owner of Primiera won a point",
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+صاحب\\s+البريميرا\\s+وخسر\\s+نقطة$",
+    "template": "{0} owner of Primiera lost a point",
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "pattern": "^تعادل\\s+في\\s+البريميرا$",
+    "template": "Tie in Primiera",
+    "roles": []
+  },
+  {
+    "pattern": "^(.+?)\\s+حقق\\s+(\\d+)\\s+إسكوبا\\s+\\(\\+(\\d+)\\s+نقطة\\)$",
+    "template": "{0} achieved {1} Scopa (+{2} pt)",
+    "roles": [
+      "user",
+      "num",
+      "num"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+حقق\\s+إسكوبا\\s+\\(\\+(\\d+)\\s+نقطة\\)$",
+    "template": "{0} achieved a Scopa (+{1} pt)",
+    "roles": [
+      "user",
+      "num"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+حقق\\s+(\\d+)\\s+إسكوبا\\s+وخسر\\s+(\\d+)\\s+نقطة$",
+    "template": "{0} achieved {1} Scopa and lost {2} point",
+    "roles": [
+      "user",
+      "num",
+      "num"
+    ]
+  },
+  {
+    "pattern": "^(.+?)\\s+حقق\\s+إسكوبا\\s+وخسر\\s+نقطة$",
+    "template": "{0} achieved a Scopa and lost a point",
+    "roles": [
+      "user"
+    ]
+  },
+  {
     "pattern": "^(.+?)\\s+أخذ\\s+(.+?)\\s+مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)\\.?$",
     "template": "{0} took {1} for {2} points.",
     "roles": {

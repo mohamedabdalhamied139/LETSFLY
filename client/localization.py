@@ -16,6 +16,14 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+try:
+    import re._parser as sre_parse
+except ImportError:
+    try:
+        import sre_parse
+    except ImportError:
+        sre_parse = None
+
 from client import settings_store
 
 TranslationCallback = Callable[[str], None]
@@ -375,19 +383,6 @@ class TranslationManager:
                     trailing = s[len(s.rstrip()):]
                     return f"{leading}{' — '.join(translated_parts)}{trailing}"
 
-        # Multi-sentence splitting: If the text consists of multiple sentences (. ! ؟ ?),
-        # try translating each sentence independently. If all sentences successfully translate,
-        # return the translated compound sentence rather than letting a broad single-line pattern
-        # consume part of it or leave parts in Arabic.
-        if any(sep in stripped for sep in (". ", "! ", "؟ ", "? ")):
-            parts = [p.strip() for p in re.split(r"(?<=[.!?؟])\s+", stripped) if p.strip()]
-            if len(parts) > 1:
-                translated_parts = [self.tr(part) for part in parts]
-                if all(tp != part for tp, part in zip(translated_parts, parts)):
-                    leading = s[:len(s) - len(s.lstrip())]
-                    trailing = s[len(s.rstrip()):]
-                    return f"{leading}{' '.join(translated_parts)}{trailing}"
-
         # 3. Dynamic regex template pattern matching on whole string
         for pattern, template, roles in self._patterns:
             m = pattern.match(stripped)
@@ -418,23 +413,11 @@ class TranslationManager:
                     elif role in {"game", "title", "rules", "color", "combo", "tile", "side", "card", "card_list", "status", "sub", "ordinal", "floor"}:
                         # These roles are explicitly user-facing/localizable categories.
                         translated = self.tr(val)
-                        # Some composite summaries intentionally keep dynamic names and
-                        # numbers untouched inside a localized fragment. When no full
-                        # catalog/pattern match exists, translate only known presentation
-                        # tokens such as the Arabic score unit instead of touching names.
-                        if role == "sub":
+                        if role == "card_list":
                             if active == "en":
-                                translated = re.sub(r"(?<!\w)النتائج:(?!\w)", "Scores:", translated)
-                                translated = re.sub(r"(?<!\w)المجموعات:(?!\w)", "Groups:", translated)
-                                translated = re.sub(r"(?<!\w)الدور التالي:(?!\w)", "Next turn:", translated)
-                                translated = re.sub(r"(?<!\w)نقاط(?=\.|،|,|$)", "points", translated)
-                                translated = translated.replace("، ", ", ")
+                                translated = translated.replace(" و ", " and ")
                             elif active == "fr":
-                                translated = re.sub(r"(?<!\w)النتائج:(?!\w)", "Scores :", translated)
-                                translated = re.sub(r"(?<!\w)المجموعات:(?!\w)", "Groupes :", translated)
-                                translated = re.sub(r"(?<!\w)الدور التالي:(?!\w)", "Tour suivant :", translated)
-                                translated = re.sub(r"(?<!\w)نقاط(?=\.|،|,|$)", "points", translated)
-                                translated = translated.replace("، ", ", ")
+                                translated = translated.replace(" و ", " et ")
                         translated_args.append(translated)
                     else:
                         # user/num/text/dice are runtime data and must remain untouched.
@@ -448,6 +431,17 @@ class TranslationManager:
                     return f"{leading}{out}{trailing}"
                 except Exception:
                     continue
+
+        # 4. Multi-sentence splitting: If the text consists of multiple sentences (. ! ؟ ?),
+        # try translating each sentence independently when full match was not found.
+        if any(sep in stripped for sep in (". ", "! ", "؟ ", "? ")):
+            parts = [p.strip() for p in re.split(r"(?<=[.!?؟])\s+", stripped) if p.strip()]
+            if len(parts) > 1:
+                translated_parts = [self.tr(part) for part in parts]
+                if all(tp != part for tp, part in zip(translated_parts, parts)):
+                    leading = s[:len(s) - len(s.lstrip())]
+                    trailing = s[len(s.rstrip()):]
+                    return f"{leading}{' '.join(translated_parts)}{trailing}"
 
         # 4. Multi-sentence splitting (fallback for concatenated statements)
         if any(sep in stripped for sep in (". ", "! ", "؟ ", "? ")):
