@@ -152,12 +152,25 @@ class TableVoiceSubmenuDialog(QDialog):
         mute_label = "إلغاء كتم المايكروفون" if is_muted else "كتم المايكروفون"
         actions = [(mute_label, "voice_mute")]
 
+        actions.append(("تعديل مستوى الصوت (حاليًا {0}%)", "voice_volume"))
+
         if is_host:
             actions.append(("إزالة من المحادثة الصوتية", "voice_kick"))
             actions.append(("حظر من المحادثة الصوتية", "voice_ban"))
 
+        # Retrieve current user volume scale
+        current_vol_pct = 100
+        parent_window = self.parent()
+        voice = getattr(parent_window, "voice", None)
+        if voice is not None:
+            uid = int(target_user.get("id") or 0)
+            current_vol_pct = int(round(voice.get_user_volume(uid) * 100))
+
         for label, tag in actions:
-            disp_label = tr(label)
+            if tag == "voice_volume":
+                disp_label = tr("تعديل مستوى الصوت (حاليًا {0}%)", current_vol_pct)
+            else:
+                disp_label = tr(label)
             it = QListWidgetItem(disp_label)
             it.setData(Qt.UserRole, tag)
             self.list.addItem(it)

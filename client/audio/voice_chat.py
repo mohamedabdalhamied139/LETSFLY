@@ -10,6 +10,8 @@ from concurrent.futures import ThreadPoolExecutor
 from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtMultimedia import QAudioFormat, QAudioSource, QAudioSink, QMediaDevices
 
+import math
+import struct
 from client.audio.voice_codec import encode_pcm16, decode_pcm16
 
 logger = logging.getLogger("tableverse.voice")
@@ -19,9 +21,11 @@ CHANNELS = 1
 SAMPLE_BYTES = 2
 FRAME_SAMPLES = 320
 FRAME_BYTES = FRAME_SAMPLES * SAMPLE_BYTES
-_MAX_PCM_QUEUE = 12
+_MAX_PCM_QUEUE = 4
 _MAX_PACKET_QUEUE = 12
 _VOICE_MAGIC = b"LFS1"
+_VAD_ENERGY_THRESHOLD = 320.0
+_VAD_RELEASE_FRAMES = 12
 
 class VoiceChatManager(QObject):
     stateChanged = Signal(str)
@@ -51,10 +55,84 @@ class VoiceChatManager(QObject):
         self._playback_history = deque(maxlen=25)  # holds recent incoming frames for echo subtraction
         self._last_playback_time = 0.0
         self._playback_lock = threading.Lock()
+        self._vad_active_countdown = 0
+        self._user_volumes: dict[int, float] = {}
+        self._user_mutes: set[int] = set()
+        self._active_speakers: dict[int, float] = {}
+        self._speakers_lock = threading.Lock()
+        self._load_user_audio_preferences()
         self._play_timer = QTimer(self)
         self._play_timer.setInterval(10)
         self._play_timer.timeout.connect(self._drain_playback)
         self._outputRequested.connect(self._ensure_output)
+
+
+    def _load_user_audio_preferences(self):
+        try:
+            from client import settings_store
+            s = settings_store.load_settings().get("audio", {})
+            raw_vols = s.get("voice_user_volumes", {})
+            for uid_str, vol in raw_vols.items():
+                try:
+                    self._user_volumes[int(uid_str)] = max(0.0, min(2.0, float(vol)))
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def save_user_volume(self, user_id: int, volume_scale: float):
+        uid = int(user_id)
+        scale = max(0.0, min(2.0, float(volume_scale)))
+        self._user_volumes[uid] = scale
+        try:
+            from client import settings_store
+            s = settings_store.load_settings()
+            audio = s.setdefault("audio", {})
+            vols = audio.setdefault("voice_user_volumes", {})
+            vols[str(uid)] = scale
+            settings_store.save_settings(s)
+        except Exception:
+            pass
+
+    def get_user_volume(self, user_id: int) -> float:
+        return self._user_volumes.get(int(user_id), 1.0)
+
+    def is_user_locally_muted(self, user_id: int) -> bool:
+        return int(user_id) in self._user_mutes or self.get_user_volume(user_id) <= 0.001
+
+    def set_user_locally_muted(self, user_id: int, muted: bool):
+        uid = int(user_id)
+        if muted:
+            self._user_mutes.add(uid)
+        else:
+            self._user_mutes.discard(uid)
+
+    def get_active_speaker_ids(self) -> list[int]:
+        now = time.monotonic()
+        with self._speakers_lock:
+            return [uid for uid, t in self._active_speakers.items() if (now - t) < 1.5]
+
+    @staticmethod
+    def _calculate_rms(pcm_bytes: bytes) -> float:
+        count = len(pcm_bytes) // 2
+        if count <= 0:
+            return 0.0
+        samples = struct.unpack("<%dh" % count, pcm_bytes[:count * 2])
+        sum_squares = sum(s * s for s in samples)
+        return math.sqrt(sum_squares / count)
+
+    @staticmethod
+    def _apply_volume(pcm_bytes: bytes, scale: float) -> bytes:
+        if abs(scale - 1.0) < 0.01:
+            return pcm_bytes
+        if scale <= 0.001:
+            return bytes(len(pcm_bytes))
+        count = len(pcm_bytes) // 2
+        if count <= 0:
+            return b""
+        samples = struct.unpack("<%dh" % count, pcm_bytes[:count * 2])
+        scaled = [max(-32768, min(32767, int(s * scale))) for s in samples]
+        return struct.pack("<%dh" % count, *scaled)
 
     def _is_stereo_mix_source(self) -> bool:
         """Detect if the current microphone is Stereo Mix, What U Hear, or a loopback device."""
@@ -338,16 +416,24 @@ class VoiceChatManager(QObject):
         return struct.pack("<%dh" % len(out), *out)
 
     def _filter_echo_from_frame(self, frame: bytes) -> bytes:
-        """If using Stereo Mix and remote audio is currently playing, suppress the loopback."""
-        if not self._is_stereo_mix_source():
-            return frame
+        """Suppress speaker audio and screen reader speech from leaking into microphone."""
         now = time.monotonic()
-        with self._playback_lock:
-            time_since_playback = now - self._last_playback_time
-            if time_since_playback < 0.45:  # Within echo window of remote speech
-                # If there's recent incoming audio playing on speakers, mute Stereo Mix capture
-                # so other players' voices are not looped back to the server
-                return bytes(len(frame))
+        # 1. Screen reader speech ducking: if NVDA just spoke within 0.35s, duck input
+        try:
+            from client.accessibility.reader import reader
+            ctrl = getattr(reader, "_controller", None)
+            if ctrl and hasattr(ctrl, "last_speech_time"):
+                if (now - ctrl.last_speech_time) < 0.35:
+                    return bytes(len(frame))
+        except Exception:
+            pass
+
+        # 2. Stereo Mix / Loopback suppression
+        if self._is_stereo_mix_source():
+            with self._playback_lock:
+                time_since_playback = now - self._last_playback_time
+                if time_since_playback < 0.45:
+                    return bytes(len(frame))
         return frame
 
     def _prepare_and_send(self, data: bytes, fmt, generation: int):
@@ -367,6 +453,16 @@ class VoiceChatManager(QObject):
                     frame = bytes(self._capture_pcm_buffer[:FRAME_BYTES])
                     del self._capture_pcm_buffer[:FRAME_BYTES]
                     frame = self._filter_echo_from_frame(frame)
+                    # Voice Activity Detection (VAD) / Noise Gate
+                    rms = self._calculate_rms(frame)
+                    if rms >= _VAD_ENERGY_THRESHOLD:
+                        self._vad_active_countdown = _VAD_RELEASE_FRAMES
+                    elif self._vad_active_countdown > 0:
+                        self._vad_active_countdown -= 1
+                    else:
+                        # Below noise floor and release window elapsed; suppress packet to save network and prevent background hiss
+                        continue
+
                     packet = encode_pcm16(frame, SAMPLE_RATE)
                     if packet and generation == self._generation and not self._closed and not self.muted and self.room_id and self._voice_session_active:
                         if not self.ws.send_bytes(packet):
@@ -388,29 +484,44 @@ class VoiceChatManager(QObject):
         if self._closed or not self.room_id:
             return
         # Server frame: LFS1 + sender_user_id(uint32) + LFV1 + ADPCM packet.
-        # Strip both routing headers before passing the codec payload onward.
         if not isinstance(data, (bytes, bytearray)) or len(data) < 17 or bytes(data[:4]) != _VOICE_MAGIC:
             return
+        sender_id = struct.unpack_from(">I", data, 4)[0]
+        if self.is_user_locally_muted(sender_id):
+            return
+
         payload = bytes(data[8:])
         if len(payload) > 4096 or len(payload) < 9 or payload[:4] != b"LFV1" or not self._decode_slots.acquire(blocking=False):
             return
-        future = self._executor.submit(self._decode_and_queue, payload, self._generation)
+        future = self._executor.submit(self._decode_and_queue, payload, sender_id, self._generation)
         future.add_done_callback(lambda _f: self._decode_slots.release())
 
-    def _decode_and_queue(self, payload: bytes, generation: int):
+    def _decode_and_queue(self, payload: bytes, sender_id: int, generation: int):
         if self._closed:
             return
         try:
             pcm = decode_pcm16(payload)
-            if generation != self._generation:
+            if generation != self._generation or not pcm:
                 return
+
+            # Apply per-user volume scaling
+            user_vol = self.get_user_volume(sender_id)
+            if abs(user_vol - 1.0) >= 0.01:
+                pcm = self._apply_volume(pcm, user_vol)
             if not pcm:
                 return
+
+            # Track active speaker
+            with self._speakers_lock:
+                self._active_speakers[sender_id] = time.monotonic()
+
             output_fmt = getattr(self, "_output_format", None)
             if output_fmt is not None:
                 pcm = self._pcm16_for_output(pcm, output_fmt)
             if not pcm:
                 return
+
+            # Drop-oldest queue policy to strictly prevent audio latency accumulation
             try:
                 self._play_queue.put_nowait(pcm)
             except queue.Full:

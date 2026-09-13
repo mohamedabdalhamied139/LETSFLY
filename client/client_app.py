@@ -2239,6 +2239,22 @@ class TableVerseApp(QMainWindow):
                 lambda _r: reader.speak(tr("تم حظر {name} من المحادثة الصوتية.", name=target_name), interrupt=True),
                 lambda e: reader.speak(tr("تعذر حظر اللاعب من الصوت: {error}", error=tr(str(e))), interrupt=True)
             )
+        elif tag == "voice_volume":
+            from PySide6.QtWidgets import QInputDialog
+            current_pct = int(round(self.voice.get_user_volume(target_id) * 100))
+            val, ok = QInputDialog.getInt(
+                self,
+                tr("تعديل مستوى الصوت"),
+                tr("أدخل مستوى صوت {name} بالنسبة المئوية (من 0 إلى 200):", name=target_name),
+                current_pct,
+                0,
+                200,
+                5
+            )
+            if ok:
+                new_scale = val / 100.0
+                self.voice.save_user_volume(target_id, new_scale)
+                reader.speak(tr("تم ضبط مستوى صوت {name} على {0}%.", val, name=target_name), interrupt=True)
 
     def on_toggle_room_privacy(self):
         """Ctrl+H shortcut to toggle room privacy (public/private)."""
@@ -3005,6 +3021,25 @@ class TableVerseApp(QMainWindow):
         if not self.is_in_room():
             return
         self.voice.toggle_mute()
+
+    def on_query_voice_status(self):
+        """Query voice connection state, mic status, and active speakers."""
+        if not self.is_in_room():
+            return
+        if not self.voice.in_voice_chat:
+            reader.speak(tr("لست في المحادثة الصوتية حاليًا."), interrupt=True)
+            return
+        mic_status = tr("الميكروفون مكتوم") if self.voice.muted else tr("الميكروفون مفتوح")
+        active_ids = self.voice.get_active_speaker_ids()
+        if active_ids:
+            room = self.current_room or {}
+            names_dict = room.get("player_names") or room.get("players_dict") or {}
+            speaker_names = [names_dict.get(uid, names_dict.get(str(uid), tr("لاعب"))) for uid in active_ids]
+            speakers_str = "، ".join(speaker_names)
+            msg = tr("متصل بالصوت، {0}. يتحدث الآن: {1}.", mic_status, speakers_str)
+        else:
+            msg = tr("متصل بالصوت، {0}. لا أحد يتحدث حاليًا.", mic_status)
+        reader.speak(msg, interrupt=True)
 
     def on_announce_table_time(self):
         if not self.is_in_room():

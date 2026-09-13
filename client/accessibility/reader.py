@@ -20,6 +20,7 @@ class NVDAController:
         self.path = None
         self.architecture = None
         self.last_error = ""
+        self.last_speech_time = 0.0
         self._load()
 
     def set_diagnostic(self, callback):
@@ -193,6 +194,8 @@ class NVDAController:
             result = self.dll.nvdaController_speakText(text)
             self._emit(f"speakText({text!r}) → return={result}.")
             if result == self.SUCCESS:
+                import time
+                self.last_speech_time = time.monotonic()
                 return True
 
             self.last_error = f"speakText returned {result}"

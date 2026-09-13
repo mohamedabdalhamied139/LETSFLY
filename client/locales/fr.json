@@ -2298,5 +2298,14 @@
   "أنت داخل طاولة أخرى حاليًا.": "Vous êtes actuellement dans une autre table.",
   "أنت داخل طاولة أخرى حالياً.": "Vous êtes actuellement dans une autre table.",
   "اللاعب غير متصل حالياً.": "Le joueur est actuellement hors ligne.",
-  "اللاعب موجود في طاولة أخرى حالياً.": "Le joueur est actuellement dans une autre table."
+  "اللاعب موجود في طاولة أخرى حالياً.": "Le joueur est actuellement dans une autre table.",
+  "تعديل مستوى الصوت (حاليًا {0}%)": "Régler le volume (actuellement {0}%)",
+  "تعديل مستوى الصوت": "Régler le volume",
+  "أدخل مستوى صوت {name} بالنسبة المئوية (من 0 إلى 200):": "Entrez le volume pour {name} en pourcentage (0 à 200) :",
+  "تم ضبط مستوى صوت {name} على {0}%.": "Volume de {name} réglé à {0}%.",
+  "لست في المحادثة الصوتية حاليًا.": "Vous n'êtes pas actuellement en chat vocal.",
+  "الميكروفون مكتوم": "Le micro est coupé",
+  "الميكروفون مفتوح": "Le micro est ouvert",
+  "متصل بالصوت، {0}. يتحدث الآن: {1}.": "Connecté à la voix, {0}. Parle actuellement : {1}.",
+  "متصل بالصوت، {0}. لا أحد يتحدث حاليًا.": "Connecté à la voix, {0}. Personne ne parle actuellement."
 }
