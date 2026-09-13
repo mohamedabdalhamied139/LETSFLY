@@ -179,6 +179,18 @@ class ApiClient:
     def toggle_room_privacy(self, room_id: str):
         return self._request("POST", f"/api/rooms/{room_id}/privacy")
 
+    def save_room(self, room_id: str):
+        return self._request("POST", f"/api/rooms/{room_id}/save")
+
+    def list_saved_tables(self):
+        return self._request("GET", "/api/rooms/saved")
+
+    def delete_saved_table(self, saved_id: int):
+        return self._request("DELETE", f"/api/rooms/saved/{int(saved_id)}")
+
+    def restore_saved_table(self, saved_id: int):
+        return self._request("POST", f"/api/rooms/saved/{int(saved_id)}/restore")
+
     def game_state(self, room_id: str):
         return self._request("GET", f"/api/rooms/{room_id}/game/state")
 

@@ -102,7 +102,7 @@ class RoomsMenuView(QWidget):
             ]
         else:
             self.title_label.setText(tr("الطاولات"))
-            items = [(tr("إنشاء"), "create"), (tr("انضمام"), "join")]
+            items = [(tr("إنشاء"), "create"), (tr("انضمام"), "join"), (tr("الطاولات المحفوظة"), "saved_tables")]
 
         target_row = 0
         for idx, (label, tag) in enumerate(items):

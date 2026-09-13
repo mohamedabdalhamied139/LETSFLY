@@ -1,7 +1,7 @@
 """Database models and session setup."""
 import os
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, event, inspect, text, UniqueConstraint, Index
+from sqlalchemy import create_engine, Column, Integer, String, Text, LargeBinary, DateTime, ForeignKey, event, inspect, text, UniqueConstraint, Index
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -214,6 +214,21 @@ class Feedback(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     message = Column(String(4000), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+
+class SavedTable(Base):
+    __tablename__ = "saved_tables"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    game = Column(String(40), nullable=False, index=True)
+    target_score = Column(Integer, nullable=True)
+    rules_json = Column(Text, nullable=False, default="{}")
+    scores_json = Column(Text, nullable=False, default="{}")
+    players_json = Column(Text, nullable=False, default="[]")
+    opponents_summary = Column(String(255), nullable=False, default="")
+    serialized_engine = Column(LargeBinary, nullable=False)
+    saved_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+
 
 Base.metadata.create_all(bind=engine)
 

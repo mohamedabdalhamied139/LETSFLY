@@ -21,6 +21,7 @@ from client.views.auth_view import AuthView
 from client.views.home_view import HomeView
 from client.views.rooms_menu_view import RoomsMenuView
 from client.views.join_rooms_view import JoinRoomsView
+from client.views.saved_tables_view import SavedTablesView
 from client.views.friends_view import FriendsView
 from client.views.friend_actions import FriendActionsDialog, OnlineUserActionsDialog, SimpleMessageDialog, ProfileDialog, HeadToHeadDialog, MuteDialog, GiftDialog
 from client.views.online_users_view import OnlineUsersView
@@ -94,6 +95,7 @@ class TableVerseApp(QMainWindow):
         self.rooms_menu_view = RoomsMenuView(self) # Index 2
         self.join_rooms_view = JoinRoomsView(self) # Index 3
         self.table_view = TableView(self)          # Index 4
+        self.saved_tables_view = SavedTablesView(self) # Index 5
         self.login_loading_view = QWidget(self)
         self.login_loading_view.setAccessibleName("")
         self.login_loading_view.setAccessibleDescription("")
@@ -107,9 +109,10 @@ class TableVerseApp(QMainWindow):
         self.stack.addWidget(self.rooms_menu_view)
         self.stack.addWidget(self.join_rooms_view)
         self.stack.addWidget(self.table_view)
+        self.stack.addWidget(self.saved_tables_view)
         self.stack.addWidget(self.login_loading_view)
 
-        for view in (self.home_view, self.rooms_menu_view, self.join_rooms_view, self.table_view):
+        for view in (self.home_view, self.rooms_menu_view, self.join_rooms_view, self.table_view, self.saved_tables_view):
             panel = getattr(view, "activity_panel", None)
             if panel is not None:
                 panel.eventActivated.connect(self._on_activity_event_activated)
@@ -129,6 +132,11 @@ class TableVerseApp(QMainWindow):
         self.join_rooms_view.backRequested.connect(lambda: (self.stack.setCurrentIndex(2), self.rooms_menu_view.set_main(), self.rooms_menu_view.menu_list.setFocus(), reader.speak(tr("قائمة الطاولات"))))
         self.join_rooms_view.activitySelected.connect(lambda category: self._handle_activity_selection_for_view(self.join_rooms_view, category))
         self.join_rooms_view.loadOlderRequested.connect(lambda category, before_id: self._handle_activity_load_older_for_view(self.join_rooms_view, category, before_id))
+        self.saved_tables_view.restoreSelected.connect(self._handle_restore_saved_table)
+        self.saved_tables_view.deleteSelected.connect(self._handle_delete_saved_table)
+        self.saved_tables_view.backRequested.connect(lambda: (self.stack.setCurrentIndex(2), self.rooms_menu_view.set_main(), self.rooms_menu_view.menu_list.setFocus(), reader.speak(tr("قائمة الطاولات"))))
+        self.saved_tables_view.activitySelected.connect(lambda category: self._handle_activity_selection_for_view(self.saved_tables_view, category))
+        self.saved_tables_view.loadOlderRequested.connect(lambda category, before_id: self._handle_activity_load_older_for_view(self.saved_tables_view, category, before_id))
         self.table_view.cardActivated.connect(self._handle_play_card)
         self.table_view.chatSent.connect(self._handle_send_chat)
         self.table_view.thiefActionSubmitted.connect(self._handle_thief_action)
@@ -198,6 +206,7 @@ class TableVerseApp(QMainWindow):
             ("Ctrl+F", "on_ctrl_friends"),
             ("Ctrl+W", "on_ctrl_online_users"),
             ("Ctrl+H", "on_toggle_room_privacy"),
+            ("Ctrl+S", "on_save_table_shortcut"),
         ]
         for key, method in entries:
             shortcut = QShortcut(QKeySequence(key), self)
@@ -216,7 +225,7 @@ class TableVerseApp(QMainWindow):
         if method == "on_toggle_spectator_shortcut":
             self.on_toggle_spectator_shortcut()
             return
-        if method in ("on_toggle_voice_chat", "on_toggle_voice_mute", "on_toggle_room_privacy"):
+        if method in ("on_toggle_voice_chat", "on_toggle_voice_mute", "on_toggle_room_privacy", "on_save_table_shortcut"):
             if self.is_in_room():
                 getattr(self, method)()
             return
@@ -486,9 +495,14 @@ class TableVerseApp(QMainWindow):
         idx = self.stack.currentIndex()
         if idx == 4:
             self.table_view.focus_initial()
+        elif idx == 5:
+            self.stack.setCurrentIndex(2)
+            self.rooms_menu_view.set_main(focus_tag="saved_tables")
+            self.rooms_menu_view.menu_list.setFocus()
+            reader.speak(tr("قائمة الطاولات"))
         elif idx == 3:
             self.stack.setCurrentIndex(2)
-            self.rooms_menu_view.set_main()
+            self.rooms_menu_view.set_main(focus_tag="join")
             self.rooms_menu_view.menu_list.setFocus()
             reader.speak(tr("قائمة الطاولات"))
         elif idx == 2:
@@ -1212,6 +1226,10 @@ class TableVerseApp(QMainWindow):
             self.stack.setCurrentIndex(3)
             self._load_activity_into(self.join_rooms_view)
             self._refresh_available_rooms()
+        elif tag == "saved_tables":
+            self.stack.setCurrentIndex(5)
+            self._load_activity_into(self.saved_tables_view)
+            self._refresh_saved_tables()
 
     def _refresh_available_rooms(self):
         def done(rooms):
@@ -2461,6 +2479,14 @@ class TableVerseApp(QMainWindow):
                 self.voice.receive_packet(bytes(data))
             return
 
+        if et == "table_restored":
+            msg = event.get("message") or tr("تم استرجاع طاولة محفوظة.")
+            rid = event.get("room_id")
+            reader.speak(tr(msg), interrupt=True)
+            if rid:
+                self._handle_join_room(rid)
+            return
+
         if et == "activity_event":
             # One canonical event stream feeds every place where the shared
             # activity log is visible. Register game-event identity so a state-poll
@@ -2477,7 +2503,7 @@ class TableVerseApp(QMainWindow):
                     self._seen_game_activity_events = set(list(seen)[-256:])
             # Activity events are data-only for the log and do NOT emit ambient
             # background speech or sound cues.
-            for view in (self.home_view, self.rooms_menu_view, self.join_rooms_view, self.table_view):
+            for view in (self.home_view, self.rooms_menu_view, self.join_rooms_view, self.table_view, self.saved_tables_view):
                 panel = getattr(view, "activity_panel", None)
                 if panel is not None:
                     panel.add_event(event)
@@ -2933,7 +2959,7 @@ class TableVerseApp(QMainWindow):
                     self.table_view._scopa_state = self.scopa_state
                 self.table_view._on_language_changed(active_lang)
             # Refresh dynamic home/table menus from their existing state.
-            for view in (self.auth_view, self.home_view, self.rooms_menu_view, self.join_rooms_view, self.table_view):
+            for view in (self.auth_view, self.home_view, self.rooms_menu_view, self.join_rooms_view, self.table_view, self.saved_tables_view):
                 localize_widget_tree(view)
         except Exception:
             pass
@@ -3753,6 +3779,12 @@ class TableVerseApp(QMainWindow):
         players_act = menu.addAction(tr("قائمة اللاعبين"))
         spectator_act = menu.addAction(tr("وضع المتفرج"))
         
+        # Save table option
+        save_act = menu.addAction(tr("حفظ الطاولة") + " (Ctrl+S)")
+        can_save = (status == "playing" and len(self.current_room.get("players", [])) > 1)
+        save_act.setEnabled(can_save)
+        save_act.triggered.connect(self.on_save_table_shortcut)
+
         # Privacy toggle in a balanced, logical middle position
         is_priv = bool((self.current_room.get("rules") or {}).get("private", False))
         priv_title = tr("اجعل الطاولة عامة") if is_priv else tr("اجعل الطاولة خاصة")
@@ -4095,6 +4127,8 @@ class TableVerseApp(QMainWindow):
                         QTimer.singleShot(0, self.rooms_menu_view.menu_list.setFocus)
                     elif curr_idx == 3 and hasattr(self.join_rooms_view, "rooms_list"):
                         QTimer.singleShot(0, self.join_rooms_view.rooms_list.setFocus)
+                    elif curr_idx == 5 and hasattr(self.saved_tables_view, "tables_list"):
+                        QTimer.singleShot(0, self.saved_tables_view.tables_list.setFocus)
         super().changeEvent(event)
 
     def contextMenuEvent(self, event):
@@ -4139,3 +4173,56 @@ class TableVerseApp(QMainWindow):
             return
         super().keyPressEvent(event)
 
+
+    def on_save_table_shortcut(self):
+        if not self.is_in_room():
+            return
+        status = (self.current_room or {}).get("status")
+        players = (self.current_room or {}).get("players", [])
+        if status != "playing":
+            reader.speak(tr("لا يمكن حفظ الطاولة إلا أثناء اللعب الفعلي."), interrupt=True)
+            return
+        if len(players) <= 1:
+            reader.speak(tr("يجب أن تحتوي الطاولة على أكثر من لاعب لحفظها."), interrupt=True)
+            return
+        rid = str((self.current_room or {}).get("id") or "")
+        if not rid:
+            return
+        reader.speak(tr("جاري حفظ الطاولة..."), interrupt=True)
+        def done(res):
+            sound_engine.play_event("CONNECTED")
+            msg = res.get("message") or tr("تم حفظ الطاولة بنجاح مقابل عملتين.")
+            reader.speak(tr(msg), interrupt=True)
+        def fail(err):
+            sound_engine.play_event("INVALID_ACTION")
+            reader.speak(str(err), interrupt=True)
+        self._run_async(lambda: self.api.save_room(rid), done, fail)
+
+    def _refresh_saved_tables(self):
+        def done(tables):
+            self.saved_tables_view.update_tables(tables)
+            self.saved_tables_view.tables_list.setFocus()
+            reader.speak(tr("قائمة الطاولات المحفوظة."))
+        def fail(err):
+            reader.speak(str(err), interrupt=True)
+        self._run_async(self.api.list_saved_tables, done, fail)
+
+    def _handle_delete_saved_table(self, saved_id: int):
+        def done(res):
+            sound_engine.play_event("ACTION_CLICK")
+            reader.speak(tr("تم حذف الطاولة المحفوظة."), interrupt=True)
+            self._refresh_saved_tables()
+        def fail(err):
+            reader.speak(str(err), interrupt=True)
+        self._run_async(lambda: self.api.delete_saved_table(saved_id), done, fail)
+
+    def _handle_restore_saved_table(self, saved_id: int):
+        reader.speak(tr("استعادة الطاولة..."), interrupt=True)
+        def done(res):
+            rid = res.get("room_id")
+            if rid:
+                self._handle_join_room(rid)
+        def fail(err):
+            sound_engine.play_event("INVALID_ACTION")
+            reader.speak(str(err), interrupt=True)
+        self._run_async(lambda: self.api.restore_saved_table(saved_id), done, fail)
