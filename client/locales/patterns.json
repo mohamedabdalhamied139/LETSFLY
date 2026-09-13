@@ -1,5 +1,91 @@
 [
   {
+    "pattern": "^انتهى\\s+وقت\\s+الدور!\\s+(.+?)\\s+خسر\\s+نقطة\\s+لتجاوز\\s+الوقت\\.\\s+خرج\\s+(.+?)\\s+من\\s+اللعبة\\.?$",
+    "template": "Turn time expired! {0} lost a point for timeout. {1} left the game.",
+    "roles": [
+      "user",
+      "user"
+    ]
+  },
+  {
+    "pattern": "^انتهى\\s+وقت\\s+الدور!\\s+(.+?)\\s+خسر\\s+نقطة\\s+لتجاوز\\s+الوقت\\.?$",
+    "template": "Turn time expired! {0} lost a point for timeout.",
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "pattern": "^تعادل\\s+في\\s+صدارة\\s+المباراة\\.\\s+تبدأ\\s+جولة\\s+فاصلة\\.\\s+النتائج:\\s+(.+?)$",
+    "template": "Tie for the lead! A playoff round begins. Results: {0}",
+    "roles": [
+      "score_list"
+    ]
+  },
+  {
+    "pattern": "^تعذر\\s+استعادة\\s+الطاولة:\\s+(.+?)$",
+    "template": "Failed to restore table: {0}",
+    "roles": [
+      "status"
+    ]
+  },
+  {
+    "pattern": "^اللاعب\\s+(.+?)\\s+موجود\\s+في\\s+طاولة\\s+أخرى\\s+حالياً\\.?$",
+    "template": "Player {0} is currently in another table.",
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "pattern": "^اللاعب\\s+(.+?)\\s+غير\\s+متصل\\s+حالياً\\.?$",
+    "template": "Player {0} is currently offline.",
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "pattern": "^قام\\s+(.+?)\\s+باسترجاع\\s+الطاولة\\s+المحفوظة\\s+المشتركة\\s+معكم\\.?$",
+    "template": "{0} restored the shared saved table with you.",
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "pattern": "^قام\\s+(.+?)\\s+بحفظ\\s+الطاولة\\s+وإنهاء\\s+الجلسة\\.?$",
+    "template": "{0} saved the table and ended the session.",
+    "roles": [
+      "user"
+    ]
+  },
+  {
+    "pattern": "^تم\\s+استبدالك\\s+بـ\\s+(.+?)\\s+في\\s+الطاولة\\s+بواسطة\\s+(.+?)\\.?$",
+    "template": "You were replaced by {0} in the table by {1}.",
+    "roles": [
+      "user",
+      "actor"
+    ]
+  },
+  {
+    "pattern": "^تم\\s+استبدالك\\s+ببوت\\s+في\\s+هذه\\s+الطاولة\\s+بواسطة\\s+(.+?)\\.?$",
+    "template": "You were replaced by a bot in this table by {0}.",
+    "roles": [
+      "actor"
+    ]
+  },
+  {
+    "pattern": "^تم\\s+حظرك\\s+من\\s+هذه\\s+الطاولة\\s+بواسطة\\s+(.+?)\\.?$",
+    "template": "You were banned from this table by {0}.",
+    "roles": [
+      "actor"
+    ]
+  },
+  {
+    "pattern": "^تم\\s+طردك\\s+من\\s+الطاولة\\s+بواسطة\\s+(.+?)\\.?$",
+    "template": "You were kicked from the table by {0}.",
+    "roles": [
+      "actor"
+    ]
+  },
+  {
     "pattern": "^لعب\\s+(.+?)\\s+(.+?)\\s+وأكل\\s+بها\\s+\\((.+?)\\)\\s+\\.\\.\\.\\s+إسكوبااااا!\\s+🧹✨\\s+\\(\\+1\\s+نقطة\\s+فوري\\)$",
     "template": "{0} played {1} and captured ({2}) ... SCOPA! 🧹✨ (+1 point)",
     "roles": [
@@ -156,19 +242,19 @@
   {
     "pattern": "^(.+?)\\s+أخذ\\s+(.+?)\\s+مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)\\.?$",
     "template": "{0} took {1} for {2} points.",
-    "roles": {
-      "0": "user",
-      "1": "combo",
-      "2": "num"
-    }
+    "roles": [
+      "user",
+      "combo",
+      "num"
+    ]
   },
   {
     "pattern": "^(.+?)\\s+أخذ\\s+(\\d+)\\s+(?:نقطة|نقاط)\\.?$",
     "template": "{0} took {1} points.",
-    "roles": {
-      "0": "user",
-      "1": "num"
-    }
+    "roles": [
+      "user",
+      "num"
+    ]
   },
   {
     "pattern": "^(.*?)\\s+لعب\\s+(.*?)\\s+—\\s+(.*?)$",
@@ -307,7 +393,7 @@
     "template": "Match ended! Winner: {0}. Results: {1}",
     "roles": [
       "text",
-      "text"
+      "set_list"
     ]
   },
   {
@@ -647,7 +733,7 @@
       "num",
       "sub",
       "sub",
-      "sub",
+      "set_list",
       "num"
     ]
   },
@@ -2112,33 +2198,33 @@
   {
     "pattern": "^(.+?):\\s*لعب\\s*(\\d+)[\\u060C,]\\s*فزت\\s*(\\d+)[\\u060C,]\\s*خسرت\\s*(\\d+)$",
     "template": "{0}: Played {1}, Won {2}, Lost {3}",
-    "roles": {
-      "0": "game",
-      "1": "num",
-      "2": "num",
-      "3": "num"
-    }
+    "roles": [
+      "game",
+      "num",
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^المعمارية:\\s*(.+)\\.?$",
     "template": "Architecture: {0}.",
-    "roles": {
-      "0": "text"
-    }
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^تم تحديد الجنس:\\s*(.+)$",
     "template": "Gender set to: {0}",
-    "roles": {
-      "0": "sub"
-    }
+    "roles": [
+      "sub"
+    ]
   },
   {
     "pattern": "^آخر ظهور:\\s*(.+)$",
     "template": "Last seen: {0}",
-    "roles": {
-      "0": "text"
-    }
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^مرحبًا بك في TableVerse\\. يرجى كتابة اسم المستخدم وكلمة المرور\\.?$",
@@ -2148,295 +2234,299 @@
   {
     "pattern": "^مرحبًا بعودتك\\s+(.+?)\\.?$",
     "template": "Welcome back, {0}.",
-    "roles": {
-      "0": "user"
-    }
+    "roles": [
+      "user"
+    ]
   },
   {
     "pattern": "^مرحبًا\\s+(.+?)\\.?$",
     "template": "Welcome, {0}.",
-    "roles": {
-      "0": "user"
-    }
+    "roles": [
+      "user"
+    ]
   },
   {
     "pattern": "^تعذر إلغاء الطلب:\\s*(.+)$",
     "template": "Could not cancel request: {0}",
-    "roles": {
-      "0": "sub"
-    }
+    "roles": [
+      "sub"
+    ]
   },
   {
     "pattern": "^تعذر إرسال الهدية:\\s*(.+)$",
     "template": "Could not send gift: {0}",
-    "roles": {
-      "0": "sub"
-    }
+    "roles": [
+      "sub"
+    ]
   },
   {
     "pattern": "^تعذر قبول الدعوة:\\s*(.+)$",
     "template": "Could not accept invitation: {0}",
-    "roles": {
-      "0": "sub"
-    }
+    "roles": [
+      "sub"
+    ]
   },
   {
     "pattern": "^(\\d+)/(\\d+)[\\u060C,]\\s*المجموع\\s*(\\d+)$",
     "template": "{0}/{1}, total {2}",
-    "roles": {
-      "0": "num",
-      "1": "num",
-      "2": "num"
-    }
+    "roles": [
+      "num",
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^أكلت\\s*(\\d+)\\s*كارت[\\u060C,]\\s*والمتبقي في البنك\\s*(\\d+)\\s*كارت\\.?$",
     "template": "Captured {0} cards, remaining in bank {1} cards.",
-    "roles": {
-      "0": "num",
-      "1": "num"
-    }
+    "roles": [
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^رصيدك\\s*(\\d+)$",
     "template": "Your balance is {0}",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^لا يمكنك التثبيت الآن\\. الحد الأدنى للتثبيت هو\\s*(\\d+)\\s*نقطة\\.?$",
     "template": "Cannot bank now. Minimum bank score is {0} points.",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^عدد الجولات:\\s*(\\d+)$",
     "template": "Number of rounds: {0}",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^الحد الأدنى للإيداع:\\s*(\\d+)$",
     "template": "Minimum deposit: {0}",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^الحد الأدنى لفتح الرصيد:\\s*(\\d+)$",
     "template": "Minimum opening balance: {0}",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^النقاط:\\s*(\\d+)\\s*لـ\\s*(.+?)\\s*مقابل\\s*(\\d+)\\s*لـ\\s*(.+?)\\.?$",
     "template": "Points: {0} for {1} vs {2} for {3}.",
-    "roles": {
-      "0": "num",
-      "1": "user",
-      "2": "num",
-      "3": "user"
-    }
+    "roles": [
+      "num",
+      "user",
+      "num",
+      "user"
+    ]
   },
   {
     "pattern": "^الأشواط:\\s*(\\d+)\\s*لـ\\s*(.+?)\\s*و\\s*(\\d+)\\s*لـ\\s*(.+?)\\.?$",
     "template": "Games: {0} for {1} and {2} for {3}.",
-    "roles": {
-      "0": "num",
-      "1": "user",
-      "2": "num",
-      "3": "user"
-    }
+    "roles": [
+      "num",
+      "user",
+      "num",
+      "user"
+    ]
   },
   {
     "pattern": "^المجموعات:\\s*(\\d+)\\s*لـ\\s*(.+?)\\s*و\\s*(\\d+)\\s*لـ\\s*(.+?)\\.?$",
     "template": "Sets: {0} for {1} and {2} for {3}.",
-    "roles": {
-      "0": "num",
-      "1": "user",
-      "2": "num",
-      "3": "user"
-    }
+    "roles": [
+      "num",
+      "user",
+      "num",
+      "user"
+    ]
   },
   {
     "pattern": "^اسم المستخدم:\\s*(.+?)\\s*\\(غير قابل للتعديل\\)$",
     "template": "Username: {0} (non-editable)",
-    "roles": {
-      "0": "text"
-    }
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^إجمالي المباريات:\\s*(\\d+)\\.?\\s*فزت:\\s*(\\d+)[\\u060C,]\\s*خسرت:\\s*(\\d+)\\.?$",
     "template": "Total matches: {0}. Won: {1}, Lost: {2}.",
-    "roles": {
-      "0": "num",
-      "1": "num",
-      "2": "num"
-    }
+    "roles": [
+      "num",
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^فزت:\\s*(\\d+)\\s+خسرت:\\s*(\\d+)$",
     "template": "Won: {0}   Lost: {1}",
-    "roles": {
-      "0": "num",
-      "1": "num"
-    }
+    "roles": [
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^(\\d+)\\s+فردي مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Single {0} for {1} points",
-    "roles": {
-      "0": "num",
-      "1": "num"
-    }
+    "roles": [
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^ثلاثة\\s+(\\d+)\\s+مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Three {0} for {1} points",
-    "roles": {
-      "0": "num",
-      "1": "num"
-    }
+    "roles": [
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^أربعة\\s+(\\d+)\\s+مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Four {0} for {1} points",
-    "roles": {
-      "0": "num",
-      "1": "num"
-    }
+    "roles": [
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^خمسة\\s+(\\d+)\\s+مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Five {0} for {1} points",
-    "roles": {
-      "0": "num",
-      "1": "num"
-    }
+    "roles": [
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^ستة\\s+(\\d+)\\s+مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Six {0} for {1} points",
-    "roles": {
-      "0": "num",
-      "1": "num"
-    }
+    "roles": [
+      "num",
+      "num"
+    ]
   },
   {
     "pattern": "^ثلاثة أزواج مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Three pairs for {0} points",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^تتابع صغير مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Small straight for {0} points",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^تتابع كبير مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Large straight for {0} points",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^منزل كامل مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Full house for {0} points",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^مجموعتان من ثلاثة مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)$",
     "template": "Two triplets for {0} points",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^(.+?)\\s+أخذ\\s+(.+?)،\\s*نرد ساخن!$",
     "template": "{0} takes {1}, hot dice!",
-    "roles": {
-      "0": "user",
-      "1": "combo"
-    }
+    "roles": [
+      "user",
+      "combo"
+    ]
   },
   {
     "pattern": "^(.+?)\\s+أخذ\\s+(.+?)\\.?$",
     "template": "{0} takes {1}.",
-    "roles": {
-      "0": "user",
-      "1": "combo"
-    }
+    "roles": [
+      "user",
+      "combo"
+    ]
   },
   {
     "pattern": "^أخذت\\s+(.+?)،\\s*نرد ساخن!$",
     "template": "You take {0}, hot dice!",
-    "roles": {
-      "0": "combo"
-    }
+    "roles": [
+      "combo"
+    ]
   },
   {
     "pattern": "^أخذت\\s+(.+?)\\.?$",
     "template": "You take {0}.",
-    "roles": {
-      "0": "combo"
-    }
+    "roles": [
+      "combo"
+    ]
   },
   {
     "pattern": "^(.+?)\\s+رمى النرد:\\s*(.+)$",
     "template": "{0} rolls the dice: {1}",
-    "roles": {
-      "0": "user",
-      "1": "dice"
-    }
+    "roles": [
+      "user",
+      "dice"
+    ]
   },
   {
     "pattern": "^رميت النرد:\\s*(.+)$",
     "template": "You roll the dice: {0}",
-    "roles": {
-      "0": "dice"
-    }
+    "roles": [
+      "dice"
+    ]
   },
   {
     "pattern": "^نرد\\s+(.+?):\\s*(.+)$",
     "template": "{0}'s dice: {1}",
-    "roles": {
-      "0": "user",
-      "1": "dice"
-    }
+    "roles": [
+      "user",
+      "dice"
+    ]
   },
   {
     "pattern": "^فاركل!\\s*خسرت\\s*(\\d+)\\s*نقطة في هذا الدور\\.?$",
     "template": "Farkle! You lost {0} points in this turn.",
-    "roles": {
-      "0": "num"
-    }
+    "roles": [
+      "num"
+    ]
   },
   {
     "pattern": "^دور اللاعب\\s*(.+?)\\.?$",
     "template": "Player {0}'s turn.",
-    "roles": {}
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^دور\\s+(.+?)\\.?$",
     "template": "{0}'s turn.",
-    "roles": {}
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^الإعدادات الحالية:\\s*(.+)$",
     "template": "Current settings: {0}",
-    "roles": {
-      "0": "rules"
-    }
+    "roles": [
+      "rules"
+    ]
   },
   {
     "pattern": "^\\u062a\\u0639\\u0630\\u0631\\s+\\u062d\\u0641\\u0638\\s+\\u0627\\u0644\\u0643\\u062a\\u0645:\\s*(.+)$",
@@ -3100,77 +3190,98 @@
   {
     "pattern": "^تعذر تحديث عرض الملف الشخصي:\\s*(.+)$",
     "template": "Failed to refresh profile display: {0}",
-    "roles": {
-      "0": "sub"
-    }
+    "roles": [
+      "sub"
+    ]
   },
   {
     "pattern": "^تعذر تحميل الإحصائيات:\\s*(.+)$",
     "template": "Failed to load statistics: {0}",
-    "roles": {
-      "0": "sub"
-    }
+    "roles": [
+      "sub"
+    ]
   },
   {
     "pattern": "^الإرسال مع\\s*(.+)$",
     "template": "Serving: {0}",
-    "roles": {}
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^(\\d+/\\d+)\\s*،\\s*المجموع\\s*(\\d+)$",
     "template": "{0}, total {1}",
-    "roles": {}
+    "roles": [
+      "text",
+      "text"
+    ]
   },
   {
     "pattern": "^أكلت\\s*(\\d+)\\s*كارت،\\s*والمتبقي في البنك\\s*(\\d+)\\s*كارت\\.?$",
     "template": "Captured {0} cards, {1} cards remaining in deck.",
-    "roles": {}
+    "roles": [
+      "text",
+      "text"
+    ]
   },
   {
     "pattern": "^المتصلون \\((\\d+)\\)$",
     "template": "Online ({0})",
-    "roles": {}
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^طاولة\\s*(.+?)\\s*رقم\\s*(\\d+)\\.?$",
     "template": "{0} Table #{1}.",
-    "roles": {
-      "0": "game"
-    }
+    "roles": [
+      "game",
+      "text"
+    ]
   },
   {
     "pattern": "^انضم اللاعب\\s*(.+?)\\s*إلى الطاولة\\.?$",
     "template": "Player {0} joined the table.",
-    "roles": {}
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^غادر اللاعب\\s*(.+?)\\s*الطاولة\\.?$",
     "template": "Player {0} left the table.",
-    "roles": {}
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^انضم البوت\\s*(.+?)\\s*إلى الطاولة\\.?$",
     "template": "Bot {0} joined the table.",
-    "roles": {}
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^تمت إزالة البوت\\s*(.+?)\\.?$",
     "template": "Bot {0} was removed.",
-    "roles": {}
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^طاولة\\s*(.+?)\\s*-\\s*(.+?)\\.?$",
     "template": "Table {0} - {1}.",
-    "roles": {
-      "0": "game"
-    }
+    "roles": [
+      "game",
+      "text"
+    ]
   },
   {
     "pattern": "^دعوة من\\s*(.+?)\\s*للانضمام لطاولة\\s*(.+)$",
     "template": "Invitation from {0} to join {1} table",
-    "roles": {
-      "1": "game"
-    }
+    "roles": [
+      "text",
+      "game"
+    ]
   },
   {
     "pattern": "^الجولة (.*?)\\. اللص في الطابق (.*?)\\.$",
@@ -3201,19 +3312,32 @@
   },
   {
     "pattern": "^\\s*تم\\s+العثور\\s+على\\s+DLL:\\s*(.*?)\\s*\\|\\s*المعمارية:\\s*(.*?)\\.?\\s*$",
-    "template": "Found DLL: {0} | Architecture: {1}."
+    "template": "Found DLL: {0} | Architecture: {1}.",
+    "roles": [
+      "text",
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*إعدادات\\s+غير\\s+مسموحة\\s+للعبة:\\s*(.*?)\\s*$",
-    "template": "Settings not allowed for the game: {0}"
+    "template": "Settings not allowed for the game: {0}",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^(.*?)\\s+رمى\\s+النرد:\\s*$",
-    "template": "{0} rolled the dice: "
+    "template": "{0} rolled the dice: ",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*خرج\\s+(.*?)\\s+من\\s+اللعبة\\.?$",
-    "template": "{0} left the game."
+    "template": "{0} left the game.",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*أخذ\\s+(.*?)\\s+باقي\\s+الطاولة\\s*\\((.*?)\\)\\.?\\s*$",
@@ -3225,71 +3349,126 @@
   },
   {
     "pattern": "^\\s*واصطدم\\s+بـ\\s*(.*?)\\s*وأرجعه\\s*(.*?)\\s*للخلف\\s+إلى\\s+المربع\\s*(.*?)!\\s*$",
-    "template": "and bumped into {0}, pushing them {1} back to square {2}!"
+    "template": "and bumped into {0}, pushing them {1} back to square {2}!",
+    "roles": [
+      "text",
+      "text",
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*ووجد\\s+سلماً\\s+صعد\\s+به\\s+إلى\\s*(.*?)!\\s*$",
-    "template": "and found a ladder climbing to {0}!"
+    "template": "and found a ladder climbing to {0}!",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*ولدغه\\s+ثعبان\\s+إلى\\s*(.*?)!\\s*$",
-    "template": "and was bitten by a snake sliding down to {0}!"
+    "template": "and was bitten by a snake sliding down to {0}!",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*[—\\-]\\s*(.*?)\\s*سحب\\s+حتى\\s+وجد\\s*(.*?)\\s*$",
-    "template": "— {0} drew until finding {1}"
+    "template": "— {0} drew until finding {1}",
+    "roles": [
+      "text",
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*[—\\-]\\s*أسقط\\s*(.*?)\\s*كروت\\s*$",
-    "template": "— dropped {0} cards"
+    "template": "— dropped {0} cards",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*[—\\-]\\s*السحب\\s+المطلوب\\s*(.*?)\\s*$",
-    "template": "— required draw {0}"
+    "template": "— required draw {0}",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*[—\\-]\\s*متتالية\\s+من\\s*(.*?)\\s*كروت\\s*$",
-    "template": "— sequence of {0} cards"
+    "template": "— sequence of {0} cards",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*الهدف\\s+للفوز\\s+هو\\s*(.*?)\\s*$",
-    "template": "Target to win is {0}"
+    "template": "Target to win is {0}",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*وقت\\s+الطاولة\\s+(.*?)[،,]\\s+ووقت\\s+الجولة\\s+(.*?)\\.?\\s*$",
-    "template": "Table time {0}, and round time {1}."
+    "template": "Table time {0}, and round time {1}.",
+    "roles": [
+      "text",
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*(\\d+)\\s+ثواني\\s*$",
-    "template": "{0} seconds"
+    "template": "{0} seconds",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*(\\d+)\\s+ثانية\\s*$",
-    "template": "{0} seconds"
+    "template": "{0} seconds",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*(\\d+)\\s+دقائق\\s*$",
-    "template": "{0} minutes"
+    "template": "{0} minutes",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*(\\d+)\\s+دقيقة\\s*$",
-    "template": "{0} minutes"
+    "template": "{0} minutes",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*(\\d+)\\s+ساعات\\s*$",
-    "template": "{0} hours"
+    "template": "{0} hours",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*(\\d+)\\s+ساعة\\s*$",
-    "template": "{0} hours"
+    "template": "{0} hours",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*(\\d+)\\s+أيام\\s*$",
-    "template": "{0} days"
+    "template": "{0} days",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^\\s*(\\d+)\\s+يوم\\s*$",
-    "template": "{0} days"
+    "template": "{0} days",
+    "roles": [
+      "text"
+    ]
   },
   {
     "pattern": "^عدد الجولات\\s+(\\d+)$",
@@ -3402,7 +3581,7 @@
     "pattern": "^النتيجة\\s+الكلية:\\s*(.*?)،\\s*الهدف\\s+(\\d+)\\.?$",
     "template": "Overall score: {0}, Target {1}",
     "roles": [
-      "sub",
+      "set_list",
       "num"
     ]
   },

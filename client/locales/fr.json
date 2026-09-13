@@ -2282,5 +2282,21 @@
   "{0} achieved {1} Scopa and lost {2} point": "{0} a réussi {1} Scopa et a perdu {2} point",
   "فريق {0}": "Équipe {0}",
   "{0} achieved a Scopa (+{1} pt)": "{0} a réussi une Scopa (+{1} pt)",
-  "{0} achieved a Scopa and lost a point": "{0} a réussi une Scopa et a perdu un point"
+  "{0} achieved a Scopa and lost a point": "{0} a réussi une Scopa et a perdu un point",
+  "You were kicked from the table by {0}.": "Vous avez été expulsé de la table par {0}.",
+  "You were banned from this table by {0}.": "Vous avez été banni de cette table par {0}.",
+  "You were replaced by a bot in this table by {0}.": "Vous avez été remplacé par un bot dans cette table par {0}.",
+  "You were replaced by {0} in the table by {1}.": "Vous avez été remplacé par {0} dans la table par {1}.",
+  "{0} saved the table and ended the session.": "{0} a sauvegardé la table et terminé la session.",
+  "{0} restored the shared saved table with you.": "{0} a restauré la table sauvegardée partagée avec vous.",
+  "Player {0} is currently offline.": "Le joueur {0} est actuellement hors ligne.",
+  "Player {0} is currently in another table.": "Le joueur {0} est actuellement dans une autre table.",
+  "Failed to restore table: {0}": "Échec de la restauration de la table : {0}",
+  "Tie for the lead! A playoff round begins. Results: {0}": "Égalité en tête ! Une manche décisive commence. Résultats : {0}",
+  "Turn time expired! {0} lost a point for timeout.": "Temps de tour écoulé ! {0} a perdu un point pour dépassement de temps.",
+  "Turn time expired! {0} lost a point for timeout. {1} left the game.": "Temps de tour écoulé ! {0} a perdu un point pour dépassement de temps. {1} a quitté la partie.",
+  "أنت داخل طاولة أخرى حاليًا.": "Vous êtes actuellement dans une autre table.",
+  "أنت داخل طاولة أخرى حالياً.": "Vous êtes actuellement dans une autre table.",
+  "اللاعب غير متصل حالياً.": "Le joueur est actuellement hors ligne.",
+  "اللاعب موجود في طاولة أخرى حالياً.": "Le joueur est actuellement dans une autre table."
 }

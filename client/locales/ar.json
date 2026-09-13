@@ -1834,5 +1834,21 @@
   "{0} achieved {1} Scopa and lost {2} point": "{0} achieved {1} Scopa and lost {2} point",
   "فريق {0}": "فريق {0}",
   "{0} achieved a Scopa (+{1} pt)": "{0} حقق إسكوبا (+{1} نقطة)",
-  "{0} achieved a Scopa and lost a point": "{0} حقق إسكوبا وخسر نقطة"
+  "{0} achieved a Scopa and lost a point": "{0} حقق إسكوبا وخسر نقطة",
+  "You were kicked from the table by {0}.": "تم طردك من الطاولة بواسطة {0}.",
+  "You were banned from this table by {0}.": "تم حظرك من هذه الطاولة بواسطة {0}.",
+  "You were replaced by a bot in this table by {0}.": "تم استبدالك ببوت في هذه الطاولة بواسطة {0}.",
+  "You were replaced by {0} in the table by {1}.": "تم استبدالك بـ {0} في الطاولة بواسطة {1}.",
+  "{0} saved the table and ended the session.": "قام {0} بحفظ الطاولة وإنهاء الجلسة.",
+  "{0} restored the shared saved table with you.": "قام {0} باسترجاع الطاولة المحفوظة المشتركة معكم.",
+  "Player {0} is currently offline.": "اللاعب {0} غير متصل حالياً.",
+  "Player {0} is currently in another table.": "اللاعب {0} موجود في طاولة أخرى حالياً.",
+  "Failed to restore table: {0}": "تعذر استعادة الطاولة: {0}",
+  "Tie for the lead! A playoff round begins. Results: {0}": "تعادل في صدارة المباراة. تبدأ جولة فاصلة. النتائج: {0}",
+  "Turn time expired! {0} lost a point for timeout.": "انتهى وقت الدور! {0} خسر نقطة لتجاوز الوقت.",
+  "Turn time expired! {0} lost a point for timeout. {1} left the game.": "انتهى وقت الدور! {0} خسر نقطة لتجاوز الوقت. خرج {1} من اللعبة.",
+  "أنت داخل طاولة أخرى حاليًا.": "أنت داخل طاولة أخرى حاليًا.",
+  "أنت داخل طاولة أخرى حالياً.": "أنت داخل طاولة أخرى حالياً.",
+  "اللاعب غير متصل حالياً.": "اللاعب غير متصل حالياً.",
+  "اللاعب موجود في طاولة أخرى حالياً.": "اللاعب موجود في طاولة أخرى حالياً."
 }

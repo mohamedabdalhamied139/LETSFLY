@@ -1860,5 +1860,21 @@
   "{0} achieved {1} Scopa and lost {2} point": "{0} achieved {1} Scopa and lost {2} point",
   "فريق {0}": "Team {0}",
   "{0} achieved a Scopa (+{1} pt)": "{0} achieved a Scopa (+{1} pt)",
-  "{0} achieved a Scopa and lost a point": "{0} achieved a Scopa and lost a point"
+  "{0} achieved a Scopa and lost a point": "{0} achieved a Scopa and lost a point",
+  "You were kicked from the table by {0}.": "You were kicked from the table by {0}.",
+  "You were banned from this table by {0}.": "You were banned from this table by {0}.",
+  "You were replaced by a bot in this table by {0}.": "You were replaced by a bot in this table by {0}.",
+  "You were replaced by {0} in the table by {1}.": "You were replaced by {0} in the table by {1}.",
+  "{0} saved the table and ended the session.": "{0} saved the table and ended the session.",
+  "{0} restored the shared saved table with you.": "{0} restored the shared saved table with you.",
+  "Player {0} is currently offline.": "Player {0} is currently offline.",
+  "Player {0} is currently in another table.": "Player {0} is currently in another table.",
+  "Failed to restore table: {0}": "Failed to restore table: {0}",
+  "Tie for the lead! A playoff round begins. Results: {0}": "Tie for the lead! A playoff round begins. Results: {0}",
+  "Turn time expired! {0} lost a point for timeout.": "Turn time expired! {0} lost a point for timeout.",
+  "Turn time expired! {0} lost a point for timeout. {1} left the game.": "Turn time expired! {0} lost a point for timeout. {1} left the game.",
+  "أنت داخل طاولة أخرى حاليًا.": "You are currently inside another table.",
+  "أنت داخل طاولة أخرى حالياً.": "You are currently inside another table.",
+  "اللاعب غير متصل حالياً.": "The player is currently offline.",
+  "اللاعب موجود في طاولة أخرى حالياً.": "The player is currently in another table."
 }

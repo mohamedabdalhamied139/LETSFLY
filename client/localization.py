@@ -355,7 +355,10 @@ class TranslationManager:
                 if all(tp != part for tp, part in zip(translated_parts, parts)):
                     leading = s[:len(s) - len(s.lstrip())]
                     trailing = s[len(s.rstrip()):]
-                    join_sep = " and " if sep in (" و ", " و") else sep
+                    if sep in (" و ", " و"):
+                        join_sep = " et " if active == "fr" else " and "
+                    else:
+                        join_sep = sep
                     return f"{leading}{join_sep.join(translated_parts)}{trailing}"
 
         # 2. Compound Arabic-comma or em-dash clauses.
@@ -410,7 +413,7 @@ class TranslationManager:
                     elif role == "set_list":
                         comma = ", " if active in ("en", "fr") else "، "
                         translated_args.append(val.replace("، ", comma))
-                    elif role in {"game", "title", "rules", "color", "combo", "tile", "side", "card", "card_list", "status", "sub", "ordinal", "floor"}:
+                    elif role in {"game", "title", "rules", "color", "combo", "tile", "side", "card", "card_list", "status", "sub", "ordinal", "floor", "actor"}:
                         # These roles are explicitly user-facing/localizable categories.
                         translated = self.tr(val)
                         if role == "card_list":
