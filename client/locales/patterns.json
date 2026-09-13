@@ -1,5 +1,22 @@
 [
   {
+    "pattern": "^(.+?)\\s+أخذ\\s+(.+?)\\s+مقابل\\s+(\\d+)\\s+(?:نقطة|نقاط)\\.?$",
+    "template": "{0} took {1} for {2} points.",
+    "roles": {
+      "0": "user",
+      "1": "combo",
+      "2": "num"
+    }
+  },
+  {
+    "pattern": "^(.+?)\\s+أخذ\\s+(\\d+)\\s+(?:نقطة|نقاط)\\.?$",
+    "template": "{0} took {1} points.",
+    "roles": {
+      "0": "user",
+      "1": "num"
+    }
+  },
+  {
     "pattern": "^(.*?)\\s+لعب\\s+(.*?)\\s+—\\s+(.*?)$",
     "template": "{0} played {1} — {2}",
     "roles": [
@@ -214,7 +231,7 @@
     "roles": [
       "text",
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -380,10 +397,10 @@
     ]
   },
   {
-    "pattern": "^(.*?)\\ نقطة$",
+    "pattern": "^(\\d+)\\s+نقطة$",
     "template": "{0} points",
     "roles": [
-      "text"
+      "num"
     ]
   },
   {
@@ -465,7 +482,7 @@
     "template": "Three pairs for {0} {1}",
     "roles": [
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -508,7 +525,7 @@
     "roles": [
       "text",
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -641,7 +658,7 @@
     "template": "Large straight for {0} {1}",
     "roles": [
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -772,7 +789,7 @@
     "roles": [
       "text",
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -825,7 +842,7 @@
     "template": "Single 5 for {0} {1}",
     "roles": [
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -1008,8 +1025,8 @@
     "pattern": "^(.*?)\\ أخذ\\ (.*?)،\\ نرد\\ ساخن!$",
     "template": "{0} took {1}, hot dice!",
     "roles": [
-      "text",
-      "text"
+      "user",
+      "combo"
     ]
   },
   {
@@ -1038,7 +1055,7 @@
     "template": "Single 1 for {0} {1}",
     "roles": [
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -1132,7 +1149,7 @@
     "template": "Full house for {0} {1}",
     "roles": [
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -1141,7 +1158,7 @@
     "roles": [
       "text",
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -1340,8 +1357,8 @@
     "pattern": "^(.*?)\\ أخذ\\ (.*?)\\.$",
     "template": "{0} took {1}.",
     "roles": [
-      "text",
-      "text"
+      "user",
+      "combo"
     ]
   },
   {
@@ -1440,10 +1457,10 @@
     ]
   },
   {
-    "pattern": "^(.*?)\\ نقاط$",
+    "pattern": "^(\\d+)\\s+نقاط$",
     "template": "{0} points",
     "roles": [
-      "text"
+      "num"
     ]
   },
   {
@@ -1460,7 +1477,7 @@
     "template": "Small straight for {0} {1}",
     "roles": [
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -1521,7 +1538,7 @@
     "template": "Three 1s for {0} {1}",
     "roles": [
       "text",
-      "text"
+      "pts"
     ]
   },
   {
@@ -1699,7 +1716,7 @@
     "template": "Two sets of three for {0} {1}",
     "roles": [
       "text",
-      "text"
+      "pts"
     ]
   },
   {
