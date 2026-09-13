@@ -24,7 +24,7 @@ class SettingsDialog(QDialog):
         # Left navigation
         self.nav_list = QListWidget()
         self.nav_list.setAccessibleName(tr("أقسام الإعدادات"))
-        self.nav_list.addItems(["عام", "الصوت", "النطق", "الخصوصية", "الألعاب"])
+        self.nav_list.addItems([tr("عام"), tr("الصوت"), tr("النطق"), tr("الخصوصية"), tr("الألعاب")])
         self.nav_list.setMaximumWidth(150)
         
         # Right content

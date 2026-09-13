@@ -2337,5 +2337,8 @@
   "خارج المحادثة": "Hors du chat vocal",
   "الحالي": "Actuel",
   "يتحدث": "Parle",
-  "مكتوم": "Muet"
+  "مكتوم": "Muet",
+  "إرسال رسالة إلى {name}": "Envoyer un message à {name}",
+  "تغيير وضع المحادثة الصوتية متاح للقائد فقط.": "Seul l'hôte peut changer le mode de chat vocal.",
+  "وضع صوت غير صالح.": "Mode vocal invalide."
 }

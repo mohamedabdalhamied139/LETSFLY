@@ -1915,5 +1915,8 @@
   "التحدث معطل في هذه الطاولة بواسطة القائد.": "Speaking is disabled in this table by the captain.",
   "تعذر تغيير وضع المحادثة الصوتية: {error}": "Failed to change voice chat mode: {error}",
   "يتحدث": "Speaking",
-  "مكتوم": "Muted"
+  "مكتوم": "Muted",
+  "إرسال رسالة إلى {name}": "Send message to {name}",
+  "تغيير وضع المحادثة الصوتية متاح للقائد فقط.": "Only the host can change voice chat mode.",
+  "وضع صوت غير صالح.": "Invalid voice mode."
 }

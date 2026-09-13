@@ -634,7 +634,7 @@ class TableVerseApp(QMainWindow):
                 target_id = actor_id
                 target_name = payload.get("sender") or "لاعب"
                 
-            dlg = SimpleMessageDialog(f"إرسال رسالة إلى {target_name}", "اكتب رسالتك:", self)
+            dlg = SimpleMessageDialog(tr("إرسال رسالة إلى {name}", name=target_name), tr("اكتب رسالتك:"), self)
             if dlg.exec():
                 self._run_async(lambda: self.api.send_private_message(target_id, dlg.editor.text().strip()), lambda _r: None, lambda e: reader.speak(tr(f"تعذر إرسال الرسالة: {e}"), interrupt=True))
                 
@@ -1104,7 +1104,7 @@ class TableVerseApp(QMainWindow):
         if tag == "profile":
             self._run_async(lambda: self.api.user_profile(uid), lambda r: ProfileDialog(r, friends_dialog).exec(), lambda e: reader.speak(tr(f"تعذر فتح الملف الشخصي: {e}"), interrupt=True))
         elif tag == "message":
-            dlg=SimpleMessageDialog(f"إرسال رسالة إلى {name}", "اكتب رسالتك:", friends_dialog)
+            dlg=SimpleMessageDialog(tr("إرسال رسالة إلى {name}", name=name), tr("اكتب رسالتك:"), friends_dialog)
             if dlg.exec():
                 self._run_async(lambda: self.api.send_private_message(uid, dlg.editor.text().strip()), lambda _r: None, lambda e: reader.speak(tr(f"تعذر إرسال الرسالة: {e}"), interrupt=True))
         elif tag == "join":
@@ -1158,7 +1158,7 @@ class TableVerseApp(QMainWindow):
         elif tag == "add_friend":
             self._run_async(lambda: self.api.send_friend_request(uid), lambda _r: reader.speak(tr("تم إرسال طلب الصداقة."), interrupt=True), lambda e: reader.speak(tr(f"تعذر إرسال طلب الصداقة: {e}"), interrupt=True))
         elif tag == "message":
-            dlg=SimpleMessageDialog(f"إرسال رسالة إلى {name}", "اكتب رسالتك:", online_dialog)
+            dlg=SimpleMessageDialog(tr("إرسال رسالة إلى {name}", name=name), tr("اكتب رسالتك:"), online_dialog)
             if dlg.exec():
                 self._run_async(lambda: self.api.send_private_message(uid, dlg.editor.text().strip()), lambda _r: None, lambda e: reader.speak(tr(f"تعذر إرسال الرسالة: {e}"), interrupt=True))
         elif tag == "join":
@@ -2252,7 +2252,7 @@ class TableVerseApp(QMainWindow):
                 lambda e: reader.speak(tr(f"تعذر إرسال طلب الصداقة: {e}"), interrupt=True)
             )
         elif tag == "message":
-            msg_dlg = SimpleMessageDialog(f"إرسال رسالة إلى {target_name}", "اكتب رسالتك:", self)
+            msg_dlg = SimpleMessageDialog(tr("إرسال رسالة إلى {name}", name=target_name), tr("اكتب رسالتك:"), self)
             if msg_dlg.exec():
                 self._run_async(
                     lambda: self.api.send_private_message(target_id, msg_dlg.editor.text().strip()),
@@ -4254,7 +4254,7 @@ class TableVerseApp(QMainWindow):
             return
         sender = (self.user or {}).get("display_name", "أنت")
         if not self.ws.send_json({"text": text}):
-            self._show_error("الدردشة غير متصلة حاليًا.")
+            self._show_error(tr("الدردشة غير متصلة حاليًا."))
 
     def changeEvent(self, event):
         if event.type() == QEvent.ActivationChange:
