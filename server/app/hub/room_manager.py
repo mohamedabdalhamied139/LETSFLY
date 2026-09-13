@@ -47,6 +47,7 @@ class Room:
         self.banned_players: set[int] = set()
         self.voice_banned: set[int] = set()
         self.voice_muted: set[int] = set()
+        self.voice_mode: str = "all"  # "all", "listen_only", "owner_only"
         self.co_host_id: Optional[int] = None
         self.spectators: List[int] = []
         self.pending_spectators: set[int] = set()
@@ -214,6 +215,7 @@ class Room:
             "spectators": list(self.spectators),
             "voice_banned": [int(uid) for uid in self.voice_banned],
             "voice_muted": [int(uid) for uid in self.voice_muted],
+            "voice_mode": getattr(self, "voice_mode", "all"),
             "voice_participants": self.get_voice_participants(),
             "role": "captain" if viewer_id == self.host_id else "co_host" if (self.co_host_id is not None and viewer_id == self.co_host_id) else "player" if viewer_id in self.players else "spectator",
             "table_created_at": self.table_created_at,

@@ -374,8 +374,13 @@ async def ws_room(websocket: WebSocket, room_id: str):
                     is_voice_member = websocket in voice_members
                 if not is_voice_member:
                     continue
-                if current_room and (user_id in current_room.voice_banned or user_id in current_room.voice_muted):
-                    continue
+                if current_room:
+                    if user_id in current_room.voice_banned or user_id in current_room.voice_muted:
+                        continue
+                    v_mode = getattr(current_room, "voice_mode", "all")
+                    # If mode is listen_only or owner_only, only host can broadcast microphone packets
+                    if v_mode in ("listen_only", "owner_only") and user_id != current_room.host_id:
+                        continue
                 now = time.monotonic()
                 while voice_times and now - voice_times[0] >= 1.0:
                     voice_times.popleft()
@@ -409,6 +414,9 @@ async def ws_room(websocket: WebSocket, room_id: str):
             if data.get("type") == "voice_join" and set(data.keys()) == {"type"}:
                 if current_room and user_id in current_room.voice_banned:
                     await ws_manager.send_json(websocket, {"type": "voice_banned_notice", "room_id": room_id, "message": "أنت محظور من المحادثة الصوتية في هذه الطاولة."}, room_id)
+                    continue
+                if current_room and getattr(current_room, "voice_mode", "all") == "owner_only" and user_id != current_room.host_id:
+                    await ws_manager.send_json(websocket, {"type": "voice_disabled_notice", "room_id": room_id, "message": "المحادثة الصوتية معطلة في هذه الطاولة من قبل القائد."}, room_id)
                     continue
                 if ws_manager.join_voice(room_id, websocket):
                     await ws_manager.send_json(websocket, {"type": "voice_joined", "room_id": room_id}, room_id)

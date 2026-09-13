@@ -174,6 +174,50 @@ class TableVoiceSubmenuDialog(QDialog):
             self.accept()
 
 
+class TableVoiceModeDialog(QDialog):
+    """Dialog for host to select voice conversation mode for the table."""
+
+    def __init__(self, current_mode: str = "all", parent=None):
+        super().__init__(parent)
+        self.selected_mode = None
+        title = tr("تحديد وضع المحادثة الصوتية")
+        self.setWindowTitle(title)
+        self.setAccessibleName(title)
+        self.setModal(True)
+
+        layout = QVBoxLayout(self)
+        self.list = _AccessibleListWidget(self)
+        self.list.setAccessibleName(title)
+
+        modes = [
+            ("متاحة للجميع (الوضع الافتراضي)", "all"),
+            ("تعطيل التحدث (استماع فقط - التحدث مقتصر على القائد)", "listen_only"),
+            ("تعطيل المحادثة الصوتية تماماً (مقتصرة على القائد)", "owner_only"),
+        ]
+
+        cur_idx = 0
+        for idx, (label, tag) in enumerate(modes):
+            disp = tr(label)
+            if tag == current_mode:
+                disp += f" ({tr('الحالي')})"
+                cur_idx = idx
+            it = QListWidgetItem(disp)
+            it.setData(Qt.UserRole, tag)
+            self.list.addItem(it)
+
+        layout.addWidget(self.list)
+        if self.list.count() > 0:
+            self.list.setCurrentRow(cur_idx)
+        self.list.itemActivated.connect(self._activate)
+        self.list.setFocus()
+
+    def _activate(self, item):
+        mode = item.data(Qt.UserRole) if item else None
+        if mode:
+            self.selected_mode = mode
+            self.accept()
+
+
 class TableVoiceManagerDialog(QDialog):
     """Voice manager dialog displaying voice chat controls and player voice status."""
 
@@ -206,28 +250,44 @@ class TableVoiceManagerDialog(QDialog):
         voice = getattr(self.parent_window, "voice", None)
         in_voice = bool(voice and getattr(voice, "in_voice_chat", False))
         is_muted = bool(voice and getattr(voice, "muted", False))
+        host_id = int(self.room.get("host_id") or 0)
+        is_host = (self.my_user_id == host_id)
 
-        # 1. Voice Session Toggle (Leave / Disable or Join)
-        if in_voice:
-            session_label = tr("تعطيل المحادثة الصوتية والخروج")
-            session_tag = "leave_voice"
-        else:
-            session_label = tr("الانضمام للمحادثة الصوتية")
-            session_tag = "join_voice"
+        # Host controls only:
+        if is_host:
+            # 1. Voice Mode Setting
+            current_mode = str(self.room.get("voice_mode") or "all").lower()
+            if current_mode == "listen_only":
+                mode_label = tr("وضع المحادثة: استماع فقط (تعطيل تحدث اللاعبين)")
+            elif current_mode == "owner_only":
+                mode_label = tr("وضع المحادثة: معطلة تماماً (مقتصرة على القائد)")
+            else:
+                mode_label = tr("وضع المحادثة: متاحة للجميع")
 
-        it = QListWidgetItem(session_label)
-        it.setData(Qt.UserRole, {"type": "session_action", "action": session_tag})
-        self.list.addItem(it)
+            mode_item = QListWidgetItem(mode_label)
+            mode_item.setData(Qt.UserRole, {"type": "voice_mode_menu"})
+            self.list.addItem(mode_item)
 
-        # 2. Mic Mute Toggle
-        if in_voice:
-            mic_label = tr("إلغاء كتم المايكروفون") if is_muted else tr("كتم المايكروفون")
-            it = QListWidgetItem(mic_label)
-            it.setData(Qt.UserRole, {"type": "session_action", "action": "toggle_mute"})
+            # 2. Host Mic Mute Toggle (if in voice)
+            if in_voice:
+                mic_label = tr("إلغاء كتم المايكروفون") if is_muted else tr("كتم المايكروفون")
+                it = QListWidgetItem(mic_label)
+                it.setData(Qt.UserRole, {"type": "session_action", "action": "toggle_mute"})
+                self.list.addItem(it)
+
+            # 3. Host Leave Voice Session Toggle
+            if in_voice:
+                session_label = tr("الخروج من المحادثة الصوتية")
+                session_tag = "leave_voice"
+            else:
+                session_label = tr("الانضمام للمحادثة الصوتية")
+                session_tag = "join_voice"
+
+            it = QListWidgetItem(session_label)
+            it.setData(Qt.UserRole, {"type": "session_action", "action": session_tag})
             self.list.addItem(it)
 
-        # 3. Players with voice status
-        host_id = int(self.room.get("host_id") or 0)
+        # 4. Players with voice status (visible to everyone)
         host_name = str(self.room.get("host_name") or "القائد")
         co_host_id = self.room.get("co_host_id")
         co_host_id = int(co_host_id) if co_host_id is not None else None

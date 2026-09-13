@@ -10,7 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import update
 from sqlalchemy.exc import IntegrityError
-from core_shared.protocol import CreateRoomRequest, StartGameRequest, RoomActionRequest, TargetUserRequest
+from core_shared.protocol import CreateRoomRequest, StartGameRequest, RoomActionRequest, TargetUserRequest, VoiceModeRequest
 from server.app.db.database import User, CoinTransaction, ChallengeInvitation, SavedTable, SessionLocal, get_db
 from server.app.api.users import get_current_user
 from server.app.hub.room_manager import room_manager
@@ -1154,6 +1154,34 @@ async def voice_ban_player(room_id: str, req: TargetUserRequest, user: User = De
     ws_manager.broadcast_user(target_id, {"type": "voice_banned", "room_id": room_id, "message": "تم حظرك من المحادثة الصوتية في هذه الطاولة."})
     ws_manager.broadcast_room(room_id, {"type": "voice_user_banned", "user_id": target_id, "name": target_name})
     return {"ok": True}
+
+@router.post("/{room_id}/voice/mode")
+async def set_voice_mode(room_id: str, req: VoiceModeRequest, user: User = Depends(get_current_user)):
+    room = room_manager.get_room(room_id)
+    if not room:
+        raise HTTPException(404, "الطاولة غير موجودة.")
+    if user.id != room.host_id:
+        raise HTTPException(403, "تغيير وضع المحادثة الصوتية متاح للقائد فقط.")
+    new_mode = str(req.mode or "").strip().lower()
+    if new_mode not in ("all", "listen_only", "owner_only"):
+        raise HTTPException(400, "وضع صوت غير صالح.")
+    
+    async with room._mutation_lock:
+        room.voice_mode = new_mode
+        if new_mode == "owner_only":
+            # Disconnect all non-host sockets from voice
+            with ws_manager._state_lock:
+                sockets = [ws for ws in ws_manager.voice_connections.get(room_id, set()) if ws_manager.connection_users.get(ws) != room.host_id]
+            for ws in sockets:
+                ws_manager.leave_voice(room_id, ws)
+
+    ws_manager.broadcast_room(room_id, {
+        "type": "voice_mode_changed",
+        "room_id": room_id,
+        "mode": new_mode,
+        "voice_participants": room.get_voice_participants(),
+    })
+    return {"ok": True, "mode": new_mode}
 
 @router.post("/{room_id}/spectator")
 async def toggle_spectator(room_id: str, req: Optional[TargetUserRequest] = None, user: User = Depends(get_current_user)):

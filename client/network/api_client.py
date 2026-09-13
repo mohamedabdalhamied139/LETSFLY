@@ -172,6 +172,9 @@ class ApiClient:
     def voice_ban_player(self, room_id: str, target_user_id: int):
         return self._request("POST", f"/api/rooms/{room_id}/voice/ban", {"target_user_id": int(target_user_id)})
 
+    def set_voice_mode(self, room_id: str, mode: str):
+        return self._request("POST", f"/api/rooms/{room_id}/voice/mode", {"mode": str(mode)})
+
     def toggle_spectator(self, room_id: str, target_user_id: Optional[int] = None):
         payload = {"target_user_id": int(target_user_id)} if target_user_id is not None else {}
         return self._request("POST", f"/api/rooms/{room_id}/spectator", payload)

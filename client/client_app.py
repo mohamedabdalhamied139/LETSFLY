@@ -28,7 +28,7 @@ from client.views.online_users_view import OnlineUsersView
 from client.views.social_center_views import PrivateMessagesView, NotificationsView, MyProfileEditDialog, ChallengeDialog
 from client.views.game_settings_view import GameSettingsView
 from client.views.table_view import TableView
-from client.views.table_players_dialog import TablePlayersDialog, TablePlayerActionsDialog, TableVoiceSubmenuDialog, TableSubstituteChoiceDialog, TableVoiceManagerDialog
+from client.views.table_players_dialog import TablePlayersDialog, TablePlayerActionsDialog, TableVoiceSubmenuDialog, TableSubstituteChoiceDialog, TableVoiceManagerDialog, TableVoiceModeDialog
 from core_shared.constants import CARD_TYPES
 from core_shared.time_utils import parse_timestamp, format_duration
 from core_shared.rules_config import RULE_DEFINITIONS
@@ -2119,7 +2119,29 @@ class TableVerseApp(QMainWindow):
 
         action_data = dlg.selected_action
         action_type = action_data.get("type")
-        if action_type == "session_action":
+        if action_type == "voice_mode_menu":
+            cur_mode = str(self.current_room.get("voice_mode") or "all").lower()
+            mode_dlg = TableVoiceModeDialog(cur_mode, self)
+            if mode_dlg.exec() == QDialog.Accepted and mode_dlg.selected_mode:
+                new_mode = mode_dlg.selected_mode
+                rid = str(self.current_room.get("id") or "")
+                def done(r):
+                    mode_val = r.get("mode") or new_mode
+                    if self.current_room:
+                        self.current_room["voice_mode"] = mode_val
+                    if mode_val == "listen_only":
+                        msg = "تم ضبط وضع المحادثة الصوتية: استماع فقط (تعطيل تحدث اللاعبين)."
+                    elif mode_val == "owner_only":
+                        msg = "تم تعطيل المحادثة الصوتية تماماً في الطاولة."
+                    else:
+                        msg = "تمت إتاحة المحادثة الصوتية للجميع."
+                    self.table_view.add_log(tr(msg), category="ALL")
+                    reader.speak(tr(msg), interrupt=True)
+                def fail(e):
+                    reader.speak(tr("تعذر تغيير وضع المحادثة الصوتية: {error}", error=tr(str(e))), interrupt=True)
+                self._run_async(lambda: self.api.set_voice_mode(rid, new_mode), done, fail)
+            return
+        elif action_type == "session_action":
             act = action_data.get("action")
             if act == "leave_voice":
                 self.voice.leave_voice_session()
@@ -2531,6 +2553,39 @@ class TableVerseApp(QMainWindow):
 
         if et == "voice_banned_notice":
             reader.speak(tr(event.get("message") or "أنت محظور من المحادثة الصوتية في هذه الطاولة."), interrupt=True)
+            return
+
+        if et == "voice_disabled_notice":
+            reader.speak(tr(event.get("message") or "المحادثة الصوتية معطلة في هذه الطاولة من قبل القائد."), interrupt=True)
+            return
+
+        if et == "voice_mode_changed":
+            new_mode = str(event.get("mode") or "all").lower()
+            if self.current_room:
+                self.current_room["voice_mode"] = new_mode
+                if "voice_participants" in event:
+                    self.current_room["voice_participants"] = event["voice_participants"]
+            my_id = int((self.user or {}).get("id") or 0)
+            host_id = int((self.current_room or {}).get("host_id") or 0)
+            is_host = (my_id == host_id)
+            if new_mode == "listen_only":
+                msg = "قام القائد بضبط وضع المحادثة الصوتية: استماع فقط (تعطيل تحدث اللاعبين)."
+                self.table_view.add_log(tr(msg), category="ALL")
+                reader.speak(tr(msg), interrupt=False)
+                # If non-host has microphone open, mute it
+                if not is_host and self.voice and not self.voice.muted:
+                    self.voice.stop_microphone(silent=True)
+                    self.voice.muted = True
+            elif new_mode == "owner_only":
+                msg = "قام القائد بتعطيل المحادثة الصوتية تماماً في الطاولة."
+                self.table_view.add_log(tr(msg), category="ALL")
+                reader.speak(tr(msg), interrupt=False)
+                if not is_host and self.voice.in_voice_chat:
+                    self.voice.leave_voice_session()
+            else:
+                msg = "قام القائد بإتاحة المحادثة الصوتية للجميع."
+                self.table_view.add_log(tr(msg), category="ALL")
+                reader.speak(tr(msg), interrupt=False)
             return
 
         if et == "voice_joined":
@@ -3071,10 +3126,24 @@ class TableVerseApp(QMainWindow):
     def on_toggle_voice_chat(self):
         if not self.is_in_room():
             return
+        my_id = int((self.user or {}).get("id") or 0)
+        host_id = int((self.current_room or {}).get("host_id") or 0)
+        is_host = (my_id == host_id)
+        mode = str((self.current_room or {}).get("voice_mode") or "all").lower()
+        if mode == "owner_only" and not is_host:
+            reader.speak(tr("المحادثة الصوتية معطلة في هذه الطاولة من قبل القائد."), interrupt=True)
+            return
         self.voice.toggle_voice_session()
 
     def on_toggle_voice_mute(self):
         if not self.is_in_room():
+            return
+        my_id = int((self.user or {}).get("id") or 0)
+        host_id = int((self.current_room or {}).get("host_id") or 0)
+        is_host = (my_id == host_id)
+        mode = str((self.current_room or {}).get("voice_mode") or "all").lower()
+        if (mode in ("listen_only", "owner_only")) and not is_host:
+            reader.speak(tr("التحدث معطل في هذه الطاولة بواسطة القائد."), interrupt=True)
             return
         self.voice.toggle_mute()
 

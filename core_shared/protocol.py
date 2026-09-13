@@ -88,3 +88,6 @@ class TargetUserRequest(BaseModel):
     replacement_user_id: Optional[int] = None
     is_bot: Optional[bool] = False
 
+class VoiceModeRequest(BaseModel):
+    mode: str = Field(min_length=1, max_length=20)
+
