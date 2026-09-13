@@ -409,12 +409,39 @@ async def restore_saved_table(saved_id: int, user: User = Depends(get_current_us
         new_room.players = []
         new_room.player_names = {}
         new_room.player_joined_at = {}
+        bot_id_mapping = {}
         for p in players_info:
             uid = int(p["user_id"])
             pname = p["name"]
+            is_bot = bool(p.get("is_bot") or uid < 0)
+            if is_bot:
+                # If this bot ID is already present in another room, assign a fresh bot ID
+                actual_id = uid
+                while room_manager.user_in_any_room(actual_id) or actual_id in new_room.players:
+                    actual_id -= 1
+                if actual_id != uid:
+                    bot_id_mapping[uid] = actual_id
+                uid = actual_id
             new_room.players.append(uid)
             new_room.player_names[uid] = pname
             new_room.player_joined_at[uid] = now_iso
+
+        # If any bot ID was remapped, apply remapping to deserialized engine
+        if bot_id_mapping:
+            for old_id, new_id in bot_id_mapping.items():
+                if hasattr(engine, "player_ids") and old_id in engine.player_ids:
+                    idx = engine.player_ids.index(old_id)
+                    engine.player_ids[idx] = new_id
+                if hasattr(engine, "players"):
+                    for i, ep in enumerate(engine.players):
+                        if hasattr(ep, "user_id") and ep.user_id == old_id:
+                            ep.user_id = new_id
+                        elif isinstance(ep, tuple) and ep[0] == old_id:
+                            engine.players[i] = (new_id, ep[1])
+                for attr in ("scores", "hands", "tokens", "positions", "turn_start_positions", "captured_cards"):
+                    obj = getattr(engine, attr, None)
+                    if isinstance(obj, dict) and old_id in obj:
+                        obj[new_id] = obj.pop(old_id)
 
         plugin = get_plugin(record.game)
         if not plugin:
