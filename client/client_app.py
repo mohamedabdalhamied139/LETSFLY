@@ -1639,10 +1639,10 @@ class TableVerseApp(QMainWindow):
                 if sound_engine.has_cue(c) and c in ("SNAKE_BITE", "LADDER_CLIMB", "FREEZE_TRAP", "MYSTERY_BOX", "PLAYER_BUMP", "MATCH_WIN")
             ]
             self._play_snakes_steps(roll, 1)
-        elif et in ("CANNOT_MOVE", "MATCH_WON"):
+        elif et in ("CANNOT_MOVE", "MATCH_WON", "PLAYER_FROZEN"):
             self._snakes_stepping = False
             self._snakes_pending_arrival_cues = []
-            if et == "CANNOT_MOVE":
+            if et in ("CANNOT_MOVE", "PLAYER_FROZEN"):
                 reader.speak(tr(str(self.snakes_state.get("last_action") or "")), interrupt=True)
 
     def _play_snakes_steps(self, roll: int, current_step: int = 1):
@@ -3141,7 +3141,18 @@ class TableVerseApp(QMainWindow):
         radar = self.snakes_state.get("radar") or {}
         pos = radar.get("position", 0)
         dist = radar.get("distance_to_finish", 100 - pos)
-        reader.speak(tr(f"المربع {pos}، المتبقي {dist}"), interrupt=True)
+        ladder = radar.get("nearest_ladder")
+        snake = radar.get("nearest_snake")
+        mystery = radar.get("nearest_mystery")
+        
+        parts = [tr("أنت في المربع {position}، المتبقي للفوز {distance} خطوة.", position=pos, distance=dist)]
+        if ladder:
+            parts.append(tr("أقرب سلم في المربع {base} (يبعد {steps} خطوات) يصعد إلى {top}.", base=ladder[0], steps=ladder[2], top=ladder[1]))
+        if snake:
+            parts.append(tr("أقرب ثعبان في المربع {head} (يبعد {steps} خطوات) ينزل إلى {tail}.", head=snake[0], steps=snake[2], tail=snake[1]))
+        if mystery:
+            parts.append(tr("أقرب صندوق مفاجآت في المربع {tile} (يبعد {steps} خطوات).", tile=mystery[0], steps=mystery[1]))
+        reader.speak(" ".join(parts), interrupt=True)
 
     def on_snakes_positions(self):
         if not self.current_room or not self.snakes_state or not self.snakes_state.get("active"):
@@ -3151,10 +3162,16 @@ class TableVerseApp(QMainWindow):
         if not players:
             return
         parts = []
-        for p in players:
+        for idx, p in enumerate(players, start=1):
             pname = p.get("name", "لاعب")
             pos = p.get("position", 0)
-            parts.append(tr("المربع {position} لـ {name}", position=pos, name=pname))
+            status_parts = []
+            if p.get("is_frozen"):
+                status_parts.append(tr("مجمد"))
+            if p.get("has_shield"):
+                status_parts.append(tr("مع درع"))
+            status_str = f" ({'، '.join(status_parts)})" if status_parts else ""
+            parts.append(tr("المركز {rank}: {name} في المربع {position}{status}", rank=idx, name=pname, position=pos, status=status_str))
         reader.speak(("، " if language() == "ar" else ", ").join(parts), interrupt=True)
 
     def on_announce_turn(self):
