@@ -2410,8 +2410,13 @@ class TableVerseApp(QMainWindow):
         self._maybe_auto_join_voice(room)
         if self._voice_restore_after_reconnect:
             self._voice_restore_after_reconnect = False
-            if self.voice.activate_voice_session(start_microphone=True):
-                self.voice.stateChanged.emit("الاتصال الصوتي عاد.")
+            v_mode = str(room.get("voice_mode") or "all").lower()
+            my_id = int((self.user or {}).get("id") or 0)
+            host_id = int(room.get("host_id") or 0)
+            is_host = (my_id == host_id)
+            if v_mode != "owner_only" or is_host:
+                if self.voice.activate_voice_session(start_microphone=True):
+                    self.voice.stateChanged.emit("الاتصال الصوتي عاد.")
         self.table_view.set_game_type(game_type)
         # For Thief Hunt, the game snapshot is authoritative for whether the
         # gameplay area is active. A stale room-status snapshot must never hide
@@ -2499,6 +2504,7 @@ class TableVerseApp(QMainWindow):
         if et == "ws_disconnected":
             if not getattr(self, "_is_reconnecting", False):
                 self._is_reconnecting = True
+                self._reconnect_focus = QApplication.focusWidget()
                 self._last_connecting_announced_at = time.monotonic()
                 sound_engine.play_event("CONNECTION_LOST")
                 reader.speak(tr("connection lost"), interrupt=True)

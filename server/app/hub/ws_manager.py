@@ -108,11 +108,22 @@ class ConnectionManager:
                 self.connection_users[ws] = user_id
                 self._ws_locks[ws] = asyncio.Lock()
                 self._connection_times[ws] = __import__("time").monotonic()
+                stale_sockets = []
                 if room_id:
-                    self.room_connections.setdefault(room_id, set()).add(ws)
+                    room_set = self.room_connections.setdefault(room_id, set())
+                    for old_ws in list(room_set):
+                        if old_ws != ws and self.connection_users.get(old_ws) == user_id:
+                            stale_sockets.append(old_ws)
+                    room_set.add(ws)
                     self.connection_rooms[ws] = room_id
                 else:
                     self.active_connections.add(ws)
+            for old_ws in stale_sockets:
+                try:
+                    self.disconnect(old_ws, room_id=room_id)
+                    asyncio.create_task(old_ws.close(code=1000, reason="Replaced by new connection"))
+                except Exception:
+                    pass
             if not was_online:
                 self._notify_friend_presence(int(user_id), True)
             return True

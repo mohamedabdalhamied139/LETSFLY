@@ -137,7 +137,7 @@ class WebSocketClient:
             logger.exception("WebSocket callback failed")
 
     def _loop(self, generation: int, callback: Callable[[dict], None], ws_url: str, token: str):
-        retry_delay = 1
+        retry_delay = 0.5
         while not self._stop.is_set() and self._is_current(generation):
             ws = None
             try:
