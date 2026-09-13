@@ -344,7 +344,7 @@ class TablePlayersDialog(QDialog):
                                 return str(pname)
             if uid == host_id:
                 return host_name
-            return tr("لاعب {0}", uid) if uid > 0 else tr("بوت {0}", abs(uid))
+            return tr("لاعب {0}", uid) if uid > 0 else f"Bot {abs(uid)}"
 
         # 1. Captain (always first)
         captain_user = {
@@ -431,7 +431,7 @@ class TablePlayersDialog(QDialog):
                 "is_spectator": False,
                 "is_bot": True,
             }
-            bot_text = f"{name} ({tr('بوت')})"
+            bot_text = f"{name} (Bot)"
             it = QListWidgetItem(bot_text)
             it.setData(Qt.UserRole, user_data)
             self.list.addItem(it)

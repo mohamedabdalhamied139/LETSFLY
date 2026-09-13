@@ -2702,7 +2702,7 @@ class TableVerseApp(QMainWindow):
                 name = event.get('name', 'لاعب')
                 is_bot = bool(event.get('is_bot', True))
                 if is_bot:
-                    rep_name = event.get('bot_name', 'بوت')
+                    rep_name = event.get('bot_name', 'Bot')
                 else:
                     rep_name = event.get('replacement_name', 'لاعب')
                 self.table_view.add_log(tr("تم استبدال {name} بـ {rep}", name=name, rep=rep_name), category="ALL")

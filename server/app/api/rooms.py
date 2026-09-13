@@ -283,7 +283,7 @@ async def save_room(room_id: str, user: User = Depends(get_current_user), db: Se
         if uid != user.id:
             pname = room.player_names.get(uid, "لاعب")
             if uid < 0:
-                pname += " (بوت)"
+                pname += " (Bot)"
             opponents.append(pname)
     opponents_summary = "، ".join(opponents) if opponents else "لا يوجد"
 

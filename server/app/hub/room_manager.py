@@ -148,7 +148,7 @@ class Room:
         if not bot_ids:
             return None
         last_bot_id = bot_ids[-1]
-        bot_name = self.player_names.get(last_bot_id, "بوت")
+        bot_name = self.player_names.get(last_bot_id, "Bot")
         self.remove_player(last_bot_id)
         self.scores.pop(last_bot_id, None)
         return bot_name
