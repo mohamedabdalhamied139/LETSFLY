@@ -203,6 +203,229 @@ async def create_room(req: CreateRoomRequest, user: User = Depends(get_current_u
         logger.warning("Room %s created but wallet refresh failed for user %s", room.room_id, user.id, exc_info=True)
     return result
 
+# -------------------------------------------------------------
+# Saved Tables Endpoints (Save & Restore Table)
+# -------------------------------------------------------------
+import pickle
+import json
+from datetime import timedelta
+from server.app.games.registry import get_plugin
+
+def _clean_expired_saved_tables(db: Session, user_id: int = None):
+    now = datetime.now(timezone.utc)
+    q = db.query(SavedTable).filter(SavedTable.expires_at < now)
+    if user_id is not None:
+        q = q.filter(SavedTable.user_id == user_id)
+    expired = q.all()
+    for item in expired:
+        db.delete(item)
+    if expired:
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+
+@router.get("/saved")
+async def list_saved_tables(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    _clean_expired_saved_tables(db, user.id)
+    rows = db.query(SavedTable).filter(SavedTable.user_id == user.id).order_by(SavedTable.saved_at.desc()).all()
+    out = []
+    for r in rows:
+        out.append({
+            "id": r.id,
+            "game": r.game,
+            "target_score": r.target_score,
+            "opponents_summary": r.opponents_summary,
+            "saved_at": r.saved_at.isoformat() if r.saved_at else "",
+            "expires_at": r.expires_at.isoformat() if r.expires_at else "",
+        })
+    return out
+
+@router.post("/{room_id}/save")
+async def save_room(room_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    room = room_manager.get_room(room_id)
+    if not room:
+        raise HTTPException(404, "الطاولة غير موجودة.")
+    if user.id not in room.players:
+        raise HTTPException(403, "يجب أن تكون لاعباً في الطاولة لحفظها.")
+    if room.status != "playing":
+        raise HTTPException(400, "لا يمكن حفظ الطاولة إلا أثناء اللعب الفعلي.")
+    if len(room.players) <= 1:
+        raise HTTPException(400, "يجب أن تحتوي الطاولة على أكثر من لاعب لحفظها.")
+
+    _clean_expired_saved_tables(db, user.id)
+    current_count = db.query(SavedTable).filter(SavedTable.user_id == user.id).count()
+    if current_count >= 4:
+        raise HTTPException(400, "لا يمكنك حفظ أكثر من 4 طاولات.")
+
+    # Deduct 2 coins for saving
+    _spend_coins(db, user, 2, "حفظ طاولة", commit=True)
+
+    # Serialize engine snapshot
+    plugin = get_plugin(room.game)
+    if not plugin:
+        raise HTTPException(400, "اللعبة غير مدعومة للحفظ.")
+    engine = plugin.get_engine(room)
+    if not engine:
+        raise HTTPException(400, "حالة اللعبة غير متوفرة للحفظ.")
+
+    try:
+        serialized_engine = pickle.dumps(engine)
+    except Exception as exc:
+        logger.exception("Failed to pickle engine for room %s: %s", room_id, exc)
+        _refund_coins(db, user, 2, "استرجاع عملات فشل حفظ الطاولة")
+        raise HTTPException(500, "تعذر حفظ حالة اللعبة برمجياً.")
+
+    # Prepare opponents summary
+    opponents = []
+    for uid in room.players:
+        if uid != user.id:
+            pname = room.player_names.get(uid, "لاعب")
+            if uid < 0:
+                pname += " (بوت)"
+            opponents.append(pname)
+    opponents_summary = "، ".join(opponents) if opponents else "لا يوجد"
+
+    players_info = []
+    for uid in room.players:
+        players_info.append({
+            "user_id": uid,
+            "name": room.player_names.get(uid, "لاعب"),
+            "is_bot": uid < 0
+        })
+
+    now = datetime.now(timezone.utc)
+    expires = now + timedelta(days=30)
+
+    saved_record = SavedTable(
+        user_id=user.id,
+        game=room.game,
+        target_score=room.target_score,
+        rules_json=json.dumps(room.rules or {}),
+        scores_json=json.dumps(room.scores or {}),
+        players_json=json.dumps(players_info),
+        opponents_summary=opponents_summary,
+        serialized_engine=serialized_engine,
+        saved_at=now,
+        expires_at=expires
+    )
+    db.add(saved_record)
+    try:
+        db.commit()
+        db.refresh(saved_record)
+    except Exception as exc:
+        db.rollback()
+        _refund_coins(db, user, 2, "استرجاع عملات فشل حفظ الطاولة")
+        logger.exception("Failed to commit saved table: %s", exc)
+        raise HTTPException(500, "فشل حفظ الطاولة في قاعدة البيانات.")
+
+    return {"ok": True, "saved_id": saved_record.id, "message": "تم حفظ الطاولة بنجاح مقابل عملتين."}
+
+@router.delete("/saved/{saved_id}")
+async def delete_saved_table(saved_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    record = db.query(SavedTable).filter(SavedTable.id == saved_id, SavedTable.user_id == user.id).first()
+    if not record:
+        raise HTTPException(404, "الطاولة المحفوظة غير موجودة.")
+    db.delete(record)
+    db.commit()
+    return {"ok": True, "message": "تم حذف الطاولة المحفوظة."}
+
+@router.post("/saved/{saved_id}/restore")
+async def restore_saved_table(saved_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    record = db.query(SavedTable).filter(SavedTable.id == saved_id, SavedTable.user_id == user.id).first()
+    if not record:
+        raise HTTPException(404, "الطاولة المحفوظة غير موجودة.")
+
+    now = datetime.now(timezone.utc)
+    if record.expires_at < now:
+        db.delete(record)
+        db.commit()
+        raise HTTPException(400, "انتهت صلاحية هذه الطاولة المحفوظة وتم حذفها.")
+
+    try:
+        players_info = json.loads(record.players_json)
+        rules = json.loads(record.rules_json)
+        saved_scores = json.loads(record.scores_json)
+    except Exception:
+        raise HTTPException(500, "بيانات الطاولة المحفوظة تالفة.")
+
+    # Check that all human players are online and not currently playing in any room
+    human_players = [p for p in players_info if not p.get("is_bot") and p.get("user_id") > 0]
+    for p in human_players:
+        uid = int(p["user_id"])
+        pname = p.get("name", "لاعب")
+        if uid != user.id:
+            if not ws_manager.is_user_online(uid):
+                raise HTTPException(400, f"اللاعب {pname} غير متصل حالياً.")
+            if room_manager.user_in_any_room(uid):
+                raise HTTPException(400, f"اللاعب {pname} موجود في طاولة أخرى حالياً.")
+
+    # Check caller is not in another room
+    if room_manager.user_in_any_room(user.id):
+        raise HTTPException(400, "يجب مغادرة طاولتك الحالية أولاً لاسترجاع طاولة محفوظة.")
+
+    # Deserialize engine
+    try:
+        engine = pickle.loads(record.serialized_engine)
+    except Exception as exc:
+        logger.exception("Failed to unpickle saved engine: %s", exc)
+        raise HTTPException(500, "تعذر استعادة حالة اللعبة.")
+
+    # Build and register room
+    new_room = room_manager.build_room(user.id, user.display_name, record.game)
+    new_room.target_score = record.target_score
+    new_room.rules = dict(rules)
+    new_room.status = "playing"
+    new_room.match_key = uuid4().hex
+    new_room.scores = {int(k): v for k, v in saved_scores.items()} if isinstance(saved_scores, dict) else {}
+
+    # Setup players
+    new_room.players = []
+    new_room.player_names = {}
+    for p in players_info:
+        uid = int(p["user_id"])
+        pname = p["name"]
+        new_room.players.append(uid)
+        new_room.player_names[uid] = pname
+
+    plugin = get_plugin(record.game)
+    if not plugin:
+        raise HTTPException(400, f"اللعبة {record.game} غير مدعومة.")
+    plugin.set_engine(new_room, engine)
+
+    # Start bot runners if bots are present
+    has_bots = any(uid < 0 for uid in new_room.players)
+    if has_bots and plugin.bot_runner:
+        new_room._bot_task = asyncio.create_task(plugin.bot_runner(new_room))
+
+    room_manager.register_room(new_room)
+
+    # Delete the saved record now that it is restored
+    db.delete(record)
+    db.commit()
+
+    # Broadcast to lobby
+    ws_manager.broadcast_lobby({"type": "room_created", "room": new_room.public_dict()})
+
+    # Notify and pull human opponent players into the room
+    for p in human_players:
+        uid = int(p["user_id"])
+        if uid != user.id:
+            ws_manager.broadcast_user(uid, {
+                "type": "table_restored",
+                "room_id": new_room.room_id,
+                "game": new_room.game,
+                "host_name": user.display_name,
+                "message": f"قام {user.display_name} باسترجاع الطاولة المحفوظة المشتركة معكم."
+            })
+
+    return {
+        "ok": True,
+        "room_id": new_room.room_id,
+        "room": new_room.public_dict(user.id)
+    }
+
+
 @router.get("/{room_id}")
 async def get_room(room_id: str, user: User = Depends(get_current_user)):
     room = room_manager.get_room(room_id)
@@ -1126,224 +1349,3 @@ async def toggle_room_privacy(room_id: str, user: User = Depends(get_current_use
 
 
 
-# -------------------------------------------------------------
-# Saved Tables Endpoints (Save & Restore Table)
-# -------------------------------------------------------------
-import pickle
-import json
-from datetime import timedelta
-from server.app.games.registry import get_plugin
-
-def _clean_expired_saved_tables(db: Session, user_id: int = None):
-    now = datetime.now(timezone.utc)
-    q = db.query(SavedTable).filter(SavedTable.expires_at < now)
-    if user_id is not None:
-        q = q.filter(SavedTable.user_id == user_id)
-    expired = q.all()
-    for item in expired:
-        db.delete(item)
-    if expired:
-        try:
-            db.commit()
-        except Exception:
-            db.rollback()
-
-@router.get("/saved")
-async def list_saved_tables(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    _clean_expired_saved_tables(db, user.id)
-    rows = db.query(SavedTable).filter(SavedTable.user_id == user.id).order_by(SavedTable.saved_at.desc()).all()
-    out = []
-    for r in rows:
-        out.append({
-            "id": r.id,
-            "game": r.game,
-            "target_score": r.target_score,
-            "opponents_summary": r.opponents_summary,
-            "saved_at": r.saved_at.isoformat() if r.saved_at else "",
-            "expires_at": r.expires_at.isoformat() if r.expires_at else "",
-        })
-    return out
-
-@router.post("/{room_id}/save")
-async def save_room(room_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    room = room_manager.get_room(room_id)
-    if not room:
-        raise HTTPException(404, "الطاولة غير موجودة.")
-    if user.id not in room.players:
-        raise HTTPException(403, "يجب أن تكون لاعباً في الطاولة لحفظها.")
-    if room.status != "playing":
-        raise HTTPException(400, "لا يمكن حفظ الطاولة إلا أثناء اللعب الفعلي.")
-    if len(room.players) <= 1:
-        raise HTTPException(400, "يجب أن تحتوي الطاولة على أكثر من لاعب لحفظها.")
-
-    _clean_expired_saved_tables(db, user.id)
-    current_count = db.query(SavedTable).filter(SavedTable.user_id == user.id).count()
-    if current_count >= 4:
-        raise HTTPException(400, "لا يمكنك حفظ أكثر من 4 طاولات.")
-
-    # Deduct 2 coins for saving
-    _spend_coins(db, user, 2, "حفظ طاولة", commit=True)
-
-    # Serialize engine snapshot
-    plugin = get_plugin(room.game)
-    if not plugin:
-        raise HTTPException(400, "اللعبة غير مدعومة للحفظ.")
-    engine = plugin.get_engine(room)
-    if not engine:
-        raise HTTPException(400, "حالة اللعبة غير متوفرة للحفظ.")
-
-    try:
-        serialized_engine = pickle.dumps(engine)
-    except Exception as exc:
-        logger.exception("Failed to pickle engine for room %s: %s", room_id, exc)
-        _refund_coins(db, user, 2, "استرجاع عملات فشل حفظ الطاولة")
-        raise HTTPException(500, "تعذر حفظ حالة اللعبة برمجياً.")
-
-    # Prepare opponents summary
-    opponents = []
-    for uid in room.players:
-        if uid != user.id:
-            pname = room.player_names.get(uid, "لاعب")
-            if uid < 0:
-                pname += " (بوت)"
-            opponents.append(pname)
-    opponents_summary = "، ".join(opponents) if opponents else "لا يوجد"
-
-    players_info = []
-    for uid in room.players:
-        players_info.append({
-            "user_id": uid,
-            "name": room.player_names.get(uid, "لاعب"),
-            "is_bot": uid < 0
-        })
-
-    now = datetime.now(timezone.utc)
-    expires = now + timedelta(days=30)
-
-    saved_record = SavedTable(
-        user_id=user.id,
-        game=room.game,
-        target_score=room.target_score,
-        rules_json=json.dumps(room.rules or {}),
-        scores_json=json.dumps(room.scores or {}),
-        players_json=json.dumps(players_info),
-        opponents_summary=opponents_summary,
-        serialized_engine=serialized_engine,
-        saved_at=now,
-        expires_at=expires
-    )
-    db.add(saved_record)
-    try:
-        db.commit()
-        db.refresh(saved_record)
-    except Exception as exc:
-        db.rollback()
-        _refund_coins(db, user, 2, "استرجاع عملات فشل حفظ الطاولة")
-        logger.exception("Failed to commit saved table: %s", exc)
-        raise HTTPException(500, "فشل حفظ الطاولة في قاعدة البيانات.")
-
-    return {"ok": True, "saved_id": saved_record.id, "message": "تم حفظ الطاولة بنجاح مقابل عملتين."}
-
-@router.delete("/saved/{saved_id}")
-async def delete_saved_table(saved_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    record = db.query(SavedTable).filter(SavedTable.id == saved_id, SavedTable.user_id == user.id).first()
-    if not record:
-        raise HTTPException(404, "الطاولة المحفوظة غير موجودة.")
-    db.delete(record)
-    db.commit()
-    return {"ok": True, "message": "تم حذف الطاولة المحفوظة."}
-
-@router.post("/saved/{saved_id}/restore")
-async def restore_saved_table(saved_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    record = db.query(SavedTable).filter(SavedTable.id == saved_id, SavedTable.user_id == user.id).first()
-    if not record:
-        raise HTTPException(404, "الطاولة المحفوظة غير موجودة.")
-
-    now = datetime.now(timezone.utc)
-    if record.expires_at < now:
-        db.delete(record)
-        db.commit()
-        raise HTTPException(400, "انتهت صلاحية هذه الطاولة المحفوظة وتم حذفها.")
-
-    try:
-        players_info = json.loads(record.players_json)
-        rules = json.loads(record.rules_json)
-        saved_scores = json.loads(record.scores_json)
-    except Exception:
-        raise HTTPException(500, "بيانات الطاولة المحفوظة تالفة.")
-
-    # Check that all human players are online and not currently playing in any room
-    human_players = [p for p in players_info if not p.get("is_bot") and p.get("user_id") > 0]
-    for p in human_players:
-        uid = int(p["user_id"])
-        pname = p.get("name", "لاعب")
-        if uid != user.id:
-            if not ws_manager.is_user_online(uid):
-                raise HTTPException(400, f"اللاعب {pname} غير متصل حالياً.")
-            if room_manager.user_in_any_room(uid):
-                raise HTTPException(400, f"اللاعب {pname} موجود في طاولة أخرى حالياً.")
-
-    # Check caller is not in another room
-    if room_manager.user_in_any_room(user.id):
-        raise HTTPException(400, "يجب مغادرة طاولتك الحالية أولاً لاسترجاع طاولة محفوظة.")
-
-    # Deserialize engine
-    try:
-        engine = pickle.loads(record.serialized_engine)
-    except Exception as exc:
-        logger.exception("Failed to unpickle saved engine: %s", exc)
-        raise HTTPException(500, "تعذر استعادة حالة اللعبة.")
-
-    # Build and register room
-    new_room = room_manager.build_room(user.id, user.display_name, record.game)
-    new_room.target_score = record.target_score
-    new_room.rules = dict(rules)
-    new_room.status = "playing"
-    new_room.match_key = uuid4().hex
-    new_room.scores = {int(k): v for k, v in saved_scores.items()} if isinstance(saved_scores, dict) else {}
-
-    # Setup players
-    new_room.players = []
-    new_room.player_names = {}
-    for p in players_info:
-        uid = int(p["user_id"])
-        pname = p["name"]
-        new_room.players.append(uid)
-        new_room.player_names[uid] = pname
-
-    plugin = get_plugin(record.game)
-    if not plugin:
-        raise HTTPException(400, f"اللعبة {record.game} غير مدعومة.")
-    plugin.set_engine(new_room, engine)
-
-    # Start bot runners if bots are present
-    has_bots = any(uid < 0 for uid in new_room.players)
-    if has_bots and plugin.bot_runner:
-        new_room._bot_task = asyncio.create_task(plugin.bot_runner(new_room))
-
-    room_manager.register_room(new_room)
-
-    # Delete the saved record now that it is restored
-    db.delete(record)
-    db.commit()
-
-    # Broadcast to lobby
-    ws_manager.broadcast_lobby({"type": "room_created", "room": new_room.public_dict()})
-
-    # Notify and pull human opponent players into the room
-    for p in human_players:
-        uid = int(p["user_id"])
-        if uid != user.id:
-            ws_manager.broadcast_user(uid, {
-                "type": "table_restored",
-                "room_id": new_room.room_id,
-                "game": new_room.game,
-                "host_name": user.display_name,
-                "message": f"قام {user.display_name} باسترجاع الطاولة المحفوظة المشتركة معكم."
-            })
-
-    return {
-        "ok": True,
-        "room_id": new_room.room_id,
-        "room": new_room.public_dict(user.id)
-    }
