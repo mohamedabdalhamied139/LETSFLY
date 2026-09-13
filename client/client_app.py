@@ -16,7 +16,7 @@ from client.network.ws_client import WebSocketClient
 from client.audio.voice_chat import VoiceChatManager
 from client.session_store import save_token, load_token, clear_token, save_credentials, load_credentials, clear_credentials
 
-from client.notification_policy import handle_event, handle_template_event
+from client.notification_policy import handle_event, handle_template_event, announce_game_event
 from client.views.auth_view import AuthView
 from client.views.home_view import HomeView
 from client.views.rooms_menu_view import RoomsMenuView
@@ -1641,6 +1641,36 @@ class TableVerseApp(QMainWindow):
             self._snakes_pending_announcement = ""
             if announcement:
                 QTimer.singleShot(80, lambda text=announcement: reader.speak(tr(text), interrupt=True))
+
+            # Trigger the next player's turn sound and announcement now that arrival and movement are complete
+            def _announce_snakes_turn():
+                if not self.is_in_room() or (self.current_room or {}).get("game") != "SNAKES_LADDERS":
+                    return
+                state = getattr(self, "snakes_state", {}) or {}
+                curr_id = state.get("current_turn_id")
+                if curr_id is None:
+                    curr_id = state.get("current_player_id")
+                if curr_id is None:
+                    return
+                curr_id_str = str(curr_id)
+                last_turn_attr = "_last_announced_turn_id_snakes_ladders"
+                last_announced_turn = getattr(self, last_turn_attr, None)
+                my_id = (self.user or {}).get("id")
+                is_my_turn = (curr_id_str == str(my_id)) if my_id is not None else False
+                current_name = (state.get("current_player_name") or state.get("current_turn_name") or "غير معروف")
+
+                if curr_id_str != str(last_announced_turn):
+                    setattr(self, last_turn_attr, curr_id_str)
+                    setattr(self, "_last_turn_snakes_ladders", curr_id_str)
+                    setattr(self, "_was_my_turn_snakes_ladders", is_my_turn)
+                    if is_my_turn:
+                        sound_engine.play_event("TURN_START")
+                        announce_game_event("دورك", interrupt=False)
+                    else:
+                        announce_game_event(f"دور {current_name}", interrupt=False)
+
+            delay_turn = 500 if announcement else 100
+            QTimer.singleShot(delay_turn, _announce_snakes_turn)
             return
         sound_engine.play_event("STEP_MOVE")
         QTimer.singleShot(320, lambda: self._play_snakes_steps(roll, current_step + 1))

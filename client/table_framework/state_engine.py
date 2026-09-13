@@ -217,6 +217,9 @@ class ClientStateEngine:
             and state.get("event_type") not in ("MATCH_WON", "MATCH_FINISHED", "ROUND_FINISHED", "ROUND_END")
         )
             
+        if game_type == "SNAKES_LADDERS" and (et in ("DICE_ROLLED", "BONUS_ROLL") and (state.get("last_roll") or 0) > 0):
+            is_turn_allowed = False
+
         if is_turn_allowed and curr_id is not None:
             curr_id_str = str(curr_id)
             last_turn_attr = f"_last_announced_turn_id_{game_type.lower()}"
