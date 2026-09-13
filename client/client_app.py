@@ -3140,19 +3140,15 @@ class TableVerseApp(QMainWindow):
             return
         radar = self.snakes_state.get("radar") or {}
         pos = radar.get("position", 0)
-        dist = radar.get("distance_to_finish", 100 - pos)
         ladder = radar.get("nearest_ladder")
         snake = radar.get("nearest_snake")
-        mystery = radar.get("nearest_mystery")
         
-        parts = [tr("أنت في المربع {position}، المتبقي للفوز {distance} خطوة.", position=pos, distance=dist)]
+        parts = [tr("المربع {position}", position=pos)]
         if ladder:
-            parts.append(tr("أقرب سلم في المربع {base} (يبعد {steps} خطوات) يصعد إلى {top}.", base=ladder[0], steps=ladder[2], top=ladder[1]))
+            parts.append(tr("سلم في {base} إلى {top}", base=ladder[0], top=ladder[1]))
         if snake:
-            parts.append(tr("أقرب ثعبان في المربع {head} (يبعد {steps} خطوات) ينزل إلى {tail}.", head=snake[0], steps=snake[2], tail=snake[1]))
-        if mystery:
-            parts.append(tr("أقرب صندوق مفاجآت في المربع {tile} (يبعد {steps} خطوات).", tile=mystery[0], steps=mystery[1]))
-        reader.speak(" ".join(parts), interrupt=True)
+            parts.append(tr("ثعبان في {head} إلى {tail}", head=snake[0], tail=snake[1]))
+        reader.speak(("، " if language() == "ar" else ", ").join(parts), interrupt=True)
 
     def on_snakes_positions(self):
         if not self.current_room or not self.snakes_state or not self.snakes_state.get("active"):

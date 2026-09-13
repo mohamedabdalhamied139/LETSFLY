@@ -201,10 +201,6 @@ class SnakesAndLaddersGame:
                 self.event_id += 1
                 self.event_type = "CANNOT_MOVE"
                 return self.get_state(user_id)
-            elif self.consecutive_sixes == 2:
-                self.extra_roll = True
-                roll_text = f"رمى {player_name} النرد وحصل على 6 (الرمية الثانية)! تحذير: الـ 6 القادمة ستلغي الدور كاملاً."
-                self.roll_action = roll_text
             else:
                 self.extra_roll = True
         else:
@@ -402,14 +398,10 @@ class SnakesAndLaddersGame:
         nearest_ladder = min(ladders_ahead, key=lambda x: x[2]) if ladders_ahead else None
         nearest_snake = min(snakes_ahead, key=lambda x: x[2]) if snakes_ahead else None
 
-        mystery_ahead = [(t, t - pos) for t in self.mystery_tiles if t > pos]
-        nearest_mystery = min(mystery_ahead, key=lambda x: x[1]) if mystery_ahead else None
-
         return {
             "position": pos,
             "nearest_ladder": nearest_ladder,  # (base, top, distance)
             "nearest_snake": nearest_snake,    # (head, tail, distance)
-            "nearest_mystery": nearest_mystery, # (tile, distance)
             "distance_to_finish": 100 - pos,
         }
 
