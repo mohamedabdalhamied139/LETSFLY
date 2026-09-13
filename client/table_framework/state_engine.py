@@ -98,9 +98,18 @@ class ClientStateEngine:
                 if final_play_event and hasattr(app, "_announce_scopa_final_play"):
                     app._announce_scopa_final_play(state)
                     final_play_announced = True
-            if game_type in ("SNAKES_LADDERS", "NINETY_NINE"):
+            if game_type == "NINETY_NINE":
                 raw_cues = state.get("sound_cues") or ()
                 valid_sequence = tuple(c for c in raw_cues if sound_engine.has_cue(c))
+                if et not in ("MATCH_WON", "MATCH_FINISHED") and valid_sequence:
+                    event_cues = valid_sequence
+            elif game_type == "SNAKES_LADDERS":
+                raw_cues = state.get("sound_cues") or ()
+                # Exclude arrival cues that should only play after token steps finish
+                valid_sequence = tuple(
+                    c for c in raw_cues
+                    if sound_engine.has_cue(c) and c not in ("SNAKE_BITE", "LADDER_CLIMB", "FREEZE_TRAP", "MYSTERY_BOX", "PLAYER_BUMP")
+                )
                 if et not in ("MATCH_WON", "MATCH_FINISHED") and valid_sequence:
                     event_cues = valid_sequence
             # A ROUND_FINISHED state is only a transport frame for

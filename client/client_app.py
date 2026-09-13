@@ -1614,18 +1614,29 @@ class TableVerseApp(QMainWindow):
             if roll_action:
                 reader.speak(tr(roll_action), interrupt=True)
             self._snakes_pending_announcement = str(self.snakes_state.get("arrival_action") or self.snakes_state.get("last_action") or "")
+            raw_cues = self.snakes_state.get("sound_cues") or ()
+            self._snakes_pending_arrival_cues = [
+                c for c in raw_cues
+                if sound_engine.has_cue(c) and c in ("SNAKE_BITE", "LADDER_CLIMB", "FREEZE_TRAP", "MYSTERY_BOX", "PLAYER_BUMP")
+            ]
             self._play_snakes_steps(roll, 1)
         elif et in ("CANNOT_MOVE", "MATCH_WON"):
             self._snakes_stepping = False
+            self._snakes_pending_arrival_cues = []
             if et == "CANNOT_MOVE":
                 reader.speak(tr(str(self.snakes_state.get("last_action") or "")), interrupt=True)
 
     def _play_snakes_steps(self, roll: int, current_step: int = 1):
         if not self.is_in_room() or (self.current_room or {}).get("game") != "SNAKES_LADDERS":
             self._snakes_stepping = False
+            self._snakes_pending_arrival_cues = []
             return
         if current_step > roll:
             self._snakes_stepping = False
+            arrival_cues = getattr(self, "_snakes_pending_arrival_cues", [])
+            self._snakes_pending_arrival_cues = []
+            for cue in arrival_cues:
+                sound_engine.play_event(cue)
             announcement = getattr(self, "_snakes_pending_announcement", "")
             self._snakes_pending_announcement = ""
             if announcement:
