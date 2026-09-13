@@ -131,14 +131,14 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                         self._call("on_save_table_shortcut")
                         return True, 0
 
-            # Ctrl+M: Query voice status and active speakers
+            # Ctrl+M: Open Voice Manager (مدير الصوت)
             if vk == 0x4D:
                 user32 = ctypes.windll.user32
                 ctrl = bool(user32.GetKeyState(0x11) & 0x8000)
                 alt = bool(user32.GetKeyState(0x12) & 0x8000)
                 if ctrl and not shift and not alt:
                     if self.window.is_in_room():
-                        self._call("on_query_voice_status")
+                        self._call("on_open_voice_manager")
                         return True, 0
 
             # F5 is a real network reconnect command and remains available even

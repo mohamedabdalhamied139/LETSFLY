@@ -1125,12 +1125,13 @@ async def voice_kick_player(room_id: str, req: TargetUserRequest, user: User = D
     target_id = req.target_user_id
     async with room._mutation_lock:
         _require_voice_moderation_target(room, user, target_id)
+        room.voice_banned.add(target_id)
         with ws_manager._state_lock:
             sockets = [ws for ws in ws_manager.voice_connections.get(room_id, set()) if ws_manager.connection_users.get(ws) == target_id]
         for ws in sockets:
             ws_manager.leave_voice(room_id, ws)
     target_name = room.player_names.get(target_id, "لاعب")
-    ws_manager.broadcast_user(target_id, {"type": "voice_kicked", "room_id": room_id, "message": "تم إخراجك من المحادثة الصوتية بواسطة القائد."})
+    ws_manager.broadcast_user(target_id, {"type": "voice_kicked", "room_id": room_id, "message": "تمت إزالتك من المحادثة الصوتية بواسطة القائد ولا يمكنك العودة."})
     ws_manager.broadcast_room(room_id, {"type": "voice_user_kicked", "user_id": target_id, "name": target_name})
     return {"ok": True}
 

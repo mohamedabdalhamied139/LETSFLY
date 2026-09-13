@@ -131,7 +131,7 @@ class TablePlayerActionsDialog(QDialog):
 
 
 class TableVoiceSubmenuDialog(QDialog):
-    """Submenu for voice actions targeting a specific player."""
+    """Submenu for voice actions targeting a specific player (Host only: mute/unmute and remove)."""
 
     def __init__(self, target_user: dict, is_host: bool, is_muted: bool, parent=None):
         super().__init__(parent)
@@ -140,37 +140,23 @@ class TableVoiceSubmenuDialog(QDialog):
         self.selected_tag = None
 
         target_name = str(target_user.get("display_name") or target_user.get("username") or "لاعب")
-        title = tr("المحادثة الصوتية - {name}", name=target_name)
+        title = tr("التحكم بصوت {name}", name=target_name)
         self.setWindowTitle(title)
         self.setAccessibleName(title)
         self.setModal(True)
 
         layout = QVBoxLayout(self)
         self.list = _AccessibleListWidget(self)
-        self.list.setAccessibleName(tr("خيارات المحادثة الصوتية"))
+        self.list.setAccessibleName(title)
 
-        mute_label = "إلغاء كتم المايكروفون" if is_muted else "كتم المايكروفون"
+        mute_label = "إلغاء كتم المايكروفون" if is_muted else "كتم"
         actions = [(mute_label, "voice_mute")]
-
-        actions.append(("تعديل مستوى الصوت (حاليًا {0}%)", "voice_volume"))
 
         if is_host:
             actions.append(("إزالة من المحادثة الصوتية", "voice_kick"))
-            actions.append(("حظر من المحادثة الصوتية", "voice_ban"))
-
-        # Retrieve current user volume scale
-        current_vol_pct = 100
-        parent_window = self.parent()
-        voice = getattr(parent_window, "voice", None)
-        if voice is not None:
-            uid = int(target_user.get("id") or 0)
-            current_vol_pct = int(round(voice.get_user_volume(uid) * 100))
 
         for label, tag in actions:
-            if tag == "voice_volume":
-                disp_label = tr("تعديل مستوى الصوت (حاليًا {0}%)", current_vol_pct)
-            else:
-                disp_label = tr(label)
+            disp_label = tr(label)
             it = QListWidgetItem(disp_label)
             it.setData(Qt.UserRole, tag)
             self.list.addItem(it)
@@ -185,6 +171,162 @@ class TableVoiceSubmenuDialog(QDialog):
         tag = item.data(Qt.UserRole) if item else None
         if tag:
             self.selected_tag = tag
+            self.accept()
+
+
+class TableVoiceManagerDialog(QDialog):
+    """Voice manager dialog displaying voice chat controls and player voice status."""
+
+    def __init__(self, room: dict, my_user_id: int, parent=None):
+        super().__init__(parent)
+        self.room = room or {}
+        self.my_user_id = my_user_id
+        self.parent_window = parent
+        self.selected_action = None  # (action_tag, data)
+
+        title = tr("مدير الصوت")
+        self.setWindowTitle(title)
+        self.setAccessibleName(title)
+        self.setModal(True)
+        self.setMinimumSize(420, 360)
+
+        layout = QVBoxLayout(self)
+        self.list = _AccessibleListWidget(self)
+        self.list.setAccessibleName(title)
+
+        self._populate_options()
+
+        layout.addWidget(self.list)
+        if self.list.count() > 0:
+            self.list.setCurrentRow(0)
+        self.list.itemActivated.connect(self._activate)
+        self.list.setFocus()
+
+    def _populate_options(self):
+        voice = getattr(self.parent_window, "voice", None)
+        in_voice = bool(voice and getattr(voice, "in_voice_chat", False))
+        is_muted = bool(voice and getattr(voice, "muted", False))
+
+        # 1. Voice Session Toggle (Leave / Disable or Join)
+        if in_voice:
+            session_label = tr("تعطيل المحادثة الصوتية والخروج")
+            session_tag = "leave_voice"
+        else:
+            session_label = tr("الانضمام للمحادثة الصوتية")
+            session_tag = "join_voice"
+
+        it = QListWidgetItem(session_label)
+        it.setData(Qt.UserRole, {"type": "session_action", "action": session_tag})
+        self.list.addItem(it)
+
+        # 2. Mic Mute Toggle
+        if in_voice:
+            mic_label = tr("إلغاء كتم المايكروفون") if is_muted else tr("كتم المايكروفون")
+            it = QListWidgetItem(mic_label)
+            it.setData(Qt.UserRole, {"type": "session_action", "action": "toggle_mute"})
+            self.list.addItem(it)
+
+        # 3. Players with voice status
+        host_id = int(self.room.get("host_id") or 0)
+        host_name = str(self.room.get("host_name") or "القائد")
+        co_host_id = self.room.get("co_host_id")
+        co_host_id = int(co_host_id) if co_host_id is not None else None
+        players = list(self.room.get("players") or [])
+        spectators = list(self.room.get("spectators") or [])
+        raw_names = self.room.get("player_names") or []
+        players_dict = dict(self.room.get("players_dict") or {})
+
+        def get_name(uid):
+            suid = str(uid)
+            if suid in players_dict and players_dict[suid]:
+                return str(players_dict[suid])
+            if isinstance(raw_names, dict) and suid in raw_names and raw_names[suid]:
+                return str(raw_names[suid])
+            if isinstance(raw_names, list):
+                try:
+                    if uid in players:
+                        idx = players.index(uid)
+                        if 0 <= idx < len(raw_names) and raw_names[idx]:
+                            return str(raw_names[idx])
+                except Exception:
+                    pass
+            parent_win = self.parent_window
+            if parent_win:
+                for st_attr in ("uno_state", "domino_state", "scopa_state", "snakes_state", "thief_state", "farkle_state"):
+                    st = getattr(parent_win, st_attr, None)
+                    if isinstance(st, dict):
+                        for p in st.get("players") or []:
+                            if isinstance(p, dict) and (p.get("id") == uid or str(p.get("id")) == suid):
+                                pname = p.get("name") or p.get("display_name")
+                                if pname:
+                                    return str(pname)
+                        pnames = st.get("player_names")
+                        if isinstance(pnames, dict) and (suid in pnames or uid in pnames):
+                            pname = pnames.get(suid) or pnames.get(uid)
+                            if pname:
+                                return str(pname)
+            if uid == host_id:
+                return host_name
+            return tr("لاعب {0}", uid) if uid > 0 else f"Bot {abs(uid)}"
+
+        # Collect human table members
+        all_humans = []
+        if host_id > 0 and host_id not in all_humans:
+            all_humans.append(host_id)
+        if co_host_id is not None and co_host_id > 0 and co_host_id not in all_humans:
+            all_humans.append(co_host_id)
+        for uid in players:
+            uid = int(uid)
+            if uid > 0 and uid not in all_humans:
+                all_humans.append(uid)
+        for uid in spectators:
+            uid = int(uid)
+            if uid > 0 and uid not in all_humans:
+                all_humans.append(uid)
+
+        active_speakers = set(voice.get_active_speaker_ids()) if voice else set()
+        room_muted = set(int(u) for u in (self.room.get("voice_muted") or []))
+        voice_participants = set(int(u) for u in (self.room.get("voice_participants") or []))
+        if in_voice and self.my_user_id > 0:
+            voice_participants.add(self.my_user_id)
+
+        for uid in all_humans:
+            name = get_name(uid)
+            is_me = (uid == self.my_user_id)
+            is_target_host = (uid == host_id)
+            is_target_co_host = (uid == co_host_id)
+
+            # Determine voice state
+            if uid in active_speakers:
+                status_str = tr("يتحدث")
+            elif uid in room_muted or (is_me and is_muted) or (voice and voice.is_user_locally_muted(uid)):
+                status_str = tr("مكتوم")
+            elif uid in voice_participants:
+                status_str = tr("في المحادثة")
+            else:
+                status_str = tr("خارج المحادثة")
+
+            item_text = f"{name} ({status_str})"
+            user_data = {
+                "id": uid,
+                "display_name": name,
+                "is_host": is_target_host,
+                "is_co_host": is_target_co_host,
+                "is_spectator": uid in spectators,
+                "is_bot": False,
+                "is_me": is_me,
+                "voice_status": status_str,
+                "is_voice_muted": (uid in room_muted),
+                "in_voice": (uid in voice_participants or uid in active_speakers),
+            }
+            it = QListWidgetItem(item_text)
+            it.setData(Qt.UserRole, {"type": "player", "user": user_data})
+            self.list.addItem(it)
+
+    def _activate(self, item):
+        data = item.data(Qt.UserRole) if item else None
+        if data:
+            self.selected_action = data
             self.accept()
 
 
@@ -449,10 +591,22 @@ class TablePlayersDialog(QDialog):
             it.setData(Qt.UserRole, user_data)
             self.list.addItem(it)
 
+        # 6. Voice Manager (مدير الصوت)
+        vm_text = tr("مدير الصوت (Ctrl+M)")
+        vm_data = {
+            "type": "open_voice_manager",
+        }
+        vm_item = QListWidgetItem(vm_text)
+        vm_item.setData(Qt.UserRole, vm_data)
+        self.list.addItem(vm_item)
+
     def _activate(self, item):
-        user = item.data(Qt.UserRole) if item else None
-        if user:
-            self.selected_user = user
+        data = item.data(Qt.UserRole) if item else None
+        if data:
+            if isinstance(data, dict) and data.get("type") == "open_voice_manager":
+                self.selected_user = data
+            else:
+                self.selected_user = data
             self.accept()
 
     def _handle_shortcut_action(self, event) -> bool:

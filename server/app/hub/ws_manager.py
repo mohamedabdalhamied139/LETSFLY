@@ -298,6 +298,11 @@ class ConnectionManager:
                 if not sockets:
                     self.voice_connections.pop(room_id, None)
 
+    def get_voice_user_ids(self, room_id: str) -> list[int]:
+        with self._state_lock:
+            sockets = self.voice_connections.get(room_id, set())
+            return [self.connection_users[s] for s in sockets if s in self.connection_users and self.connection_users[s] is not None]
+
     def broadcast_room_bytes(self, room_id: str, payload: bytes, exclude: WebSocket | None = None):
         """Broadcast an opaque binary frame only to sockets subscribed to one room."""
         if not isinstance(payload, (bytes, bytearray)) or len(payload) > 4096:

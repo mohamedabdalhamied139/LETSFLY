@@ -28,7 +28,7 @@ from client.views.online_users_view import OnlineUsersView
 from client.views.social_center_views import PrivateMessagesView, NotificationsView, MyProfileEditDialog, ChallengeDialog
 from client.views.game_settings_view import GameSettingsView
 from client.views.table_view import TableView
-from client.views.table_players_dialog import TablePlayersDialog, TablePlayerActionsDialog, TableVoiceSubmenuDialog, TableSubstituteChoiceDialog
+from client.views.table_players_dialog import TablePlayersDialog, TablePlayerActionsDialog, TableVoiceSubmenuDialog, TableSubstituteChoiceDialog, TableVoiceManagerDialog
 from core_shared.constants import CARD_TYPES
 from core_shared.time_utils import parse_timestamp, format_duration
 from core_shared.rules_config import RULE_DEFINITIONS
@@ -207,6 +207,7 @@ class TableVerseApp(QMainWindow):
             ("Ctrl+W", "on_ctrl_online_users"),
             ("Ctrl+H", "on_toggle_room_privacy"),
             ("Ctrl+S", "on_save_table_shortcut"),
+            ("Ctrl+M", "on_open_voice_manager"),
         ]
         for key, method in entries:
             shortcut = QShortcut(QKeySequence(key), self)
@@ -225,7 +226,7 @@ class TableVerseApp(QMainWindow):
         if method == "on_toggle_spectator_shortcut":
             self.on_toggle_spectator_shortcut()
             return
-        if method in ("on_toggle_voice_chat", "on_toggle_voice_mute", "on_toggle_room_privacy", "on_save_table_shortcut"):
+        if method in ("on_toggle_voice_chat", "on_toggle_voice_mute", "on_toggle_room_privacy", "on_save_table_shortcut", "on_open_voice_manager"):
             if self.is_in_room():
                 getattr(self, method)()
             return
@@ -2102,7 +2103,41 @@ class TableVerseApp(QMainWindow):
             self._execute_table_player_action(tag, target_user)
             return
         if dlg.selected_user:
+            if isinstance(dlg.selected_user, dict) and dlg.selected_user.get("type") == "open_voice_manager":
+                self.on_open_voice_manager()
+                return
             self._open_table_player_actions(dlg.selected_user)
+
+    def on_open_voice_manager(self):
+        """Open Voice Manager dialog (مدير الصوت) with controls and player voice status."""
+        if not self.is_in_room() or not self.current_room:
+            return
+        my_id = int((self.user or {}).get("id") or 0)
+        dlg = TableVoiceManagerDialog(self.current_room, my_id, self)
+        if dlg.exec() != QDialog.Accepted or not dlg.selected_action:
+            return
+
+        action_data = dlg.selected_action
+        action_type = action_data.get("type")
+        if action_type == "session_action":
+            act = action_data.get("action")
+            if act == "leave_voice":
+                self.voice.leave_voice_session()
+            elif act == "join_voice":
+                self.voice.toggle_voice_session()
+            elif act == "toggle_mute":
+                self.voice.toggle_mute()
+        elif action_type == "player":
+            target_user = action_data.get("user") or {}
+            is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
+            if not is_host:
+                reader.speak(tr("التحكم بالصوت متاح لقائد الطاولة فقط."), interrupt=True)
+                return
+            target_id = int(target_user.get("id") or 0)
+            if target_id == my_id:
+                reader.speak(tr("لا يمكنك التحكم في نفسك من هنا."), interrupt=True)
+                return
+            self._open_table_voice_submenu(target_user)
 
     def _open_table_player_actions(self, target_user: dict):
         if not self.current_room or not isinstance(target_user, dict):
@@ -2561,7 +2596,7 @@ class TableVerseApp(QMainWindow):
                 )
             return
 
-        if et in ("player_joined", "player_left", "captain_changed", "bot_added", "bot_removed", "player_connection_lost", "player_reconnected", "player_kicked", "player_banned", "spectator_changed", "voice_user_kicked", "voice_user_banned", "voice_mute_changed"):
+        if et in ("player_joined", "player_left", "captain_changed", "bot_added", "bot_removed", "player_connection_lost", "player_reconnected", "player_kicked", "player_banned", "spectator_changed", "voice_user_joined", "voice_user_kicked", "voice_user_banned", "voice_mute_changed"):
             if et == "player_connection_lost":
                 name = event.get('name', 'لاعب')
                 if str(event.get("user_id")) != str((self.user or {}).get("id")):
@@ -2683,14 +2718,35 @@ class TableVerseApp(QMainWindow):
                     else:
                         vm.discard(uid)
                     self.current_room["voice_muted"] = list(vm)
+            elif et == "voice_user_joined":
+                name = event.get('name', 'لاعب')
+                uid = int(event.get("user_id") or 0)
+                self.table_view.add_log(tr("انضم {name} إلى المحادثة الصوتية.", name=name), category="ALL")
+                if str(uid) != str((self.user or {}).get("id")):
+                    reader.speak(tr("انضم {name} إلى المحادثة الصوتية.", name=name), interrupt=False)
+                if self.current_room:
+                    vp = set(int(u) for u in (self.current_room.get("voice_participants") or []))
+                    if uid > 0:
+                        vp.add(uid)
+                    self.current_room["voice_participants"] = list(vp)
             elif et == "voice_user_kicked":
                 name = event.get('name', 'لاعب')
+                uid = int(event.get("user_id") or 0)
                 self.table_view.add_log(tr("تمت إزالة {name} من المحادثة الصوتية.", name=name), category="ALL")
                 reader.speak(tr("تمت إزالة {name} من المحادثة الصوتية.", name=name), interrupt=False)
+                if self.current_room:
+                    vp = set(int(u) for u in (self.current_room.get("voice_participants") or []))
+                    vp.discard(uid)
+                    self.current_room["voice_participants"] = list(vp)
             elif et == "voice_user_banned":
                 name = event.get('name', 'لاعب')
+                uid = int(event.get("user_id") or 0)
                 self.table_view.add_log(tr("تم حظر {name} من المحادثة الصوتية.", name=name), category="ALL")
                 reader.speak(tr("تم حظر {name} من المحادثة الصوتية.", name=name), interrupt=False)
+                if self.current_room:
+                    vp = set(int(u) for u in (self.current_room.get("voice_participants") or []))
+                    vp.discard(uid)
+                    self.current_room["voice_participants"] = list(vp)
             elif et == "captain_changed":
                 name = event.get('name', 'لاعب')
                 self.table_view.add_log(tr("{name} أصبح كابتن الطاولة", name=name), category="ALL")

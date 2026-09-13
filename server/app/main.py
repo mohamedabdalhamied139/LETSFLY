@@ -412,6 +412,12 @@ async def ws_room(websocket: WebSocket, room_id: str):
                     continue
                 if ws_manager.join_voice(room_id, websocket):
                     await ws_manager.send_json(websocket, {"type": "voice_joined", "room_id": room_id}, room_id)
+                    user_disp = (current_room.player_names.get(user_id) if current_room else None) or "لاعب"
+                    ws_manager.broadcast_room(room_id, {
+                        "type": "voice_user_joined",
+                        "user_id": user_id,
+                        "name": user_disp,
+                    })
                 continue
             if data.get("type") == "voice_leave" and set(data.keys()) == {"type"}:
                 ws_manager.leave_voice(room_id, websocket)

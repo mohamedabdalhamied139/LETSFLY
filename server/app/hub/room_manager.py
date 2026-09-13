@@ -181,6 +181,13 @@ class Room:
             task.cancel()
         self._bot_task = None
 
+    def get_voice_participants(self) -> list[int]:
+        try:
+            from server.app.hub.ws_manager import ws_manager
+            return ws_manager.get_voice_user_ids(self.room_id)
+        except Exception:
+            return []
+
     def public_dict(self, viewer_id: Optional[int] = None) -> dict:
         from server.app.games.registry import get_plugin
         plugin = get_plugin(self.game)
@@ -207,6 +214,7 @@ class Room:
             "spectators": list(self.spectators),
             "voice_banned": [int(uid) for uid in self.voice_banned],
             "voice_muted": [int(uid) for uid in self.voice_muted],
+            "voice_participants": self.get_voice_participants(),
             "role": "captain" if viewer_id == self.host_id else "co_host" if (self.co_host_id is not None and viewer_id == self.co_host_id) else "player" if viewer_id in self.players else "spectator",
             "table_created_at": self.table_created_at,
             "table_started_at": self.table_started_at,
