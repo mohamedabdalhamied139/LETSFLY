@@ -488,10 +488,27 @@ class TableView(QWidget):
         self._clear_main_table_item_text()
 
     def _on_language_changed(self, _lang: str):
+        if hasattr(self, "chat_input") and self.chat_input:
+            self.chat_input.setPlaceholderText(tr("الدردشة..."))
+            self.chat_input.setAccessibleName(tr("الدردشة"))
+
         if hasattr(self, "wild_color_list"):
             self.wild_color_list.clear()
             for color_name in self.WILD_COLOR_OPTIONS:
                 self.wild_color_list.addItem(QListWidgetItem(tr(color_name)))
+        
+        if hasattr(self, "thief_answer_input") and self.thief_answer_input:
+            mode = getattr(self, "_thief_input_mode", None)
+            if mode == "choose_floor":
+                self.thief_answer_input.setAccessibleName(tr("اختيار طابق اللص"))
+                self.thief_answer_input.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+            elif mode == "answer":
+                self.thief_answer_input.setAccessibleName(tr("إجابة الطابق"))
+                self.thief_answer_input.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+            for i in range(self.thief_answer_input.count()):
+                it = self.thief_answer_input.item(i)
+                val = it.data(Qt.UserRole) or str(i + 1)
+                it.setText(tr("الطابق {0}", val))
         
         self._last_hand_signature = None
         self._last_domino_rendered_sig = None

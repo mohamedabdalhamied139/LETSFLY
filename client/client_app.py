@@ -2900,8 +2900,21 @@ class TableVerseApp(QMainWindow):
     def _on_language_changed(self, _value=None):
         """Apply language changes immediately to all existing UI without restart."""
         try:
+            from client.localization import language
+            active_lang = language()
             localize_widget_tree(self)
-            QApplication.instance().setLayoutDirection(Qt.LeftToRight if __import__("client.localization", fromlist=["language"]).language() == "en" else Qt.RightToLeft)
+            QApplication.instance().setLayoutDirection(Qt.RightToLeft if active_lang == "ar" else Qt.LeftToRight)
+            # Sync active game states to table_view so game widgets re-render in new language
+            if hasattr(self, "table_view") and self.table_view:
+                if hasattr(self, "snakes_state") and self.snakes_state:
+                    self.table_view._snakes_state = self.snakes_state
+                if hasattr(self, "farkle_state") and self.farkle_state:
+                    self.table_view._farkle_state = self.farkle_state
+                if hasattr(self, "domino_state") and self.domino_state:
+                    self.table_view._domino_state = self.domino_state
+                if hasattr(self, "scopa_state") and self.scopa_state:
+                    self.table_view._scopa_state = self.scopa_state
+                self.table_view._on_language_changed(active_lang)
             # Refresh dynamic home/table menus from their existing state.
             for view in (self.auth_view, self.home_view, self.rooms_menu_view, self.join_rooms_view, self.table_view):
                 localize_widget_tree(view)
