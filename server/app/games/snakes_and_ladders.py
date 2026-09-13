@@ -255,7 +255,10 @@ class SnakesAndLaddersGame:
             self._spawn_single_mystery_tile()
             self.sound_cues.append("MYSTERY_BOX")
             self.sound_cue = "MYSTERY_BOX"
-            m_type = random.choice(["freeze", "shield", "boost", "swap", "bonus", "wind", "coins"])
+            mystery_pool = ["freeze", "shield", "boost", "swap", "bonus", "wind"]
+            if user_id > 0:
+                mystery_pool.append("coins")
+            m_type = random.choice(mystery_pool)
             
             if m_type == "freeze":
                 self.frozen_players[user_id] = True
@@ -350,11 +353,11 @@ class SnakesAndLaddersGame:
             self.winner_id = user_id
             self.event_id += 1
             self.event_type = "MATCH_FINISHED"
-            self.sound_cues = ["MATCH_WIN"]
+            self.sound_cues = ["DICE_ROLL", "MATCH_WIN"]
             self.sound_cue = "MATCH_WIN"
             scores_summary = "، ".join(f"{self.player_names.get(uid, 'لاعب')}: {self.positions.get(uid, 0)}" for uid in self.player_ids)
             self.arrival_action = f"نهاية المباراة! الفائز: {player_name}. النتائج: {scores_summary}"
-            self.last_action = self.arrival_action
+            self.last_action = f"{roll_text} {self.arrival_action}"
             return self.get_state(user_id)
 
         # If extra roll granted (from Golden Dice or rolling a 6) and player is not frozen

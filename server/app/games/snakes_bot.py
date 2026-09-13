@@ -43,6 +43,8 @@ async def run_snakes_bots(room: Room):
                 else:
                     game.roll_dice(current_id)
                 if game.winner_id is not None:
+                    ws_manager.broadcast_room(room.room_id, {"type": "snakes_state_changed", "room_id": room.room_id})
+                    await asyncio.sleep(2.5)
                     await finalize_snakes_match(room)
                     return
                 ws_manager.broadcast_room(room.room_id, {"type": "snakes_state_changed", "room_id": room.room_id})

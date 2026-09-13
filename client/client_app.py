@@ -1608,7 +1608,7 @@ class TableVerseApp(QMainWindow):
         et = str(self.snakes_state.get("event_type") or "")
         roll = int(self.snakes_state.get("last_roll") or 0)
         event_id = int(self.snakes_state.get("event_id", 0) or 0)
-        if et in ("DICE_ROLLED", "BONUS_ROLL") and roll > 0 and event_id != getattr(self, "_last_snakes_step_event_id", 0):
+        if et in ("DICE_ROLLED", "BONUS_ROLL", "MATCH_FINISHED") and roll > 0 and event_id != getattr(self, "_last_snakes_step_event_id", 0):
             self._last_snakes_step_event_id = event_id
             self._snakes_stepping = True
             roll_action = str(self.snakes_state.get("roll_action") or "")
@@ -1618,7 +1618,7 @@ class TableVerseApp(QMainWindow):
             raw_cues = self.snakes_state.get("sound_cues") or ()
             self._snakes_pending_arrival_cues = [
                 c for c in raw_cues
-                if sound_engine.has_cue(c) and c in ("SNAKE_BITE", "LADDER_CLIMB", "FREEZE_TRAP", "MYSTERY_BOX", "PLAYER_BUMP")
+                if sound_engine.has_cue(c) and c in ("SNAKE_BITE", "LADDER_CLIMB", "FREEZE_TRAP", "MYSTERY_BOX", "PLAYER_BUMP", "MATCH_WIN")
             ]
             self._play_snakes_steps(roll, 1)
         elif et in ("CANNOT_MOVE", "MATCH_WON"):
@@ -1641,6 +1641,17 @@ class TableVerseApp(QMainWindow):
             self._snakes_pending_announcement = ""
             if announcement:
                 QTimer.singleShot(80, lambda text=announcement: reader.speak(tr(text), interrupt=True))
+
+            # If match is finished, execute any pending match finished transition
+            state = getattr(self, "snakes_state", {}) or {}
+            et = str(state.get("event_type") or "")
+            if et in ("MATCH_FINISHED", "MATCH_WON") or state.get("winner_id") is not None:
+                self._snakes_stepping = False
+                pending_term = getattr(self, "_pending_snakes_terminal_event", None)
+                if pending_term:
+                    self._pending_snakes_terminal_event = None
+                    self._finish_snakes_match(pending_term)
+                return
 
             # Trigger the next player's turn sound and announcement now that arrival and movement are complete
             def _announce_snakes_turn():
@@ -2746,12 +2757,10 @@ class TableVerseApp(QMainWindow):
             return
 
         if et == "snakes_match_finished":
-            self._announce_terminal_result(event)
-            self.snakes_state = None
-            self.table_view.set_game_type("SNAKES_LADDERS")
-            self.table_view.set_playing_mode(False)
-            self.table_view.clear_hand_for_round_transition()
-            self.table_view.main_table_widget.setFocus()
+            if getattr(self, "_snakes_stepping", False):
+                self._pending_snakes_terminal_event = dict(event)
+            else:
+                self._finish_snakes_match(event)
             return
 
         if et == "thief_match_finished":
@@ -2869,6 +2878,14 @@ class TableVerseApp(QMainWindow):
             sound_engine.play_event("MATCH_WIN" if won else "MATCH_LOSS")
             self._match_result_sound_played = True
         reader.speak(tr("فزت بالمباراة." if won else "انتهت المباراة."), interrupt=False)
+
+    def _finish_snakes_match(self, event: dict):
+        self._announce_terminal_result(event)
+        self.snakes_state = None
+        self.table_view.set_game_type("SNAKES_LADDERS")
+        self.table_view.set_playing_mode(False)
+        self.table_view.clear_hand_for_round_transition()
+        self.table_view.main_table_widget.setFocus()
 
     def _finish_scopa_match(self, event: dict):
         self._announce_terminal_result(event)

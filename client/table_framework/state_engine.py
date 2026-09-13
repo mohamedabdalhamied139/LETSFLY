@@ -128,31 +128,35 @@ class ClientStateEngine:
                     sound_engine.play_event(event_cue)
 
             if et in ("MATCH_WON", "MATCH_FINISHED"):
-                winner_id = state.get("winner_id") or state.get("match_winner_id")
-                winning_team = state.get("winning_team")
-                teams = state.get("teams") or {}
-                my_id = (app.user or {}).get("id")
-                if winning_team is not None and my_id is not None and str(my_id) in teams:
-                    is_me = (teams.get(str(my_id)) == winning_team)
-                elif winner_id is not None and my_id is not None:
-                    is_me = (str(winner_id) == str(my_id))
+                if game_type == "SNAKES_LADDERS" and int(state.get("last_roll") or 0) > 0:
+                    # Let _play_snakes_steps sequence the footsteps, roll announcement, and victory naturally
+                    pass
                 else:
-                    winning_ids = state.get("winning_ids")
-                    if isinstance(winning_ids, (list, tuple, set)) and my_id is not None:
-                        is_me = any(str(w) == str(my_id) for w in winning_ids)
+                    winner_id = state.get("winner_id") or state.get("match_winner_id")
+                    winning_team = state.get("winning_team")
+                    teams = state.get("teams") or {}
+                    my_id = (app.user or {}).get("id")
+                    if winning_team is not None and my_id is not None and str(my_id) in teams:
+                        is_me = (teams.get(str(my_id)) == winning_team)
+                    elif winner_id is not None and my_id is not None:
+                        is_me = (str(winner_id) == str(my_id))
                     else:
-                        is_me = False
-                if not getattr(app, "_match_result_sound_played", False):
-                    sound_engine.play_event("MATCH_WIN" if is_me else "MATCH_LOSS")
-                    app._match_result_sound_played = True
-                
-                localized_action = tr(action_text)
-                if is_me:
-                    msg = tr("مبروك! لقد فزت.") + " " + localized_action
-                else:
-                    msg = tr("حظ أوفر!") + " " + localized_action
-                announce_game_event(msg, interrupt=(game_type != "SCOPA"))
-                spoke_event = True
+                        winning_ids = state.get("winning_ids")
+                        if isinstance(winning_ids, (list, tuple, set)) and my_id is not None:
+                            is_me = any(str(w) == str(my_id) for w in winning_ids)
+                        else:
+                            is_me = False
+                    if not getattr(app, "_match_result_sound_played", False):
+                        sound_engine.play_event("MATCH_WIN" if is_me else "MATCH_LOSS")
+                        app._match_result_sound_played = True
+                    
+                    localized_action = tr(action_text)
+                    if is_me:
+                        msg = tr("مبروك! لقد فزت.") + " " + localized_action
+                    else:
+                        msg = tr("حظ أوفر!") + " " + localized_action
+                    announce_game_event(msg, interrupt=(game_type != "SCOPA"))
+                    spoke_event = True
             elif et in ("ROUND_FINISHED", "ROUND_END", "ROUND_WON"):
                 if game_type == "SCOPA":
                     # Do not interrupt the final capture or duplicate the
