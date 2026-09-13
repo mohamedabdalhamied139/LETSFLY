@@ -192,7 +192,7 @@ class TableVoiceModeDialog(QDialog):
         modes = [
             ("متاحة للجميع (الوضع الافتراضي)", "all"),
             ("تعطيل التحدث (استماع فقط - التحدث مقتصر على القائد)", "listen_only"),
-            ("تعطيل المحادثة الصوتية تماماً (مقتصرة على القائد)", "owner_only"),
+            ("تعطيل المحادثة الصوتية تماماً", "owner_only"),
         ]
 
         cur_idx = 0
@@ -260,7 +260,7 @@ class TableVoiceManagerDialog(QDialog):
             if current_mode == "listen_only":
                 mode_label = tr("وضع المحادثة: استماع فقط (تعطيل تحدث اللاعبين)")
             elif current_mode == "owner_only":
-                mode_label = tr("وضع المحادثة: معطلة تماماً (مقتصرة على القائد)")
+                mode_label = tr("وضع المحادثة: معطلة تماماً")
             else:
                 mode_label = tr("وضع المحادثة: متاحة للجميع")
 
