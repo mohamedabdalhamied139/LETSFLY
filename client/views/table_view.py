@@ -958,13 +958,6 @@ class TableView(QWidget):
                 item.setData(Qt.UserRole + 1101, raw_dice)
                 item.setData(Qt.UserRole + 1102, disp_dice)
                 self.farkle_dice_list.addItem(item)
-            raw_wait = f"في انتظار دور {curr_name}..."
-            disp_wait = tr(raw_wait)
-            item = QListWidgetItem(disp_wait)
-            item.setData(Qt.UserRole, {"type": "info"})
-            item.setData(Qt.UserRole + 1101, raw_wait)
-            item.setData(Qt.UserRole + 1102, disp_wait)
-            self.farkle_dice_list.addItem(item)
 
         self.farkle_dice_list.blockSignals(False)
 
