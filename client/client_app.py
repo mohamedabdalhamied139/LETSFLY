@@ -4233,9 +4233,15 @@ class TableVerseApp(QMainWindow):
     def _handle_restore_saved_table(self, saved_id: int):
         reader.speak(tr("استعادة الطاولة..."), interrupt=True)
         def done(res):
-            rid = res.get("room_id")
-            if rid:
-                self._handle_join_room(rid)
+            room = res.get("room") if isinstance(res, dict) else None
+            if room:
+                self._enter_table(room)
+                sound_engine.play_event("TABLE_JOIN")
+                reader.speak(tr("تم استرجاع الطاولة بنجاح."), interrupt=True)
+            else:
+                rid = res.get("room_id") if isinstance(res, dict) else None
+                if rid:
+                    self._handle_join_room(rid)
         def fail(err):
             sound_engine.play_event("INVALID_ACTION")
             reader.speak(str(err), interrupt=True)

@@ -579,6 +579,11 @@ async def join_room(room_id: str, as_spectator: bool = False, user: User = Depen
     if user.id in room.banned_players:
         raise HTTPException(403, "أنت محظور من هذه الطاولة.")
         
+    if user.id in room.players:
+        # User is already a registered player of this room (e.g. restored table or rejoining after reconnect)
+        ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
+        return room.public_dict(user.id)
+
     # Join Policy Check & Block Check
     host = db.query(User).filter(User.id == room.host_id).first()
     if host and host.id != user.id:

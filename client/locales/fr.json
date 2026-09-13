@@ -2212,5 +2212,6 @@
   "اللاعب {pname} موجود في طاولة أخرى حالياً.": "Le joueur {pname} est actuellement sur une autre table.",
   "يجب مغادرة طاولتك الحالية أولاً لاسترجاع طاولة محفوظة.": "Vous devez d'abord quitter votre table actuelle pour restaurer une table enregistrée.",
   "تم حفظ الطاولة وإنهاء الجلسة.": "Table enregistrée et session terminée.",
-  "قام {user} بحفظ الطاولة وإنهاء الجلسة.": "{user} a enregistré la table et terminé la session."
+  "قام {user} بحفظ الطاولة وإنهاء الجلسة.": "{user} a enregistré la table et terminé la session.",
+  "تم استرجاع الطاولة بنجاح.": "Table restaurée avec succès."
 }

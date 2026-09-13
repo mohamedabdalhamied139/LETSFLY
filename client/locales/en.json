@@ -1788,5 +1788,6 @@
   "اللاعب {pname} موجود في طاولة أخرى حالياً.": "Player {pname} is currently in another table.",
   "يجب مغادرة طاولتك الحالية أولاً لاسترجاع طاولة محفوظة.": "You must leave your current table first to restore a saved table.",
   "تم حفظ الطاولة وإنهاء الجلسة.": "Table saved and session ended.",
-  "قام {user} بحفظ الطاولة وإنهاء الجلسة.": "{user} saved the table and ended the session."
+  "قام {user} بحفظ الطاولة وإنهاء الجلسة.": "{user} saved the table and ended the session.",
+  "تم استرجاع الطاولة بنجاح.": "Table restored successfully."
 }
