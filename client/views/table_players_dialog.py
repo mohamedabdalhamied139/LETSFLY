@@ -268,26 +268,7 @@ class TableVoiceManagerDialog(QDialog):
             mode_item.setData(Qt.UserRole, {"type": "voice_mode_menu"})
             self.list.addItem(mode_item)
 
-            # 2. Host Mic Mute Toggle (if in voice)
-            if in_voice:
-                mic_label = tr("إلغاء كتم المايكروفون") if is_muted else tr("كتم المايكروفون")
-                it = QListWidgetItem(mic_label)
-                it.setData(Qt.UserRole, {"type": "session_action", "action": "toggle_mute"})
-                self.list.addItem(it)
-
-            # 3. Host Leave Voice Session Toggle
-            if in_voice:
-                session_label = tr("الخروج من المحادثة الصوتية")
-                session_tag = "leave_voice"
-            else:
-                session_label = tr("الانضمام للمحادثة الصوتية")
-                session_tag = "join_voice"
-
-            it = QListWidgetItem(session_label)
-            it.setData(Qt.UserRole, {"type": "session_action", "action": session_tag})
-            self.list.addItem(it)
-
-        # 4. Players with voice status (visible to everyone)
+        # Players with voice status (visible to everyone)
         host_name = str(self.room.get("host_name") or "القائد")
         co_host_id = self.room.get("co_host_id")
         co_host_id = int(co_host_id) if co_host_id is not None else None
