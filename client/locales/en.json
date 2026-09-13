@@ -1885,5 +1885,17 @@
   "الميكروفون مكتوم": "Microphone is muted",
   "الميكروفون مفتوح": "Microphone is open",
   "متصل بالصوت، {0}. يتحدث الآن: {1}.": "Connected to voice, {0}. Currently speaking: {1}.",
-  "متصل بالصوت، {0}. لا أحد يتحدث حاليًا.": "Connected to voice, {0}. Nobody is speaking currently."
+  "متصل بالصوت، {0}. لا أحد يتحدث حاليًا.": "Connected to voice, {0}. Nobody is speaking currently.",
+  "مدير الصوت": "Voice Manager",
+  "مدير الصوت (Ctrl+M)": "Voice Manager (Ctrl+M)",
+  "تعطيل المحادثة الصوتية والخروج": "Disable voice chat and leave",
+  "الانضمام للمحادثة الصوتية": "Join voice chat",
+  "كتم المايكروفون": "Mute microphone",
+  "إلغاء كتم المايكروفون": "Unmute microphone",
+  "التحكم بصوت {name}": "Voice controls for {name}",
+  "التحكم بالصوت متاح لقائد الطاولة فقط.": "Voice moderation is available to the table captain only.",
+  "لا يمكنك التحكم في نفسك من هنا.": "You cannot moderate yourself from here.",
+  "انضم {name} إلى المحادثة الصوتية.": "{name} joined the voice chat.",
+  "في المحادثة": "In voice",
+  "خارج المحادثة": "Out"
 }
