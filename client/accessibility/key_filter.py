@@ -121,6 +121,16 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                         self._call("on_toggle_room_privacy")
                         return True, 0
 
+            # Ctrl+S: Save table shortcut (available anywhere in table, even while typing)
+            if vk == 0x53:
+                user32 = ctypes.windll.user32
+                ctrl = bool(user32.GetKeyState(0x11) & 0x8000)
+                alt = bool(user32.GetKeyState(0x12) & 0x8000)
+                if ctrl and not shift and not alt:
+                    if self.window.is_in_room():
+                        self._call("on_save_table_shortcut")
+                        return True, 0
+
             # F5 is a real network reconnect command and remains available even
             # while an editable control has focus.
             if vk == 0x74:  # F5
@@ -194,7 +204,7 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                     return True, 0
 
                 # S = announce scores & target.
-                if vk == 0x53 and not shift:  # 'S'
+                if vk == 0x53 and not shift and not bool(user32.GetKeyState(0x11) & 0x8000):  # 'S'
                     self._call("on_announce_scores")
                     return True, 0
 

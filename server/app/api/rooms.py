@@ -1182,7 +1182,7 @@ async def save_room(room_id: str, user: User = Depends(get_current_user), db: Se
         raise HTTPException(400, "لا يمكنك حفظ أكثر من 4 طاولات.")
 
     # Deduct 2 coins for saving
-    _deduct_coins(db, user, 2, "حفظ طاولة", commit=True)
+    _spend_coins(db, user, 2, "حفظ طاولة", commit=True)
 
     # Serialize engine snapshot
     plugin = get_plugin(room.game)
