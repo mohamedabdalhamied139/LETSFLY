@@ -375,6 +375,19 @@ class TranslationManager:
                     trailing = s[len(s.rstrip()):]
                     return f"{leading}{' — '.join(translated_parts)}{trailing}"
 
+        # Multi-sentence splitting: If the text consists of multiple sentences (. ! ؟ ?),
+        # try translating each sentence independently. If all sentences successfully translate,
+        # return the translated compound sentence rather than letting a broad single-line pattern
+        # consume part of it or leave parts in Arabic.
+        if any(sep in stripped for sep in (". ", "! ", "؟ ", "? ")):
+            parts = [p.strip() for p in re.split(r"(?<=[.!?؟])\s+", stripped) if p.strip()]
+            if len(parts) > 1:
+                translated_parts = [self.tr(part) for part in parts]
+                if all(tp != part for tp, part in zip(translated_parts, parts)):
+                    leading = s[:len(s) - len(s.lstrip())]
+                    trailing = s[len(s.rstrip()):]
+                    return f"{leading}{' '.join(translated_parts)}{trailing}"
+
         # 3. Dynamic regex template pattern matching on whole string
         for pattern, template, roles in self._patterns:
             m = pattern.match(stripped)
