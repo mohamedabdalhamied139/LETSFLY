@@ -398,6 +398,7 @@ class TableView(QWidget):
         self.farkle_dice_list = None
         self._last_domino_rendered_sig = None
         self._last_scopa_rendered_sig = None
+        self._last_snakes_rendered_sig = None
         self._scopa_gameplay_focus = False
 
         # Dynamic category tracking
@@ -496,6 +497,7 @@ class TableView(QWidget):
         self._last_domino_rendered_sig = None
         self._last_farkle_rendered_sig = None
         self._last_scopa_rendered_sig = None
+        self._last_snakes_rendered_sig = None
 
         if hasattr(self, "_last_cards") and self._last_cards is not None:
             self.update_hand(self._last_cards)
@@ -1566,6 +1568,15 @@ class TableView(QWidget):
         lst = getattr(self, "snakes_info_list", None)
         if lst is None:
             return
+        state = self._snakes_state or {}
+        new_sig = (
+            state.get("active"),
+            get_language(),
+        )
+        if getattr(self, "_last_snakes_rendered_sig", None) == new_sig and lst.count() > 0:
+            return
+        self._last_snakes_rendered_sig = new_sig
+
         had_focus = (
             lst.hasFocus()
             or (hasattr(lst, "viewport") and lst.viewport().hasFocus())
