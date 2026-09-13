@@ -1962,7 +1962,8 @@ class TableVerseApp(QMainWindow):
             state = self.farkle_state or {}
             roll = state.get("last_roll") or state.get("dice") or []
             if roll:
-                reader.speak("، ".join(map(str, roll)), interrupt=True)
+                sep = ", " if language() != "ar" else "، "
+                reader.speak(sep.join(map(str, roll)), interrupt=True)
             else:
                 reader.speak(tr("لا توجد رمية سابقة."), interrupt=True)
             return
