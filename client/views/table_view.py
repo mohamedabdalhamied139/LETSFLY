@@ -161,15 +161,22 @@ class FarkleDiceList(QListWidget):
         if event.key() in (Qt.Key_Left, Qt.Key_Right):
             event.accept()
             return
+        parent_table = self.parent()
+        while parent_table and not hasattr(parent_table, "_farkle_state"):
+            parent_table = parent_table.parent()
+        is_my_turn = False
+        if parent_table and hasattr(parent_table, "_farkle_state") and isinstance(parent_table._farkle_state, dict):
+            is_my_turn = bool(parent_table._farkle_state.get("is_my_turn"))
+        if not is_my_turn or self.count() == 0:
+            if event.key() in (Qt.Key_Up, Qt.Key_Down, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Home, Qt.Key_End, Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
+                event.accept()
+                return
         if event.key() == Qt.Key_Space:
             item = self.currentItem()
             if item:
                 data = item.data(Qt.UserRole)
                 if isinstance(data, dict) and data.get("type") == "combo":
-                    parent_table = self.parent()
-                    while parent_table and not hasattr(parent_table, "_on_farkle_item_activated"):
-                        parent_table = parent_table.parent()
-                    if parent_table:
+                    if parent_table and hasattr(parent_table, "_on_farkle_item_activated"):
                         parent_table._on_farkle_item_activated(item)
                 event.accept()
                 return
@@ -948,16 +955,7 @@ class TableView(QWidget):
             item.setData(Qt.UserRole + 1102, bank_display)
             self.farkle_dice_list.addItem(item)
         else:
-            curr_name = state.get("current_player_name", "اللاعب")
-            if dice:
-                dice_str = " ".join(map(str, sorted(dice)))
-                raw_dice = f"نرد {curr_name}: {dice_str}"
-                disp_dice = tr(raw_dice)
-                item = QListWidgetItem(disp_dice)
-                item.setData(Qt.UserRole, {"type": "info"})
-                item.setData(Qt.UserRole + 1101, raw_dice)
-                item.setData(Qt.UserRole + 1102, disp_dice)
-                self.farkle_dice_list.addItem(item)
+            pass
 
         self.farkle_dice_list.blockSignals(False)
 
