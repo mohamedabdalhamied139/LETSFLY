@@ -1593,8 +1593,8 @@
   "تحويل إلى متفرج": "Make Spectator",
   "المحادثة الصوتية": "Voice Chat",
   "خيارات المحادثة الصوتية": "Voice Chat Options",
-  "كتم المايكروفون": "Mute Microphone",
-  "إلغاء كتم المايكروفون": "Unmute Microphone",
+  "كتم المايكروفون": "Mute microphone",
+  "إلغاء كتم المايكروفون": "Unmute microphone",
   "إزالة من المحادثة الصوتية": "Remove from Voice Chat",
   "حظر من المحادثة الصوتية": "Ban from Voice Chat",
   "أنت الآن في وضع المتفرج.": "You are now in spectator mode.",
@@ -1890,8 +1890,6 @@
   "مدير الصوت (Ctrl+M)": "Voice Manager (Ctrl+M)",
   "تعطيل المحادثة الصوتية والخروج": "Disable voice chat and leave",
   "الانضمام للمحادثة الصوتية": "Join voice chat",
-  "كتم المايكروفون": "Mute microphone",
-  "إلغاء كتم المايكروفون": "Unmute microphone",
   "التحكم بصوت {name}": "Voice controls for {name}",
   "التحكم بالصوت متاح لقائد الطاولة فقط.": "Voice moderation is available to the table captain only.",
   "لا يمكنك التحكم في نفسك من هنا.": "You cannot moderate yourself from here.",
@@ -1915,5 +1913,7 @@
   "قام القائد بإتاحة المحادثة الصوتية للجميع.": "The captain made voice chat available to everyone.",
   "المحادثة الصوتية معطلة في هذه الطاولة من قبل القائد.": "Voice chat is disabled in this table by the captain.",
   "التحدث معطل في هذه الطاولة بواسطة القائد.": "Speaking is disabled in this table by the captain.",
-  "تعذر تغيير وضع المحادثة الصوتية: {error}": "Failed to change voice chat mode: {error}"
+  "تعذر تغيير وضع المحادثة الصوتية: {error}": "Failed to change voice chat mode: {error}",
+  "يتحدث": "Speaking",
+  "مكتوم": "Muted"
 }

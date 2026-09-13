@@ -2335,5 +2335,7 @@
   "انضم {name} إلى المحادثة الصوتية.": "{name} a rejoint le chat vocal.",
   "في المحادثة": "Dans le chat vocal",
   "خارج المحادثة": "Hors du chat vocal",
-  "الحالي": "Actuel"
+  "الحالي": "Actuel",
+  "يتحدث": "Parle",
+  "مكتوم": "Muet"
 }
