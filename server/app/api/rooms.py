@@ -208,6 +208,7 @@ async def create_room(req: CreateRoomRequest, user: User = Depends(get_current_u
 # -------------------------------------------------------------
 import pickle
 import json
+from uuid import uuid4
 from datetime import timedelta
 from server.app.games.registry import get_plugin
 
@@ -357,7 +358,10 @@ async def restore_saved_table(saved_id: int, user: User = Depends(get_current_us
         raise HTTPException(404, "الطاولة المحفوظة غير موجودة.")
 
     now = datetime.now(timezone.utc)
-    if record.expires_at < now:
+    expires_at = record.expires_at
+    if expires_at is not None and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at and expires_at < now:
         db.delete(record)
         db.commit()
         raise HTTPException(400, "انتهت صلاحية هذه الطاولة المحفوظة وتم حذفها.")
@@ -392,37 +396,49 @@ async def restore_saved_table(saved_id: int, user: User = Depends(get_current_us
         raise HTTPException(500, "تعذر استعادة حالة اللعبة.")
 
     # Build and register room
-    new_room = room_manager.build_room(user.id, user.display_name, record.game)
-    new_room.target_score = record.target_score
-    new_room.rules = dict(rules)
-    new_room.status = "playing"
-    new_room.match_key = uuid4().hex
-    new_room.scores = {int(k): v for k, v in saved_scores.items()} if isinstance(saved_scores, dict) else {}
+    try:
+        new_room = room_manager.build_room(user.id, user.display_name, record.game)
+        new_room.target_score = record.target_score
+        new_room.rules = dict(rules)
+        new_room.status = "playing"
+        new_room.match_key = uuid4().hex
+        new_room.scores = {int(k): v for k, v in saved_scores.items()} if isinstance(saved_scores, dict) else {}
 
-    # Setup players
-    new_room.players = []
-    new_room.player_names = {}
-    for p in players_info:
-        uid = int(p["user_id"])
-        pname = p["name"]
-        new_room.players.append(uid)
-        new_room.player_names[uid] = pname
+        # Setup players
+        now_iso = datetime.now(timezone.utc).isoformat()
+        new_room.players = []
+        new_room.player_names = {}
+        new_room.player_joined_at = {}
+        for p in players_info:
+            uid = int(p["user_id"])
+            pname = p["name"]
+            new_room.players.append(uid)
+            new_room.player_names[uid] = pname
+            new_room.player_joined_at[uid] = now_iso
 
-    plugin = get_plugin(record.game)
-    if not plugin:
-        raise HTTPException(400, f"اللعبة {record.game} غير مدعومة.")
-    plugin.set_engine(new_room, engine)
+        plugin = get_plugin(record.game)
+        if not plugin:
+            raise HTTPException(400, f"اللعبة {record.game} غير مدعومة.")
+        plugin.set_engine(new_room, engine)
 
-    # Start bot runners if bots are present
-    has_bots = any(uid < 0 for uid in new_room.players)
-    if has_bots and plugin.bot_runner:
-        new_room._bot_task = asyncio.create_task(plugin.bot_runner(new_room))
+        # Start bot runners if bots are present
+        has_bots = any(uid < 0 for uid in new_room.players)
+        if has_bots and plugin.bot_runner:
+            new_room._bot_task = asyncio.create_task(plugin.bot_runner(new_room))
 
-    room_manager.register_room(new_room)
+        room_manager.register_room(new_room)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to initialize restored room: %s", exc)
+        raise HTTPException(500, f"تعذر استعادة الطاولة: {exc}")
 
     # Delete the saved record now that it is restored
-    db.delete(record)
-    db.commit()
+    try:
+        db.delete(record)
+        db.commit()
+    except Exception as exc:
+        logger.exception("Failed to delete restored record from DB: %s", exc)
 
     # Broadcast to lobby
     ws_manager.broadcast_lobby({"type": "room_created", "room": new_room.public_dict()})
