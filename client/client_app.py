@@ -2441,6 +2441,18 @@ class TableVerseApp(QMainWindow):
                 self.voice.stateChanged.emit("الاتصال الصوتي غير متاح.")
             return
 
+        if et == "table_saved_closed":
+            msg = event.get("message") or "تم حفظ الطاولة وإنهاء الجلسة."
+            reader.speak(tr(msg), interrupt=True)
+            if QApplication.activePopupWidget() is not None:
+                try:
+                    QApplication.activePopupWidget().close()
+                except Exception:
+                    pass
+                self._active_context_menu = None
+            self._menu_leave_room()
+            return
+
         if et in ("kicked_from_room", "banned_from_room"):
             msg = event.get("message") or ("تم طردك من الطاولة." if et == "kicked_from_room" else "تم حظرك من الطاولة.")
             reader.speak(tr(msg), interrupt=True)
@@ -4193,6 +4205,8 @@ class TableVerseApp(QMainWindow):
             sound_engine.play_event("CONNECTED")
             msg = res.get("message") or tr("تم حفظ الطاولة بنجاح مقابل عملتين.")
             reader.speak(tr(msg), interrupt=True)
+            if self.current_room:
+                self._menu_leave_room()
         def fail(err):
             sound_engine.play_event("INVALID_ACTION")
             reader.speak(str(err), interrupt=True)

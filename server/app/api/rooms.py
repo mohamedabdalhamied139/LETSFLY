@@ -319,6 +319,26 @@ async def save_room(room_id: str, user: User = Depends(get_current_user), db: Se
         logger.exception("Failed to commit saved table: %s", exc)
         raise HTTPException(500, "فشل حفظ الطاولة في قاعدة البيانات.")
 
+    # Notify all room occupants that the table is saved and closed, and clean up the active room
+    msg = f"قام {user.display_name} بحفظ الطاولة وإنهاء الجلسة."
+    ws_manager.broadcast_room(room_id, {
+        "type": "table_saved_closed",
+        "room_id": room_id,
+        "message": msg
+    })
+    ws_manager.broadcast_lobby({"type": "room_deleted", "room_id": room_id})
+
+    from server.app.main import cancel_room_disconnect_grace_timers
+    cancel_room_disconnect_grace_timers(room_id)
+
+    # Disconnect any lingering room socket connections for human participants
+    all_uids = list(set(room.players) | set(room.spectators))
+    for uid in all_uids:
+        if uid > 0:
+            await ws_manager.disconnect_user_from_room(room_id, uid)
+
+    room_manager.delete_room(room_id)
+
     return {"ok": True, "saved_id": saved_record.id, "message": "تم حفظ الطاولة بنجاح مقابل عملتين."}
 
 @router.delete("/saved/{saved_id}")
