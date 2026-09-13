@@ -1610,6 +1610,7 @@ class TableVerseApp(QMainWindow):
         event_id = int(self.snakes_state.get("event_id", 0) or 0)
         if et in ("DICE_ROLLED", "BONUS_ROLL") and roll > 0 and event_id != getattr(self, "_last_snakes_step_event_id", 0):
             self._last_snakes_step_event_id = event_id
+            self._snakes_stepping = True
             roll_action = str(self.snakes_state.get("roll_action") or "")
             if roll_action:
                 reader.speak(tr(roll_action), interrupt=True)
@@ -1632,7 +1633,6 @@ class TableVerseApp(QMainWindow):
             self._snakes_pending_arrival_cues = []
             return
         if current_step > roll:
-            self._snakes_stepping = False
             arrival_cues = getattr(self, "_snakes_pending_arrival_cues", [])
             self._snakes_pending_arrival_cues = []
             for cue in arrival_cues:
@@ -1644,6 +1644,7 @@ class TableVerseApp(QMainWindow):
 
             # Trigger the next player's turn sound and announcement now that arrival and movement are complete
             def _announce_snakes_turn():
+                self._snakes_stepping = False
                 if not self.is_in_room() or (self.current_room or {}).get("game") != "SNAKES_LADDERS":
                     return
                 state = getattr(self, "snakes_state", {}) or {}
