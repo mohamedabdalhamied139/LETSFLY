@@ -92,21 +92,49 @@ def test_atomic_challenge_creation_and_compensation(db_session):
     db_session.commit()
 
     from server.app.hub.ws_manager import ws_manager
-    mock_sock = object()
+    import asyncio
+    class MockWs:
+        async def send_json(self, msg):
+            pass
+    mock_sock = MockWs()
     with ws_manager._state_lock:
         ws_manager.connection_users[mock_sock] = 202
+        ws_manager._ws_locks[mock_sock] = asyncio.Lock()
 
     headers = get_auth_headers(201, 'c_user1')
     try:
+        # 1. Successful challenge path
         res = client.post('/api/users/202/challenge', json={'game': 'SCOPA'}, headers=headers)
         assert res.status_code == 200
         data = res.json()
         room_id = data['room_id']
         assert room_id in room_manager.rooms
         room_manager.delete_room(room_id)
+
+        # 2. Insufficient coins path: no room should be created or leaked
+        user1.coins = 2
+        db_session.commit()
+        res_poor = client.post('/api/users/202/challenge', json={'game': 'SCOPA'}, headers=headers)
+        assert res_poor.status_code == 400
+        assert not any(r.host_id == 201 for r in room_manager.rooms.values())
+
+        # 3. DB commit failure path: in-memory room must be cleaned up and coins preserved
+        user1.coins = 500
+        db_session.commit()
+        initial_room_count = len(room_manager.rooms)
+        from unittest.mock import patch
+        with patch('sqlalchemy.orm.Session.commit', side_effect=Exception('Simulated commit failure')):
+            try:
+                client.post('/api/users/202/challenge', json={'game': 'SCOPA'}, headers=headers)
+            except Exception:
+                pass
+        assert len(room_manager.rooms) == initial_room_count
+        db_session.refresh(user1)
+        assert user1.coins == 500
     finally:
         with ws_manager._state_lock:
             ws_manager.connection_users.pop(mock_sock, None)
+            ws_manager._ws_locks.pop(mock_sock, None)
 
 def test_save_room_preconditions_and_hmac_integrity(db_session):
     user = db_session.query(User).filter_by(id=301).first()
@@ -119,28 +147,35 @@ def test_save_room_preconditions_and_hmac_integrity(db_session):
 
     headers = get_auth_headers(301, 'save_user')
     
+    # Precondition check: invalid room does not spend coins
     res = client.post('/api/rooms/nonexistent_room_xyz/save', headers=headers)
     assert res.status_code == 404
     db_session.refresh(user)
     assert user.coins == 100
 
     from server.app.core.security import SECRET_KEY
-    import hmac, hashlib
-    payload_data = b'{"dummy_engine": 123}'
-    correct_sig = hmac.new(SECRET_KEY.encode('utf-8'), payload_data, hashlib.sha256).digest()
+    from server.app.games.scopa import ScopaGame
+    import pickle, hmac, hashlib
+    
+    # Build a real pickled ScopaGame engine
+    real_game = ScopaGame([(301, 'SaveUser'), (999, 'BotPlayer')], target_score=11)
+    real_engine_payload = pickle.dumps(real_game)
+    correct_sig = hmac.new(SECRET_KEY.encode('utf-8'), real_engine_payload, hashlib.sha256).digest()
+    
+    # 1. Tampered signature must be strictly rejected with 400
     tampered_sig = b'X' * 32
-    tampered_blob = tampered_sig + payload_data
-    valid_blob = correct_sig + payload_data
+    tampered_blob = tampered_sig + real_engine_payload
 
     now = datetime.now(timezone.utc)
+    players = [{'user_id': 301, 'name': 'SaveUser', 'is_bot': False}, {'user_id': 999, 'name': 'BotPlayer', 'is_bot': True}]
     saved = SavedTable(
         user_id=301,
         game='SCOPA',
         serialized_engine=tampered_blob,
         rules_json='{}',
         scores_json='{}',
-        players_json='[]',
-        opponents_summary='',
+        players_json=json.dumps(players),
+        opponents_summary='BotPlayer',
         saved_at=now,
         expires_at=now + timedelta(days=7)
     )
@@ -151,13 +186,30 @@ def test_save_room_preconditions_and_hmac_integrity(db_session):
     assert res_tamper.status_code == 400
     assert 'غير صالحة أو تم التلاعب بها' in res_tamper.json().get('detail', '')
 
+    # 2. Legacy unsigned pickle data must ALSO be rejected (no unsafe legacy fallback)
+    saved.serialized_engine = real_engine_payload
+    db_session.commit()
+    res_legacy = client.post(f'/api/rooms/saved/{saved.id}/restore', headers=headers)
+    assert res_legacy.status_code == 400
+
+    # 3. Validly signed blob restores successfully into a real room
+    valid_blob = correct_sig + real_engine_payload
     saved.serialized_engine = valid_blob
     db_session.commit()
 
     res_valid = client.post(f'/api/rooms/saved/{saved.id}/restore', headers=headers)
-    assert res_valid.json().get('detail', '') != 'بيانات الطاولة المحفوظة غير صالحة أو تم التلاعب بها.'
+    assert res_valid.status_code == 200
+    data = res_valid.json()
+    assert data.get('ok') is True
+    restored_room_id = data.get('room_id')
+    assert restored_room_id in room_manager.rooms
+    restored_room = room_manager.get_room(restored_room_id)
+    assert restored_room.scopa_game is not None
+    assert 301 in restored_room.players
+    room_manager.delete_room(restored_room_id)
 
-    db_session.delete(saved)
+    # Clean up DB record
+    db_session.query(SavedTable).filter_by(id=saved.id).delete()
     db_session.commit()
 
 def test_target_user_request_null_handling(db_session):
@@ -187,26 +239,41 @@ def test_websocket_query_token_in_production():
     mock_ws.headers = Headers({})
     mock_ws.query_params = QueryParams(f'token={token_admin}')
 
-    old_env = os.environ.get('LETSFLY_ENV')
-    old_flag = os.environ.get('LETSFLY_ALLOW_QUERY_TOKEN')
+    old_tv_env = os.environ.get('TABLEVERSE_ENV')
+    old_lf_env = os.environ.get('LETSFLY_ENV')
+    old_tv_flag = os.environ.get('TABLEVERSE_ALLOW_QUERY_TOKEN')
+    old_lf_flag = os.environ.get('LETSFLY_ALLOW_QUERY_TOKEN')
     try:
-        os.environ['LETSFLY_ENV'] = 'production'
+        # Test TABLEVERSE_ENV=production blocks query token
+        os.environ['TABLEVERSE_ENV'] = 'production'
+        os.environ.pop('LETSFLY_ENV', None)
+        os.environ.pop('TABLEVERSE_ALLOW_QUERY_TOKEN', None)
         os.environ.pop('LETSFLY_ALLOW_QUERY_TOKEN', None)
         assert _ws_user_id(mock_ws) is None
 
-        os.environ['LETSFLY_ALLOW_QUERY_TOKEN'] = '1'
+        # Test TABLEVERSE_ALLOW_QUERY_TOKEN=1 allows query token
+        os.environ['TABLEVERSE_ALLOW_QUERY_TOKEN'] = '1'
         assert _ws_user_id(mock_ws) == 1
 
-        os.environ['LETSFLY_ENV'] = 'development'
-        os.environ.pop('LETSFLY_ALLOW_QUERY_TOKEN', None)
+        # Test development mode allows query token
+        os.environ['TABLEVERSE_ENV'] = 'development'
+        os.environ.pop('TABLEVERSE_ALLOW_QUERY_TOKEN', None)
         assert _ws_user_id(mock_ws) == 1
     finally:
-        if old_env:
-            os.environ['LETSFLY_ENV'] = old_env
+        if old_tv_env:
+            os.environ['TABLEVERSE_ENV'] = old_tv_env
+        else:
+            os.environ.pop('TABLEVERSE_ENV', None)
+        if old_lf_env:
+            os.environ['LETSFLY_ENV'] = old_lf_env
         else:
             os.environ.pop('LETSFLY_ENV', None)
-        if old_flag:
-            os.environ['LETSFLY_ALLOW_QUERY_TOKEN'] = old_flag
+        if old_tv_flag:
+            os.environ['TABLEVERSE_ALLOW_QUERY_TOKEN'] = old_tv_flag
+        else:
+            os.environ.pop('TABLEVERSE_ALLOW_QUERY_TOKEN', None)
+        if old_lf_flag:
+            os.environ['LETSFLY_ALLOW_QUERY_TOKEN'] = old_lf_flag
         else:
             os.environ.pop('LETSFLY_ALLOW_QUERY_TOKEN', None)
 

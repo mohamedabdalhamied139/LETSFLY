@@ -214,8 +214,11 @@ def _ws_user_id(websocket: WebSocket):
     if not token:
         # Query tokens are disabled in production to avoid leaking credentials in logs/proxies.
         # Fallback is gated behind development environment or explicit opt-in.
-        env_mode = os.getenv("LETSFLY_ENV", os.getenv("ENV", "production")).strip().lower()
-        allow_query_token = os.getenv("LETSFLY_ALLOW_QUERY_TOKEN", "").strip().lower() in ("1", "true", "yes") or env_mode in ("development", "dev", "test")
+        env_mode = os.getenv("TABLEVERSE_ENV", os.getenv("LETSFLY_ENV", os.getenv("ENV", "production"))).strip().lower()
+        allow_query_token = (
+            os.getenv("TABLEVERSE_ALLOW_QUERY_TOKEN", os.getenv("LETSFLY_ALLOW_QUERY_TOKEN", "")).strip().lower() in ("1", "true", "yes")
+            or env_mode in ("development", "dev", "test")
+        )
         if allow_query_token:
             token = websocket.query_params.get("token", "").strip()
     payload = decode_access_token(token) if token else None

@@ -415,23 +415,17 @@ async def restore_saved_table(saved_id: int, user: User = Depends(get_current_us
     from server.app.core.security import SECRET_KEY
     blob = record.serialized_engine
     if not blob or len(blob) < 32:
-        raise HTTPException(400, "بيانات الطاولة المحفوظة تالفة أو غير صالحة.")
+        raise HTTPException(400, "بيانات الطاولة المحفوظة غير صالحة أو تم التلاعب بها.")
     sig = blob[:32]
     payload_data = blob[32:]
     expected_sig = hmac.new(SECRET_KEY.encode("utf-8"), payload_data, hashlib.sha256).digest()
     if not hmac.compare_digest(sig, expected_sig):
-        # Backward-compatibility fallback: check if payload was unpicklable plain legacy data
-        try:
-            legacy_engine = pickle.loads(blob)
-            engine = legacy_engine
-        except Exception:
-            raise HTTPException(400, "بيانات الطاولة المحفوظة غير صالحة أو تم التلاعب بها.")
-    else:
-        try:
-            engine = pickle.loads(payload_data)
-        except Exception as exc:
-            logger.exception("Failed to unpickle saved engine: %s", exc)
-            raise HTTPException(400, "تعذر استعادة حالة اللعبة.")
+        raise HTTPException(400, "بيانات الطاولة المحفوظة غير صالحة أو تم التلاعب بها.")
+    try:
+        engine = pickle.loads(payload_data)
+    except Exception as exc:
+        logger.exception("Failed to unpickle saved engine: %s", exc)
+        raise HTTPException(400, "تعذر استعادة حالة اللعبة.")
 
     # Build and register room
     try:
