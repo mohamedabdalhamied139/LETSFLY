@@ -41,11 +41,15 @@ async def lifespan(app):
 
 app = FastAPI(title="TableVerse Server v2", version="2.0.0", lifespan=lifespan)
 
-_MAX_HTTP_BODY_BYTES = 64 * 1024
-_environment = os.getenv("TABLEVERSE_ENV", "development").strip().lower()
-_REQUIRE_HTTPS = os.getenv("TABLEVERSE_REQUIRE_HTTPS", "true" if _environment in {"production", "prod"} else "false").strip().lower() in {"1", "true", "yes", "on"}
+def _env(name: str, default: str = "") -> str:
+    """Read TABLEVERSE_* settings, with legacy LETSFLY_* fallback."""
+    return os.getenv(name) or os.getenv(name.replace("TABLEVERSE_", "LETSFLY_"), default)
 
-_allowed_hosts_raw = os.getenv("TABLEVERSE_ALLOWED_HOSTS") or os.getenv("LETSFLY_ALLOWED_HOSTS")
+_MAX_HTTP_BODY_BYTES = 64 * 1024
+_environment = _env("TABLEVERSE_ENV", "development").strip().lower()
+_REQUIRE_HTTPS = _env("TABLEVERSE_REQUIRE_HTTPS", "true" if _environment in {"production", "prod"} else "false").strip().lower() in {"1", "true", "yes", "on"}
+
+_allowed_hosts_raw = _env("TABLEVERSE_ALLOWED_HOSTS")
 if _environment in {"production", "prod"} and not _allowed_hosts_raw:
     raise RuntimeError("TABLEVERSE_ALLOWED_HOSTS must be explicitly configured in production.")
 if not _allowed_hosts_raw:
@@ -178,7 +182,7 @@ _WS_EVENTS_MAX_MESSAGES = 30
 # Keep the desktop/local deployment safe by default. Production deployments can
 # explicitly provide a comma-separated allow-list without changing the shared
 # room/table architecture.
-_cors_raw = os.getenv("TABLEVERSE_CORS_ORIGINS")
+_cors_raw = _env("TABLEVERSE_CORS_ORIGINS")
 if _environment in {"production", "prod"} and not _cors_raw:
     raise RuntimeError("TABLEVERSE_CORS_ORIGINS must be explicitly configured in production.")
 if not _cors_raw:

@@ -68,7 +68,8 @@ class WebSocketClient:
         if not ws:
             return False
         try:
-            ws.send_binary(bytes(payload))
+            with self._send_lock:
+                ws.send_binary(bytes(payload))
             return True
         except Exception:
             logger.debug("WebSocket binary send failed", exc_info=True)
@@ -160,7 +161,8 @@ class WebSocketClient:
                             retry_delay = 1
                         if now - last_ping >= 15:
                             try:
-                                ws.send(json.dumps({"type": "ping"}))
+                                with self._send_lock:
+                                    ws.send(json.dumps({"type": "ping"}))
                             except Exception:
                                 break
                             last_ping = now
@@ -171,7 +173,11 @@ class WebSocketClient:
                             # Binary frames are reserved for the table voice channel.
                             self._emit(callback, generation, {"type": "voice_packet", "data": bytes(raw)})
                             continue
-                        data = json.loads(raw)
+                        try:
+                            data = json.loads(raw)
+                        except (TypeError, ValueError, json.JSONDecodeError):
+                            logger.debug("Ignoring malformed WebSocket message", exc_info=True)
+                            continue
                         if isinstance(data, dict):
                             if data.get("type") == "pong":
                                 ping_id = data.get("ping_id")

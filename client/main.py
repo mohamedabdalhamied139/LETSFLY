@@ -15,8 +15,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from core_shared.version import BUILD as EXPECTED_BUILD
 
+def _env(name: str, default: str = "") -> str:
+    """Read TABLEVERSE_* settings, with legacy LETSFLY_* fallback."""
+    return os.getenv(name) or os.getenv(name.replace("TABLEVERSE_", "LETSFLY_"), default)
+
 def is_remote_server_configured() -> bool:
-    url = os.getenv("TABLEVERSE_SERVER_URL", "https://letsfly.onrender.com").strip() or "https://letsfly.onrender.com"
+    url = _env("TABLEVERSE_SERVER_URL", "https://letsfly.onrender.com").strip() or "https://letsfly.onrender.com"
     if not url:
         return False
     from urllib.parse import urlparse

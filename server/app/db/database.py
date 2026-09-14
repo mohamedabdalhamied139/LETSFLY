@@ -14,9 +14,13 @@ else:
 os.makedirs(APP_DIR, exist_ok=True)
 DB_PATH = os.path.join(APP_DIR, "tableverse_v2.db")
 
+def _env(name: str, default: str = "") -> str:
+    """Read TABLEVERSE_* settings, with legacy LETSFLY_* fallback."""
+    return os.getenv(name) or os.getenv(name.replace("TABLEVERSE_", "LETSFLY_"), default)
+
 def _database_url():
     configured = os.getenv("DATABASE_URL", "").strip()
-    environment = os.getenv("TABLEVERSE_ENV", "development").strip().lower()
+    environment = _env("TABLEVERSE_ENV", "development").strip().lower()
     if configured:
         # Render/Postgres providers sometimes expose the legacy postgres:// form.
         if configured.startswith("postgres://"):
@@ -41,8 +45,8 @@ else:
     engine = create_engine(
         DATABASE_URL,
         pool_pre_ping=True,
-        pool_size=int(os.getenv("TABLEVERSE_DB_POOL_SIZE", "5")),
-        max_overflow=int(os.getenv("TABLEVERSE_DB_MAX_OVERFLOW", "10")),
+        pool_size=int(_env("TABLEVERSE_DB_POOL_SIZE", "5")),
+        max_overflow=int(_env("TABLEVERSE_DB_MAX_OVERFLOW", "10")),
     )
 
 

@@ -34,6 +34,10 @@ from core_shared.time_utils import parse_timestamp, format_duration
 from core_shared.rules_config import RULE_DEFINITIONS
 from client.views.list_menu import ListMenu, SettingsListMenu
 from client.localization import tr, localize_widget_tree, install as install_localization, subscribe as subscribe_language_change, language
+from client.presentation.error_presenter import ErrorPresenter
+from client.presentation.sound_presenter import SoundPresenter
+from client.presentation.accessibility_presenter import AccessibilityPresenter
+from client.controllers.websocket_event_router import WebSocketEventRouter
 
 class AsyncSignals(QObject):
     success = Signal(object)
@@ -48,6 +52,10 @@ class TableVerseApp(QMainWindow):
 
         self.api = ApiClient()
         self.ws = WebSocketClient()
+        self.error_presenter = ErrorPresenter(reader, sound_engine, tr)
+        self.sound_presenter = SoundPresenter(sound_engine)
+        self.accessibility_presenter = AccessibilityPresenter(reader, tr)
+        self.ws_event_router = WebSocketEventRouter(self)
         self.user = None
         self.current_room = None
         self.uno_state = None
@@ -545,17 +553,7 @@ class TableVerseApp(QMainWindow):
         threading.Thread(target=worker, daemon=True).start()
 
     def _show_error(self, message: str):
-        text = str(message or "").strip()
-        if text.startswith("400: ") or text.startswith("403: ") or text.startswith("404: ") or text.startswith("409: "):
-            text = text[5:].strip()
-        invalid_markers = (
-            "ليس دورك", "غير صالح", "غير مناسب", "لا يمكنك السحب",
-            "الكارت المحدد", "لا يمكن الاعتراض", "كارت الاعتراض",
-            "غير كاف", "رصيدك"
-        )
-        if any(marker in text for marker in invalid_markers):
-            sound_engine.play_event("INVALID_ACTION")
-        reader.speak(tr(f"تنبيه: {text}"), interrupt=True)
+        self.error_presenter.show_error(message)
 
     # ---------- Auth Handlers ----------
     def _handle_login(self, u, p):

@@ -4,10 +4,15 @@ import json
 import httpx
 from typing import Optional, Any
 
+def _env(name: str, default: str = "") -> str:
+    """Read TABLEVERSE_* settings, with legacy LETSFLY_* fallback."""
+    return os.getenv(name) or os.getenv(name.replace("TABLEVERSE_", "LETSFLY_"), default)
+
+
 class ApiClient:
     def __init__(self, base_url: Optional[str] = None):
         if base_url is None:
-            base_url = os.getenv("TABLEVERSE_SERVER_URL", "https://letsfly.onrender.com").strip() or "https://letsfly.onrender.com"
+            base_url = _env("TABLEVERSE_SERVER_URL", "https://letsfly.onrender.com").strip() or "https://letsfly.onrender.com"
         self.base_url = base_url.rstrip("/")
         self.token: Optional[str] = None
         # Keep one pooled HTTP client for the lifetime of the desktop app.
