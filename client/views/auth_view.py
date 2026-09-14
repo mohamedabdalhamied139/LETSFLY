@@ -105,12 +105,27 @@ class AuthView(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.layout = QVBoxLayout(self)
+        # Main outer layout with centering
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setAlignment(Qt.AlignCenter)
+
+        # Card container with constrained max width
+        self.card_widget = QWidget(self)
+        self.card_widget.setMaximumWidth(460)
+        self.layout = QVBoxLayout(self.card_widget)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(12)
+
         self.title_label = QLabel(tr("تسجيل الدخول"))
         self.title_label.setAccessibleName(tr("عنوان الشاشة"))
+        self.title_label.setAlignment(Qt.AlignCenter)
+        self.title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 2px;")
         self.layout.addWidget(self.title_label)
 
         self.mode_label = QLabel(tr("وضع تسجيل الدخول"))
+        self.mode_label.setAlignment(Qt.AlignCenter)
+        self.mode_label.setStyleSheet("font-size: 14px; color: #a0a0a0; margin-bottom: 12px;")
         self.layout.addWidget(self.mode_label)
 
         self.display_name_input = QLineEdit()
@@ -145,6 +160,8 @@ class AuthView(QWidget):
         self.mode_btn = AccessibleButton(tr("الانتقال إلى إنشاء حساب"))
         self.mode_btn.clicked.connect(self.toggle_mode)
         self.layout.addWidget(self.mode_btn)
+
+        main_layout.addWidget(self.card_widget)
 
         self.password_input.returnPressed.connect(self._submit_current)
         self.username_input.returnPressed.connect(self._submit_current)
