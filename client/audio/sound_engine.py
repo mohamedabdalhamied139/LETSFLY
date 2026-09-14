@@ -327,19 +327,29 @@ class SoundEngine:
         self._ensure_initialized()
         prefix = f"{game_type.upper()}_"
         target_cues = {cue for cue in self.sounds if cue.startswith(prefix) or cue in ("TURN_START", "ROUND_START", "ROUND_END")}
+
+        def _warmup(eff):
+            try:
+                if getattr(eff, "_warmed_up", False):
+                    return
+                if eff.status() == QSoundEffect.Status.Ready:
+                    eff._warmed_up = True
+                    vol = eff.volume()
+                    eff.setVolume(0.0)
+                    eff.play()
+                    eff.stop()
+                    eff.setVolume(vol)
+            except Exception:
+                pass
+
         for cue in target_cues:
             effects = self.sounds.get(cue) or []
             for eff in effects:
                 try:
-                    if eff.status() == QSoundEffect.Status.Ready and not getattr(eff, "_warmed_up", False):
-                        vol = eff.volume()
-                        eff.setVolume(0.0)
-                        eff.play()
-                        eff.stop()
-                        eff.setVolume(vol)
-                        eff._warmed_up = True
+                    if eff.status() == QSoundEffect.Status.Ready:
+                        _warmup(eff)
                     else:
-                        _ = eff.status()
+                        eff.statusChanged.connect(lambda e=eff: _warmup(e))
                 except Exception:
                     pass
         from PySide6.QtWidgets import QApplication
