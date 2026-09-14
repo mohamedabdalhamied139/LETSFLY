@@ -38,6 +38,7 @@ from client.presentation.error_presenter import ErrorPresenter
 from client.presentation.sound_presenter import SoundPresenter
 from client.presentation.accessibility_presenter import AccessibilityPresenter
 from client.controllers.websocket_event_router import WebSocketEventRouter
+from client.controllers.auth_controller import AuthController
 
 class AsyncSignals(QObject):
     success = Signal(object)
@@ -56,6 +57,7 @@ class TableVerseApp(QMainWindow):
         self.sound_presenter = SoundPresenter(sound_engine)
         self.accessibility_presenter = AccessibilityPresenter(reader, tr)
         self.ws_event_router = WebSocketEventRouter(self)
+        self.auth_controller = AuthController(self)
         self.user = None
         self.current_room = None
         self.uno_state = None
@@ -154,7 +156,7 @@ class TableVerseApp(QMainWindow):
         self.table_view.tennisActionSubmitted.connect(self._handle_tennis_action)
         self.voice = VoiceChatManager(self.ws, self)
         self.voice.stateChanged.connect(self._on_voice_state_message)
-        self.wsEvent.connect(self._handle_ws_event)
+        self.wsEvent.connect(self.ws_event_router.route)
 
         # Polling Timer for Table State
         self.poll_timer = QTimer(self)
@@ -557,58 +559,10 @@ class TableVerseApp(QMainWindow):
 
     # ---------- Auth Handlers ----------
     def _handle_login(self, u, p):
-        self.stack.setCurrentWidget(self.login_loading_view)
-        sound_engine.play_looping("CONNECTING")
-        def done(res):
-            sound_engine.stop_looping("CONNECTING")
-            sound_engine.play_event("CONNECTED")
-            self.api.token = res.get("access_token")
-            self.user = res.get("user", {})
-            dname = self.user.get("display_name", u)
-            from client.settings_store import load_settings
-            from client.session_store import save_account_profile
-            if load_settings().get("general", {}).get("keep_credentials", True):
-                save_token(self.api.token)
-                save_account_profile(u, p, dname, active=True)
-            else:
-                clear_token()
-                clear_credentials()
-            self.home_view.set_user_greeting(dname)
-            self._start_session_clean(dname)
-        def fail(err):
-            sound_engine.stop_looping("CONNECTING")
-            self.stack.setCurrentIndex(0)
-            if u:
-                self.auth_view.username_input.setText(u)
-            if p:
-                self.auth_view.password_input.setText(p)
-            self._show_error(err)
-        self._run_async(lambda: self.api.login(u, p), done, fail)
+        self.auth_controller.login(u, p)
 
     def _handle_register(self, u, d, p):
-        sound_engine.play_looping("CONNECTING")
-        self.stack.setCurrentWidget(self.login_loading_view)
-        def done(res):
-            sound_engine.stop_looping("CONNECTING")
-            sound_engine.play_event("CONNECTED")
-            self.api.token = res.get("access_token")
-            self.user = res.get("user", {})
-            dname = self.user.get("display_name", d or u)
-            from client.settings_store import load_settings
-            from client.session_store import save_account_profile
-            if load_settings().get("general", {}).get("keep_credentials", True):
-                save_token(self.api.token)
-                save_account_profile(u, p, dname, active=True)
-            else:
-                clear_token()
-                clear_credentials()
-            self.home_view.set_user_greeting(dname)
-            self._start_session_clean(dname)
-        def fail(err):
-            sound_engine.stop_looping("CONNECTING")
-            self.stack.setCurrentIndex(0)
-            self._show_error(err)
-        self._run_async(lambda: self.api.register(u, d, p), done, fail)
+        self.auth_controller.register(u, d, p)
 
     def _on_activity_event_activated(self, event_data):
         et = event_data.get("event_type")
@@ -644,63 +598,7 @@ class TableVerseApp(QMainWindow):
 
 
     def _restore_saved_session(self):
-        from client.settings_store import load_settings
-        settings = load_settings()
-        from client.accessibility.reader import reader
-        reader.set_muted(settings.get("speech", {}).get("mute_all", False))
-        
-        keep = settings.get("general", {}).get("keep_credentials", True)
-        auto = settings.get("general", {}).get("auto_login", True)
-        
-        if not keep:
-            clear_token()
-            clear_credentials()
-            reader.speak(tr("مرحبًا بك في TableVerse. يرجى كتابة اسم المستخدم وكلمة المرور."))
-            QTimer.singleShot(100, lambda: self.auth_view.username_input.setFocus())
-            return
-
-        # keep_credentials is on — always pre-fill
-        saved_u, saved_p = load_credentials()
-        if saved_u and saved_p:
-            self.auth_view.username_input.setText(saved_u)
-            self.auth_view.password_input.setText(saved_p)
-
-        if auto:
-            # Try token-based auto login first
-            token = load_token()
-            if token:
-                sound_engine.play_looping("CONNECTING")
-                self.stack.setCurrentWidget(self.login_loading_view)
-                self.api.token = token
-                def done(res):
-                    sound_engine.stop_looping("CONNECTING")
-                    sound_engine.play_event("CONNECTED")
-                    self.user = res or {}
-                    dname = self.user.get("display_name", self.user.get("username", ""))
-                    self.home_view.set_user_greeting(dname)
-                    self._start_session_clean(dname, returning=True)
-                def failed(_):
-                    sound_engine.stop_looping("CONNECTING")
-                    clear_token(); self.api.token = None
-                    # Token expired: use saved credentials automatically.
-                    if saved_u and saved_p:
-                        self._handle_login(saved_u, saved_p)
-                    else:
-                        self.stack.setCurrentIndex(0)
-                        reader.speak(tr("تعذر الدخول التلقائي. يرجى كتابة بيانات الدخول."))
-                        QTimer.singleShot(100, lambda: self.auth_view.username_input.setFocus())
-                self._run_async(self.api.me, done, failed)
-                return
-
-        # No auto_login or no token — pre-fill and wait for user
-        if saved_u and saved_p:
-            self.auth_view.username_input.setText(saved_u)
-            self.auth_view.password_input.setText(saved_p)
-            reader.speak(tr("مرحبًا بك. بياناتك محفوظة، اضغط تسجيل الدخول."))
-            QTimer.singleShot(100, lambda: self.auth_view.login_btn.setFocus())
-        else:
-            reader.speak(tr("مرحبًا بك في TableVerse. يرجى كتابة اسم المستخدم وكلمة المرور."))
-            QTimer.singleShot(100, lambda: self.auth_view.username_input.setFocus())
+        self.auth_controller.restore_saved_session()
 
     def _start_session_clean(self, dname, returning=False):
         """Start a fresh activity session: stale events never survive a relaunch."""
