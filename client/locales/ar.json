@@ -3366,5 +3366,7 @@
   "Speaking": "يتحدث",
   "Send message to {name}": "إرسال رسالة إلى {name}",
   "Only the host can change voice chat mode.": "تغيير وضع المحادثة الصوتية متاح للقائد فقط.",
-  "Invalid voice mode.": "وضع صوت غير صالح."
+  "Invalid voice mode.": "وضع صوت غير صالح.",
+  "{name}'s turn": "دور {name}",
+  "Game over!": "نهاية اللعبة!"
 }

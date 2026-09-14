@@ -3392,5 +3392,7 @@
   "Speaking": "Speaking",
   "Send message to {name}": "Send message to {name}",
   "Only the host can change voice chat mode.": "Only the host can change voice chat mode.",
-  "Invalid voice mode.": "Invalid voice mode."
+  "Invalid voice mode.": "Invalid voice mode.",
+  "{name}'s turn": "{name}'s turn",
+  "Game over!": "Game over!"
 }
