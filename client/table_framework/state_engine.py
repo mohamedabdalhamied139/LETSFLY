@@ -23,6 +23,10 @@ class ClientStateEngine:
         is_match_over = bool(
             state.get("winner_id") is not None
             or state.get("winning_team") is not None
+            or state.get("match_winner_id") is not None
+            or bool(state.get("match_finished"))
+            or str(state.get("event_type", "")).upper() in ("MATCH_WON", "MATCH_FINISHED")
+            or str(state.get("phase", "")).lower() == "match_finished"
             or (getattr(app, "current_room", None) or {}).get("status") in ("match_finished", "waiting")
         )
         keep_scopa_hand = (
@@ -31,8 +35,15 @@ class ClientStateEngine:
             and not is_match_over
             and bool(state.get("final_play_action"))
         )
-        app.table_view.set_playing_mode((is_active and not is_round_finished) or keep_scopa_hand)
-        view_update_callback(is_active, is_round_finished)
+        app.table_view.set_playing_mode(((is_active and not is_round_finished) or keep_scopa_hand) and not is_match_over)
+        view_update_callback(is_active and not is_match_over, is_round_finished)
+
+        if is_match_over:
+            if hasattr(app.table_view, "clear_hand_for_round_transition"):
+                app.table_view.clear_hand_for_round_transition()
+            if hasattr(app.table_view, "main_table_widget"):
+                app.table_view.main_table_widget.show()
+                app.table_view.main_table_widget.setFocus()
 
         if is_active and not is_round_finished:
             sound_engine.preload_game_sounds(game_type)
@@ -219,6 +230,7 @@ class ClientStateEngine:
         # produce "دورك" / another player's turn announcement.
         is_turn_allowed = (
             is_active and not is_round_finished
+            and not is_match_over
             and not state.get("pending_deal_batch")
             and not state.get("pending_round_finalize")
             and state.get("event_type") not in ("MATCH_WON", "MATCH_FINISHED", "ROUND_FINISHED", "ROUND_END")
