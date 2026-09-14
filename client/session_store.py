@@ -5,9 +5,12 @@ blob to the current Windows user account and machine profile.
 """
 from pathlib import Path
 import os
+import logging
 import base64
 import ctypes
 from ctypes import wintypes
+
+logger = logging.getLogger("tableverse.session_store")
 
 APP_DIR = Path(os.getenv("APPDATA") or (Path.home() / ".tableverse")) / "TableVerse"
 SESSION_FILE = APP_DIR / "session.dat"
@@ -30,7 +33,8 @@ if os.name == "nt":
             _kernel.LocalFree(out.pbData)
 else:
     def _dpapi(data: bytes, decrypt: bool = False) -> bytes:
-        # Safe fallback for development and non-Windows testing environments
+        # Development / non-Windows test fallback. Note: Plain base64 encoding does NOT provide OS-level encryption.
+        logger.warning("Non-Windows OS detected; DPAPI is unavailable. Session data is stored using base64 fallback.")
         return data
 
 def _session_file() -> Path:

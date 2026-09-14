@@ -1,4 +1,5 @@
-"""Persistent activity feed API. The same event model powers home and tables."""
+import json, time, threading
+from collections import defaultdict
 from fastapi import APIRouter, Depends, Query, HTTPException, Body
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -8,6 +9,19 @@ from server.app.api.users import get_current_user
 
 router = APIRouter(prefix="/api/activity", tags=["activity"])
 _VALID_CATEGORIES = {"TABLE_CHAT", "PRIVATE_MESSAGES", "FRIENDS", "GAMEPLAY", "FRIEND_REQUESTS", "INVITATIONS", "GIFTS"}
+_activity_rate_limits = defaultdict(list)
+_activity_rate_limit_lock = threading.Lock()
+
+def _check_activity_rate_limit(user_id: int, max_requests: int = 60, window_seconds: float = 60.0) -> None:
+    now = time.monotonic()
+    key = str(user_id)
+    with _activity_rate_limit_lock:
+        times = _activity_rate_limits[key]
+        while times and now - times[0] >= window_seconds:
+            times.pop(0)
+        if len(times) >= max_requests:
+            raise HTTPException(429, "تم تجاوز حد استعلامات النشاط مؤقتًا. حاول بعد قليل.")
+        times.append(now)
 
 
 class ActivityReadRequest(BaseModel):
@@ -15,11 +29,21 @@ class ActivityReadRequest(BaseModel):
     category: str | None = None
 
 
+def _safe_parse_payload(payload_str: str | None) -> dict:
+    if not payload_str:
+        return {}
+    try:
+        data = json.loads(payload_str)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
 def _serialize(e):
     return {
         "id": e.id, "category": e.category, "event_type": e.event_type,
         "text": e.text, "actor_id": e.actor_id, "room_id": e.room_id,
-        "created_at": e.created_at.isoformat(), "is_read": bool(e.is_read), "payload": __import__("json").loads(e.payload or "{}"),
+        "created_at": e.created_at.isoformat(), "is_read": bool(e.is_read), "payload": _safe_parse_payload(e.payload),
     }
 
 
@@ -30,6 +54,7 @@ def activity(
     before_id: int | None = Query(None, ge=1),
     category: str | None = Query(None),
 ):
+    _check_activity_rate_limit(user.id, max_requests=60, window_seconds=60.0)
     category = category.upper().strip() if category else None
     if category == "ALL":
         category = None

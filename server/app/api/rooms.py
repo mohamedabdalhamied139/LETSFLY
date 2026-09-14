@@ -1,4 +1,6 @@
 import asyncio
+import hashlib
+import hmac
 import logging
 import time
 import threading
@@ -89,6 +91,22 @@ async def _consume_game_action_budget(room_id: str, user_id: int) -> None:
 def _require_room_member(room, user: User) -> None:
     if (user.id not in room.players and user.id not in room.spectators) or user.id in room.banned_players:
         raise HTTPException(403, "أنت لست عضوًا في هذه الطاولة.")
+
+
+def _can_access_private_room(room, user: User, db: Session) -> bool:
+    """Return True if user is authorized to view or join a private room."""
+    if user.id in room.banned_players:
+        return False
+    # Host, existing players, and existing spectators are authorized
+    if user.id == room.host_id or user.id in room.players or user.id in room.spectators:
+        return True
+    # An active pending invitation to this room authorizes access
+    has_invite = db.query(ChallengeInvitation).filter(
+        ChallengeInvitation.room_id == room.room_id,
+        ChallengeInvitation.recipient_id == user.id,
+        ChallengeInvitation.status == "pending",
+    ).first() is not None
+    return has_invite
 
 
 def _spend_coins(db: Session, user: User, amount: int, reason: str, *, commit: bool = True) -> int:
@@ -259,10 +277,7 @@ async def save_room(room_id: str, user: User = Depends(get_current_user), db: Se
     if current_count >= 4:
         raise HTTPException(400, "لا يمكنك حفظ أكثر من 4 طاولات.")
 
-    # Deduct 2 coins for saving
-    _spend_coins(db, user, 2, "حفظ طاولة", commit=True)
-
-    # Serialize engine snapshot
+    # Validate plugin and engine preconditions BEFORE deducting coins
     plugin = get_plugin(room.game)
     if not plugin:
         raise HTTPException(400, "اللعبة غير مدعومة للحفظ.")
@@ -270,14 +285,19 @@ async def save_room(room_id: str, user: User = Depends(get_current_user), db: Se
     if not engine:
         raise HTTPException(400, "حالة اللعبة غير متوفرة للحفظ.")
 
+    # Ensure engine state is serializable before debiting coins
     try:
-        serialized_engine = pickle.dumps(engine)
+        raw_engine_bytes = pickle.dumps(engine)
     except Exception as exc:
         logger.exception("Failed to pickle engine for room %s: %s", room_id, exc)
-        _refund_coins(db, user, 2, "استرجاع عملات فشل حفظ الطاولة")
         raise HTTPException(500, "تعذر حفظ حالة اللعبة برمجياً.")
 
-    # Prepare opponents summary
+    # Sign serialized engine with HMAC to protect integrity against tampering
+    from server.app.core.security import SECRET_KEY
+    sig = hmac.new(SECRET_KEY.encode("utf-8"), raw_engine_bytes, hashlib.sha256).digest()
+    serialized_engine = sig + raw_engine_bytes
+
+    # Prepare opponents summary and player info before debit
     opponents = []
     for uid in room.players:
         if uid != user.id:
@@ -294,6 +314,9 @@ async def save_room(room_id: str, user: User = Depends(get_current_user), db: Se
             "name": room.player_names.get(uid, "لاعب"),
             "is_bot": uid < 0
         })
+
+    # All preconditions verified: deduct 2 coins for saving
+    _spend_coins(db, user, 2, "حفظ طاولة", commit=True)
 
     now = datetime.now(timezone.utc)
     expires = now + timedelta(days=30)
@@ -388,12 +411,27 @@ async def restore_saved_table(saved_id: int, user: User = Depends(get_current_us
     if room_manager.user_in_any_room(user.id):
         raise HTTPException(400, "يجب مغادرة طاولتك الحالية أولاً لاسترجاع طاولة محفوظة.")
 
-    # Deserialize engine
-    try:
-        engine = pickle.loads(record.serialized_engine)
-    except Exception as exc:
-        logger.exception("Failed to unpickle saved engine: %s", exc)
-        raise HTTPException(500, "تعذر استعادة حالة اللعبة.")
+    # Verify HMAC integrity and deserialize engine
+    from server.app.core.security import SECRET_KEY
+    blob = record.serialized_engine
+    if not blob or len(blob) < 32:
+        raise HTTPException(400, "بيانات الطاولة المحفوظة تالفة أو غير صالحة.")
+    sig = blob[:32]
+    payload_data = blob[32:]
+    expected_sig = hmac.new(SECRET_KEY.encode("utf-8"), payload_data, hashlib.sha256).digest()
+    if not hmac.compare_digest(sig, expected_sig):
+        # Backward-compatibility fallback: check if payload was unpicklable plain legacy data
+        try:
+            legacy_engine = pickle.loads(blob)
+            engine = legacy_engine
+        except Exception:
+            raise HTTPException(400, "بيانات الطاولة المحفوظة غير صالحة أو تم التلاعب بها.")
+    else:
+        try:
+            engine = pickle.loads(payload_data)
+        except Exception as exc:
+            logger.exception("Failed to unpickle saved engine: %s", exc)
+            raise HTTPException(400, "تعذر استعادة حالة اللعبة.")
 
     # Build and register room
     try:
@@ -495,17 +533,8 @@ async def get_room(room_id: str, user: User = Depends(get_current_user), db: Ses
     if not room:
         raise HTTPException(404, "الطاولة غير موجودة.")
     rules = room.rules or {}
-    if bool(rules.get("private", False)):
-        # Private table access check: must be host, participant, spectator, or possess a pending invite
-        is_member = user.id == room.host_id or user.id in room.players or user.id in room.spectators
-        if not is_member:
-            has_invite = db.query(ChallengeInvitation).filter(
-                ChallengeInvitation.room_id == room.room_id,
-                ChallengeInvitation.recipient_id == user.id,
-                ChallengeInvitation.status == "pending",
-            ).first() is not None
-            if not has_invite:
-                raise HTTPException(403, "هذه الطاولة خاصة ولا يمكن عرضها.")
+    if bool(rules.get("private", False)) and not _can_access_private_room(room, user, db):
+        raise HTTPException(403, "هذه الطاولة خاصة ولا يمكن عرضها.")
     async with room._mutation_lock:
         current = room_manager.get_room(room_id)
         if current is None:
@@ -597,17 +626,8 @@ async def join_room(room_id: str, as_spectator: bool = False, user: User = Depen
         return room.public_dict(user.id)
 
     rules = room.rules or {}
-    if bool(rules.get("private", False)):
-        # Private table access check: must be host, player, spectator, or possess a pending invite
-        is_member = user.id == room.host_id or user.id in room.players or user.id in room.spectators
-        if not is_member:
-            has_invite = db.query(ChallengeInvitation).filter(
-                ChallengeInvitation.room_id == room.room_id,
-                ChallengeInvitation.recipient_id == user.id,
-                ChallengeInvitation.status == "pending",
-            ).first() is not None
-            if not has_invite:
-                raise HTTPException(403, "هذه الطاولة خاصة ولا يمكن الانضمام إليها.")
+    if bool(rules.get("private", False)) and not _can_access_private_room(room, user, db):
+        raise HTTPException(403, "هذه الطاولة خاصة ولا يمكن الانضمام إليها.")
 
     # Join Policy Check & Block Check
     host = db.query(User).filter(User.id == room.host_id).first()
@@ -1047,6 +1067,8 @@ async def kick_player(room_id: str, req: TargetUserRequest, user: User = Depends
         raise HTTPException(403, "طرد اللاعبين متاح للقائد أو نائب القائد فقط.")
     if room.status != "waiting":
         raise HTTPException(400, "لا يمكن طرد لاعب أثناء اللعب.")
+    if req.target_user_id is None:
+        raise HTTPException(400, "يجب تحديد معرف اللاعب المستهدف.")
     target_id = req.target_user_id
     if target_id == room.host_id:
         raise HTTPException(400, "لا يمكن طرد قائد الطاولة.")
@@ -1082,6 +1104,8 @@ async def ban_player(room_id: str, req: TargetUserRequest, user: User = Depends(
         raise HTTPException(403, "حظر اللاعبين متاح للقائد أو نائب القائد فقط.")
     if room.status != "waiting":
         raise HTTPException(400, "لا يمكن حظر لاعب أثناء اللعب.")
+    if req.target_user_id is None:
+        raise HTTPException(400, "يجب تحديد معرف اللاعب المستهدف.")
     target_id = req.target_user_id
     if target_id == room.host_id:
         raise HTTPException(400, "لا يمكن حظر قائد الطاولة.")
@@ -1122,6 +1146,8 @@ async def voice_mute_player(room_id: str, req: TargetUserRequest, user: User = D
         raise HTTPException(404, "الطاولة غير موجودة.")
     if user.id != room.host_id:
         raise HTTPException(403, "كتم ميكروفون اللاعبين متاح للقائد فقط.")
+    if req.target_user_id is None:
+        raise HTTPException(400, "يجب تحديد معرف اللاعب المستهدف.")
     target_id = req.target_user_id
     async with room._mutation_lock:
         _require_voice_moderation_target(room, user, target_id)
@@ -1147,6 +1173,8 @@ async def voice_kick_player(room_id: str, req: TargetUserRequest, user: User = D
         raise HTTPException(404, "الطاولة غير موجودة.")
     if user.id != room.host_id:
         raise HTTPException(403, "إزالة اللاعبين من المحادثة الصوتية متاح للقائد فقط.")
+    if req.target_user_id is None:
+        raise HTTPException(400, "يجب تحديد معرف اللاعب المستهدف.")
     target_id = req.target_user_id
     async with room._mutation_lock:
         _require_voice_moderation_target(room, user, target_id)
@@ -1167,6 +1195,8 @@ async def voice_ban_player(room_id: str, req: TargetUserRequest, user: User = De
         raise HTTPException(404, "الطاولة غير موجودة.")
     if user.id != room.host_id:
         raise HTTPException(403, "حظر اللاعبين من المحادثة الصوتية متاح للقائد فقط.")
+    if req.target_user_id is None:
+        raise HTTPException(400, "يجب تحديد معرف اللاعب المستهدف.")
     target_id = req.target_user_id
     async with room._mutation_lock:
         _require_voice_moderation_target(room, user, target_id)

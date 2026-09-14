@@ -12,11 +12,27 @@ from server.app.hub.ws_manager import ws_manager
 from server.app.hub.room_manager import room_manager
 from server.app.social_services import friend_ids, is_blocked, mute_flags, profile_payload, h2h, gift_fee, GAME_LABELS
 
+from collections import defaultdict
+
 router = APIRouter(prefix="/api", tags=["social"])
 logger = logging.getLogger("tableverse.social_api")
 _gift_lock = threading.Lock()
 _challenge_accept_lock = threading.Lock()
+_challenge_create_lock = threading.Lock()
 _pm_send_lock = threading.Lock()
+_rate_limits = defaultdict(list)
+_rate_limit_lock = threading.Lock()
+
+def _check_rate_limit(user_id: int, action: str, max_requests: int, window_seconds: float) -> None:
+    now = time.monotonic()
+    key = f"{user_id}:{action}"
+    with _rate_limit_lock:
+        times = _rate_limits[key]
+        while times and now - times[0] >= window_seconds:
+            times.pop(0)
+        if len(times) >= max_requests:
+            raise HTTPException(429, "تم تجاوز حد الطلبات المسموح به مؤقتًا. حاول بعد قليل.")
+        times.append(now)
 
 @contextmanager
 def _locked_transaction(db, statement):
@@ -62,6 +78,7 @@ def _enrich_user(u, online_set, friends_set=None):
 
 @router.get("/users/search")
 def search_users(q: str = "", user=Depends(get_current_user), db:Session=Depends(get_db)):
+    _check_rate_limit(user.id, "search", max_requests=30, window_seconds=10.0)
     q=str(q or "").strip()
     if len(q) < 2: return {"users": []}
     rows=db.query(User).filter(User.username.ilike(f"%{q}%"), User.id!=user.id).order_by(func.lower(User.username)).limit(50).all()
@@ -315,6 +332,7 @@ def get_blocked_users(user=Depends(get_current_user), db: Session=Depends(get_db
 
 @router.post("/users/{user_id}/challenge")
 def challenge(user_id:int,payload:dict|None=None,user=Depends(get_current_user),db:Session=Depends(get_db)):
+    _check_rate_limit(user.id, "challenge", max_requests=10, window_seconds=30.0)
     if user_id==user.id: raise HTTPException(400,"لا يمكنك تحدي نفسك.")
     target=db.query(User).filter(User.id==user_id).first()
     if not target: raise HTTPException(404,"المستخدم غير موجود.")
@@ -329,31 +347,66 @@ def challenge(user_id:int,payload:dict|None=None,user=Depends(get_current_user),
     game=str((payload or {}).get("game") or "UNO").upper()
     from server.app.games.registry import get_plugin
     if not get_plugin(game): raise HTTPException(400,"اللعبة غير متاحة.")
-    # Challenge cost is exactly 3 coins: 2 to open the table + 1 invitation fee.
-    from sqlalchemy import update
-    result=db.execute(update(User).where(User.id==user.id).where(User.coins>=3).values(coins=User.coins-3))
-    if result.rowcount != 1: raise HTTPException(400,"رصيدك غير كافٍ. تحتاج إلى 3 عملات.")
-    db.add(CoinTransaction(user_id=user.id,amount=-2,reason="challenge:open_table"))
-    db.add(CoinTransaction(user_id=user.id,amount=-1,reason="challenge:invite"))
-    room=room_manager.build_room(host_id=user.id,host_name=user.display_name,game=game)
-    inv=ChallengeInvitation(sender_id=user.id,recipient_id=user_id,status="pending",room_id=room.room_id,game=game); db.add(inv); db.flush()
-    event = create_event(db,user_id,"INVITATIONS",f"{user.display_name} دعاك للعب {GAME_LABELS.get(game,game)}.",event_type="CHALLENGE_INVITATION",actor_id=user.id,room_id=room.room_id,payload={"invitation_id":inv.id,"room_id":room.room_id,"game":game,"sender_id":user.id,"sender":user.display_name})
-    db.commit()
-    room_manager.register_room(room)
-    ws_manager.broadcast_lobby({"type":"room_created","room_id":room.room_id,"game":game})
-    flags=mute_flags(db,user_id,user.id)
-    ws_manager.broadcast_user(user_id,{
-        "type":"activity_event",
-        "id": int(event.id) if event.id is not None else None,
-        "category":"INVITATIONS",
-        "event_type":"CHALLENGE_INVITATION",
-        "text":f"{user.display_name} دعاك للعب {GAME_LABELS.get(game,game)}.",
-        "actor_id":user.id,
-        "room_id":room.room_id,
-        "payload":{"invitation_id":inv.id, "room_id":room.room_id, "game":game, "sender_id":user.id, "sender":user.display_name},
-        "notification_muted":bool(flags["all"] or flags["invitations"])
-    })
-    return {"ok":True,"id":inv.id,"room_id":room.room_id,"game":game,"coins_charged":3}
+
+    # Acquire process-level challenge creation lock to serialize room creation and coin debits
+    with _challenge_create_lock:
+        if room_manager.user_in_any_room(user.id): raise HTTPException(409,"أنت داخل طاولة حاليًا.")
+        if room_manager.user_in_any_room(user_id): raise HTTPException(409,"اللاعب موجود حاليًا في طاولة.")
+
+        # Build room first to validate room limits and parameters before deducting coins
+        try:
+            room = room_manager.build_room(host_id=user.id, host_name=user.display_name, game=game)
+        except Exception as exc:
+            raise HTTPException(409, str(exc))
+
+        # Register room in memory under the lock before committing the DB transaction
+        try:
+            room_manager.register_room(room)
+        except Exception as exc:
+            raise HTTPException(409, str(exc))
+
+        room_registered = True
+        try:
+            # Challenge cost is exactly 3 coins: 2 to open the table + 1 invitation fee.
+            from sqlalchemy import update
+            result = db.execute(update(User).where(User.id == user.id).where(User.coins >= 3).values(coins=User.coins - 3))
+            if result.rowcount != 1:
+                raise HTTPException(400, "رصيدك غير كافٍ. تحتاج إلى 3 عملات.")
+            db.add(CoinTransaction(user_id=user.id, amount=-2, reason="challenge:open_table"))
+            db.add(CoinTransaction(user_id=user.id, amount=-1, reason="challenge:invite"))
+            inv = ChallengeInvitation(sender_id=user.id, recipient_id=user_id, status="pending", room_id=room.room_id, game=game)
+            db.add(inv)
+            db.flush()
+            event = create_event(
+                db, user_id, "INVITATIONS", f"{user.display_name} دعاك للعب {GAME_LABELS.get(game,game)}.",
+                event_type="CHALLENGE_INVITATION", actor_id=user.id, room_id=room.room_id,
+                payload={"invitation_id": inv.id, "room_id": room.room_id, "game": game, "sender_id": user.id, "sender": user.display_name}
+            )
+            db.commit()
+        except Exception:
+            db.rollback()
+            if room_registered:
+                room_manager.delete_room(room.room_id)
+            raise
+
+    # Delivery/broadcast is best effort and must not roll back the committed transaction
+    try:
+        ws_manager.broadcast_lobby({"type": "room_created", "room_id": room.room_id, "game": game})
+        flags = mute_flags(db, user_id, user.id)
+        ws_manager.broadcast_user(user_id, {
+            "type": "activity_event",
+            "id": int(event.id) if event.id is not None else None,
+            "category": "INVITATIONS",
+            "event_type": "CHALLENGE_INVITATION",
+            "text": f"{user.display_name} دعاك للعب {GAME_LABELS.get(game,game)}.",
+            "actor_id": user.id,
+            "room_id": room.room_id,
+            "payload": {"invitation_id": inv.id, "room_id": room.room_id, "game": game, "sender_id": user.id, "sender": user.display_name},
+            "notification_muted": bool(flags["all"] or flags["invitations"])
+        })
+    except Exception:
+        logger.warning("Challenge notification delivery failed for invitation %s", inv.id, exc_info=True)
+    return {"ok": True, "id": inv.id, "room_id": room.room_id, "game": game, "coins_charged": 3}
 
 @router.post("/invitations/{invitation_id}/accept")
 async def accept_challenge(invitation_id:int,user=Depends(get_current_user),db:Session=Depends(get_db)):
@@ -475,6 +528,7 @@ def gift(user_id:int,payload:dict,user=Depends(get_current_user),db:Session=Depe
 
 @router.post("/feedback")
 def send_feedback(payload:dict,user=Depends(get_current_user),db:Session=Depends(get_db)):
+    _check_rate_limit(user.id, "feedback", max_requests=5, window_seconds=60.0)
     from server.app.db.database import Feedback
     message=str((payload or {}).get("message") or "").strip()
     if not message: raise HTTPException(400,"الرسالة لا يمكن أن تكون فارغة.")

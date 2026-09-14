@@ -760,6 +760,8 @@ def test_scopa_round_finished_staggers_round_end_sound_when_final_play_announced
     from client.client_app import TableVerseApp
 
     app = MagicMock(spec=TableVerseApp)
+    from client.controllers.websocket_event_router import WebSocketEventRouter
+    app.ws_event_router = WebSocketEventRouter(app)
     app.current_room = {"id": "room1"}
     app.table_view = MagicMock()
 
@@ -943,6 +945,8 @@ def test_round_summary_not_spoken_twice_on_final_state_and_round_finished():
     from client.table_framework.state_engine import ClientStateEngine
 
     app = MagicMock(spec=TableVerseApp)
+    from client.controllers.websocket_event_router import WebSocketEventRouter
+    app.ws_event_router = WebSocketEventRouter(app)
     app.user = {"id": 10}
     app.current_room = {"id": "test_room"}
     app.table_view = MagicMock()
@@ -980,13 +984,15 @@ def test_round_summary_not_spoken_twice_on_final_state_and_round_finished():
                     with patch("client.client_app.QTimer.singleShot", side_effect=lambda delay, fn: fn()):
                         with patch("client.client_app.sound_engine.play_event"):
                             # 1. WS scopa_round_finished arrives
+                            from client.localization import tr
+                            expected_spoken = tr(summary_text)
                             TableVerseApp._handle_ws_event(app, ws_event)
-                            assert spoken.count(summary_text) == 1
+                            assert spoken.count(expected_spoken) == 1
 
                             # 2. final_state from scopa_action arrives
                             ClientStateEngine.process_common_state(app, "SCOPA", final_state, lambda a, r: None)
                             # Verify still spoken only once!
-                            assert spoken.count(summary_text) == 1
+                            assert spoken.count(expected_spoken) == 1
 
 
 def test_scopa_custom_teams_and_dynamic_ampersand_naming():

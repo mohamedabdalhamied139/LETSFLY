@@ -23,9 +23,12 @@ def create_event(db: Session, recipient_id: int, category: str, text: str,
     category = str(category).upper()
     if category not in CATEGORIES or category == "ALL":
         raise ValueError("Invalid activity category")
+    # Neutralize control characters and newlines for safe logging and activity storage
+    import re
+    safe_text = " ".join(re.sub(r"[\x00-\x1f\x7f-\x9f]", " ", str(text or "")).split())[:1000]
     event = ActivityEvent(
         recipient_id=int(recipient_id), category=category, event_type=str(event_type),
-        text=str(text)[:1000], actor_id=actor_id, room_id=room_id,
+        text=safe_text, actor_id=actor_id, room_id=room_id,
         payload=json.dumps(payload or {}, ensure_ascii=False),
         created_at=datetime.now(timezone.utc),
     )
