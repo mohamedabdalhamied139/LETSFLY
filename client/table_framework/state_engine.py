@@ -118,11 +118,12 @@ class ClientStateEngine:
             if scopa_round_finished:
                 event_cues = ()
             elif game_type in ("SCOPA", "NINETY_NINE", "DOMINO") and len(event_cues) > 1:
+                cue_step = 70 if game_type == "SCOPA" else 180
                 for delay, event_cue in enumerate(event_cues):
                     if delay == 0:
                         sound_engine.play_event(event_cue)
                     else:
-                        QTimer.singleShot(delay * 180, lambda c=event_cue: sound_engine.play_event(c))
+                        QTimer.singleShot(delay * cue_step, lambda c=event_cue: sound_engine.play_event(c))
             else:
                 for event_cue in event_cues:
                     sound_engine.play_event(event_cue)

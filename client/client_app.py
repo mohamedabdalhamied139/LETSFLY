@@ -2112,7 +2112,7 @@ class TableVerseApp(QMainWindow):
             self._seen_scopa_final_plays.clear()
             self._seen_scopa_final_plays.add(key)
         for delay, cue in enumerate(sound_engine.event_cues("SCOPA", event_type, event)):
-            QTimer.singleShot(delay * 180, lambda name=cue: sound_engine.play_event(name))
+            QTimer.singleShot(delay * 70, lambda name=cue: sound_engine.play_event(name))
         reader.speak(tr(action), interrupt=False)
         return True
 

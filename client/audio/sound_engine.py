@@ -326,14 +326,15 @@ class SoundEngine:
         """Pre-decode sound effects for a game so the first trigger has zero disk/decode latency."""
         self._ensure_initialized()
         prefix = f"{game_type.upper()}_"
-        for cue, effects in self.sounds.items():
-            if cue.startswith(prefix) and effects:
-                for eff in effects:
-                    try:
-                        # Touch status to force decoder readiness
-                        _ = eff.status()
-                    except Exception:
-                        pass
+        target_cues = {cue for cue in self.sounds if cue.startswith(prefix) or cue in ("TURN_START", "ROUND_START", "ROUND_END")}
+        for cue in target_cues:
+            effects = self.sounds.get(cue) or []
+            for eff in effects:
+                try:
+                    # Touch status to force decoder readiness
+                    _ = eff.status()
+                except Exception:
+                    pass
 
     def event_cues(self, game_type: str, event_type: str, state: dict | None = None) -> tuple[str, ...]:
         """Resolve sounds while preserving every game's existing gameplay cues."""
