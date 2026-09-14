@@ -290,6 +290,14 @@ class TranslationManager:
                 return self._ar_catalog[s]
             if s in self._en_to_ar_reverse:
                 return self._en_to_ar_reverse[s]
+
+            stripped = s.strip()
+            if stripped in self._ar_catalog:
+                trans = self._ar_catalog[stripped]
+                leading = s[:len(s) - len(s.lstrip())]
+                trailing = s[len(s.rstrip()):]
+                return f"{leading}{trans}{trailing}"
+
             # Translate known localized list members without touching arbitrary
             # runtime text such as player names. This covers card/suit lists in
             # game announcements that are joined with Arabic or English commas.
@@ -299,14 +307,14 @@ class TranslationManager:
                     translated_parts = [self._ar_catalog.get(part, self._en_to_ar_reverse.get(part, part)) for part in parts]
                     if all(tp != part for tp, part in zip(translated_parts, parts)):
                         return sep.join(translated_parts)
-            # Strip trailing punctuation for reverse lookup
-            stripped = s.strip()
-            for punct in ("...", ".", "!", "?", ":", ","):
+
+            # Strip trailing punctuation for catalog and reverse lookup
+            for punct in ("...", ".", "!", "?", "؟", ":", ","):
                 if stripped.endswith(punct):
                     core = stripped[:-len(punct)].rstrip()
-                    if core in self._en_to_ar_reverse:
-                        trans_core = self._en_to_ar_reverse[core]
-                        ar_punct = "؟" if punct == "?" else punct
+                    trans_core = self._ar_catalog.get(core, self._en_to_ar_reverse.get(core))
+                    if trans_core:
+                        ar_punct = "؟" if punct in ("?", "؟") else punct
                         leading = s[:len(s) - len(s.lstrip())]
                         return f"{leading}{trans_core}{ar_punct}"
             return s
