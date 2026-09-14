@@ -247,11 +247,11 @@ class TranslationManager:
         if callback in self._callbacks:
             self._callbacks.remove(callback)
 
-    def tr(self, text: Any, *args: Any, **kwargs: Any) -> Any:
+    def tr(self, _text: Any = None, *args: Any, **kwargs: Any) -> Any:
         """Translate text at runtime using centralized catalog with safe fallback and parameter interpolation."""
-        if text is None:
-            return text
-        s = str(text)
+        if _text is None:
+            return _text
+        s = str(_text)
         if not s or not s.strip():
             return s
 
@@ -745,8 +745,8 @@ class TranslationManager:
 translation_manager = TranslationManager()
 loc = translation_manager
 
-def tr(text: Any, *args: Any, **kwargs: Any) -> Any:
-    return translation_manager.tr(text, *args, **kwargs)
+def tr(_text: Any = None, *args: Any, **kwargs: Any) -> Any:
+    return translation_manager.tr(_text, *args, **kwargs)
 
 def translate(key: Any, *args: Any, **kwargs: Any) -> Any:
     return translation_manager.translate(str(key), *args, **kwargs)

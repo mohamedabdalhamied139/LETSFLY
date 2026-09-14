@@ -134,6 +134,7 @@
   "اسم المستخدم مسجل مسبقًا.": "Username is already registered.",
   "اسم المستخدم أو كلمة المرور غير صحيحة.": "Invalid username or password.",
   "تم إنشاء الحساب بنجاح.": "Account created successfully.",
+  "تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول.": "Registration successful. You can log in now.",
   "فشل تسجيل الدخول:": "Login failed:",
   "فشل إنشاء الحساب:": "Account creation failed:",
   "شاشة تسجيل الدخول.": "Login screen.",

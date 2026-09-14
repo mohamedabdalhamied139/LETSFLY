@@ -51,7 +51,10 @@ class AuthController:
                 self.app.auth_view.username_input.setText(username)
             if password:
                 self.app.auth_view.password_input.setText(password)
-            self.app._show_error(err)
+            clean_err = self.app.error_presenter.clean_message(err)
+            from client.views.list_menu import show_message_dialog
+            show_message_dialog(self.app, clean_err, title="خطأ")
+            self.app.auth_view.username_input.setFocus()
 
         self.app._run_async(lambda: self.app.api.login(username, password), done, fail)
 
@@ -63,24 +66,18 @@ class AuthController:
         def done(res: dict):
             sound_engine.stop_looping("CONNECTING")
             sound_engine.play_event("CONNECTED")
-            self.app.api.token = res.get("access_token")
-            self.app.user = res.get("user", {})
-            dname = self.app.user.get("display_name", display_name or username)
-            
-            if load_settings().get("general", {}).get("keep_credentials", True):
-                save_token(self.app.api.token)
-                save_account_profile(username, password, dname, active=True)
-            else:
-                clear_token()
-                clear_credentials()
-
-            self.app.home_view.set_user_greeting(dname)
-            self.app._start_session_clean(dname)
+            self.app.stack.setCurrentIndex(0)
+            from client.views.list_menu import show_message_dialog
+            show_message_dialog(self.app, "تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول.", title="نجاح")
+            self.app.auth_view.switch_to_login()
 
         def fail(err: str):
             sound_engine.stop_looping("CONNECTING")
             self.app.stack.setCurrentIndex(0)
-            self.app._show_error(err)
+            clean_err = self.app.error_presenter.clean_message(err)
+            from client.views.list_menu import show_message_dialog
+            show_message_dialog(self.app, clean_err, title="خطأ")
+            self.app.auth_view.username_input.setFocus()
 
         self.app._run_async(lambda: self.app.api.register(username, display_name, password), done, fail)
 

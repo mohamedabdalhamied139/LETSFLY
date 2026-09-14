@@ -134,6 +134,7 @@
   "اسم المستخدم مسجل مسبقًا.": "Le nom d'utilisateur est déjà enregistré.",
   "اسم المستخدم أو كلمة المرور غير صحيحة.": "Nom d'utilisateur ou mot de passe invalide.",
   "تم إنشاء الحساب بنجاح.": "Compte créé avec succès.",
+  "تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول.": "Compte créé avec succès. Vous pouvez maintenant vous connecter.",
   "فشل تسجيل الدخول:": "La connexion a échoué:",
   "فشل إنشاء الحساب:": "La création du compte a échoué :",
   "شاشة تسجيل الدخول.": "Écran de connexion.",

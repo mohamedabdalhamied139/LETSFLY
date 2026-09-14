@@ -147,6 +147,16 @@ def choose(parent, title, items, current=0, speak_text=None):
     return menu.show_menu(speak_text=speak_text or title)
 
 
+def show_message_dialog(parent, message: str, title: str = "تنبيه") -> None:
+    """Accessible message popup with an OK button, automatically spoken by screen readers."""
+    t_msg = tr(message)
+    t_title = tr(title)
+    reader.speak(f"{t_title}: {t_msg}".strip(), interrupt=True)
+    menu = ListMenu(parent, title=t_title, items=[(tr("موافق"), "ok")])
+    menu.show_menu(speak_text=f"{t_title}: {t_msg}".strip())
+
+
+
 class _SettingsListWidget(QListWidget):
     def __init__(self, owner):
         super().__init__(owner)

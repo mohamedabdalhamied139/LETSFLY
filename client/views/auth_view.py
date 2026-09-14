@@ -184,6 +184,17 @@ class AuthView(QWidget):
         first.setFocus()
         reader.speak(tr("شاشة إنشاء الحساب." if self._register_mode else "شاشة تسجيل الدخول."))
 
+    def switch_to_login(self):
+        """Switch view directly to login mode, clear input fields, and focus username."""
+        self._register_mode = False
+        self._refresh_mode()
+        self.display_name_input.clear()
+        self.username_input.clear()
+        self.password_input.clear()
+        self.username_input.setFocus()
+        reader.speak(tr("شاشة تسجيل الدخول."), interrupt=True)
+
+
     def _refresh_mode(self):
         self.display_name_input.setVisible(self._register_mode)
         self.title_label.setText(tr("إنشاء حساب" if self._register_mode else "تسجيل الدخول"))
