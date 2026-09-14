@@ -490,10 +490,22 @@ async def restore_saved_table(saved_id: int, user: User = Depends(get_current_us
 
 
 @router.get("/{room_id}")
-async def get_room(room_id: str, user: User = Depends(get_current_user)):
+async def get_room(room_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     room = room_manager.get_room(room_id)
     if not room:
         raise HTTPException(404, "الطاولة غير موجودة.")
+    rules = room.rules or {}
+    if bool(rules.get("private", False)):
+        # Private table access check: must be host, participant, spectator, or possess a pending invite
+        is_member = user.id == room.host_id or user.id in room.players or user.id in room.spectators
+        if not is_member:
+            has_invite = db.query(ChallengeInvitation).filter(
+                ChallengeInvitation.room_id == room.room_id,
+                ChallengeInvitation.recipient_id == user.id,
+                ChallengeInvitation.status == "pending",
+            ).first() is not None
+            if not has_invite:
+                raise HTTPException(403, "هذه الطاولة خاصة ولا يمكن عرضها.")
     async with room._mutation_lock:
         current = room_manager.get_room(room_id)
         if current is None:
@@ -583,6 +595,19 @@ async def join_room(room_id: str, as_spectator: bool = False, user: User = Depen
         # User is already a registered player of this room (e.g. restored table or rejoining after reconnect)
         ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
         return room.public_dict(user.id)
+
+    rules = room.rules or {}
+    if bool(rules.get("private", False)):
+        # Private table access check: must be host, player, spectator, or possess a pending invite
+        is_member = user.id == room.host_id or user.id in room.players or user.id in room.spectators
+        if not is_member:
+            has_invite = db.query(ChallengeInvitation).filter(
+                ChallengeInvitation.room_id == room.room_id,
+                ChallengeInvitation.recipient_id == user.id,
+                ChallengeInvitation.status == "pending",
+            ).first() is not None
+            if not has_invite:
+                raise HTTPException(403, "هذه الطاولة خاصة ولا يمكن الانضمام إليها.")
 
     # Join Policy Check & Block Check
     host = db.query(User).filter(User.id == room.host_id).first()

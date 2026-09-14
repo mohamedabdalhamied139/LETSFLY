@@ -12,13 +12,17 @@ from typing import Optional
 logger = logging.getLogger("tableverse.security")
 
 try:  # Preferred production dependency from requirements.txt
-    from jose import jwt, JWTError  # type: ignore
-except Exception:  # pragma: no cover - exercised when optional dependency is absent
     import jwt as _pyjwt  # type: ignore
 
     jwt = _pyjwt
     JWTError = getattr(_pyjwt, "PyJWTError", Exception)
-    logger.warning("python-jose is not installed; falling back to PyJWT-compatible JWT handling.")
+except Exception:  # pragma: no cover - fallback to python-jose if present
+    try:
+        from jose import jwt, JWTError  # type: ignore
+    except Exception:
+        import jwt as _pyjwt  # type: ignore
+        jwt = _pyjwt
+        JWTError = getattr(_pyjwt, "PyJWTError", Exception)
 
 try:  # Preferred production password context from requirements.txt
     import bcrypt as _bcrypt  # type: ignore
