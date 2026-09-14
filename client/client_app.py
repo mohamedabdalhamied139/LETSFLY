@@ -1024,6 +1024,7 @@ class TableVerseApp(QMainWindow):
         self._maybe_auto_join_voice(room)
         game_type = str(room.get("game") or "").upper()
         self.table_view.set_game_type(game_type)
+        sound_engine.preload_game_sounds(game_type)
         self._reset_game_runtime_state()
         self.table_view.set_playing_mode(bool(room.get("status") == "playing"))
         self.table_view.activity_panel.clear()

@@ -331,10 +331,17 @@ class SoundEngine:
             effects = self.sounds.get(cue) or []
             for eff in effects:
                 try:
-                    # Touch status to force decoder readiness
                     _ = eff.status()
                 except Exception:
                     pass
+        from PySide6.QtWidgets import QApplication
+        from PySide6.QtCore import QCoreApplication
+        app = QApplication.instance() or QCoreApplication.instance()
+        if app:
+            try:
+                app.processEvents()
+            except Exception:
+                pass
 
     def event_cues(self, game_type: str, event_type: str, state: dict | None = None) -> tuple[str, ...]:
         """Resolve sounds while preserving every game's existing gameplay cues."""
@@ -456,15 +463,23 @@ class SoundEngine:
             if not effects:
                 return
 
+            # First pass: play on an already Ready and idle effect
             for eff in effects:
                 try:
-                    if eff.status() == QSoundEffect.Status.Loading:
-                        continue
+                    if eff.status() == QSoundEffect.Status.Ready and not eff.isPlaying():
+                        eff.play()
+                        return
+                except Exception:
+                    pass
+
+            # Second pass: if none are Ready but some are still Loading, play on the first non-playing effect
+            for eff in effects:
+                try:
                     if not eff.isPlaying():
                         eff.play()
                         return
                 except Exception:
-                    logger.exception("Sound cue playback failed: %s", key)
+                    pass
             logger.debug("Dropping sound cue %s because all pool instances are busy", key)
         except Exception:
             pass
