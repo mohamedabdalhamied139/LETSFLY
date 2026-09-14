@@ -4,7 +4,7 @@ This module deliberately uses a Qt.Popup + QListWidget instead of QDialog.
 All table confirmations and game-setting choices are presented as the same
 accessible list style, preserving the shared-table UI model.
 """
-from PySide6.QtWidgets import QDialog, QListWidget, QListWidgetItem, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QListWidget, QListWidgetItem, QVBoxLayout, QMessageBox, QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from client.accessibility.reader import reader
@@ -148,12 +148,30 @@ def choose(parent, title, items, current=0, speak_text=None):
 
 
 def show_message_dialog(parent, message: str, title: str = "تنبيه") -> None:
-    """Accessible message popup with an OK button, automatically spoken by screen readers."""
-    t_msg = tr(message)
-    t_title = tr(title)
+    """Standard system alert dialog with Windows sound and an OK button."""
+    t_msg = str(tr(message))
+    t_title = str(tr(title))
+
+    # Trigger system alert sound (QApplication.beep plays the Windows default sound)
+    try:
+        QApplication.beep()
+    except Exception:
+        pass
+
     reader.speak(f"{t_title}: {t_msg}".strip(), interrupt=True)
-    menu = ListMenu(parent, title=t_title, items=[(tr("موافق"), "ok")])
-    menu.show_menu(speak_text=f"{t_title}: {t_msg}".strip())
+
+    icon = QMessageBox.Information
+    title_lower = t_title.lower()
+    if any(k in title_lower for k in ("خطأ", "error", "erreur", "فشل", "fail")):
+        icon = QMessageBox.Critical
+    elif any(k in title_lower for k in ("تنبيه", "تحذير", "warn")):
+        icon = QMessageBox.Warning
+
+    box = QMessageBox(icon, t_title, t_msg, parent=parent)
+    btn_ok = box.addButton(str(tr("موافق")), QMessageBox.AcceptRole)
+    box.setDefaultButton(btn_ok)
+    btn_ok.setFocus()
+    box.exec()
 
 
 
