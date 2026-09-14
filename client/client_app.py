@@ -39,6 +39,7 @@ from client.presentation.sound_presenter import SoundPresenter
 from client.presentation.accessibility_presenter import AccessibilityPresenter
 from client.controllers.websocket_event_router import WebSocketEventRouter
 from client.controllers.auth_controller import AuthController
+from client.controllers.room_controller import RoomController
 
 class AsyncSignals(QObject):
     success = Signal(object)
@@ -58,6 +59,7 @@ class TableVerseApp(QMainWindow):
         self.accessibility_presenter = AccessibilityPresenter(reader, tr)
         self.ws_event_router = WebSocketEventRouter(self)
         self.auth_controller = AuthController(self)
+        self.room_controller = RoomController(self)
         self.user = None
         self.current_room = None
         self.uno_state = None
@@ -1129,70 +1131,13 @@ class TableVerseApp(QMainWindow):
             self._refresh_saved_tables()
 
     def _refresh_available_rooms(self):
-        def done(rooms):
-            self.join_rooms_view.update_rooms(rooms)
-            self.join_rooms_view.rooms_list.setFocus()
-            reader.speak(tr("قائمة الطاولات المتاحة."))
-        self._run_async(self.api.list_rooms, done)
+        self.room_controller.refresh_available_rooms()
 
     def _create_new_room(self, game="UNO"):
-        self._room_generation += 1
-        self.poll_timer.stop()
-        self._poll_in_flight = False
-        self._action_in_flight = False
-        self.ws.stop()
-        generation = self._room_generation
-        def done(room):
-            if generation != self._room_generation:
-                return
-            self.current_room = room
-            if isinstance(room, dict) and "coins" in room and self.user is not None:
-                self.user["coins"] = room["coins"]
-            self._enter_table(room)
-            # The creator is also a player who joined the new table. The
-            # server cannot reliably deliver its player_joined broadcast back
-            # to this client because the room WebSocket starts after creation.
-            sound_engine.play_event("TABLE_JOIN")
-            my_name = (self.user or {}).get("display_name", "محمد")
-            if getattr(self, "default_as_spectator", False):
-                reader.speak(tr("{name} انضم للطاولة كمتفرج", name=my_name), interrupt=False)
-                rid = str(room.get("id") or "")
-                def spec_done(r):
-                    if isinstance(r.get("room"), dict):
-                        self.current_room = r["room"]
-                    elif self.current_room:
-                        self.current_room["is_spectator"] = True
-                    if self.current_room:
-                        my_id = int((self.user or {}).get("id") or 0)
-                        self.current_room["is_host"] = (int(self.current_room.get("host_id") or 0) == my_id)
-                self._run_async(lambda: self.api.toggle_spectator(rid), spec_done)
-            else:
-                reader.speak(tr("{name} انضم للطاولة", name=my_name), interrupt=False)
-        self._run_async(lambda: self.api.create_room(game), done)
+        self.room_controller.create_new_room(game)
 
     def _handle_join_room(self, room_id: str, as_spectator: bool = False):
-        if not as_spectator and getattr(self, "default_as_spectator", False):
-            as_spectator = True
-        self._room_generation += 1
-        self.poll_timer.stop()
-        self._poll_in_flight = False
-        self._action_in_flight = False
-        self.ws.stop()
-        generation = self._room_generation
-        def done(room):
-            if generation != self._room_generation:
-                return
-            self.current_room = room
-            self._enter_table(room)
-            # The joining player may miss the server broadcast because the
-            # WebSocket is opened only after the join request completes.
-            sound_engine.play_event("TABLE_JOIN")
-            my_name = (self.user or {}).get("display_name", "محمد")
-            if as_spectator:
-                reader.speak(tr("{name} انضم للطاولة كمتفرج", name=my_name), interrupt=False)
-            else:
-                reader.speak(tr("{name} انضم للطاولة", name=my_name), interrupt=False)
-        self._run_async(lambda: self.api.join_room(room_id, as_spectator=as_spectator), done)
+        self.room_controller.join_room(room_id, as_spectator=as_spectator)
 
     def _reset_game_runtime_state(self):
         self.uno_state = None
@@ -1913,36 +1858,10 @@ class TableVerseApp(QMainWindow):
         self.on_add_bot()
 
     def on_add_bot(self):
-        if not self.current_room:
-            return
-        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
-        if not is_host:
-            reader.speak(tr("إضافة بوت متاح لمضيف الطاولة فقط."), interrupt=True)
-            return
-        rid = self.current_room.get("id")
-        def done(room):
-            self.current_room = room
-            if isinstance(room, dict) and "coins" in room and self.user is not None:
-                self.user["coins"] = room["coins"]
-            # The room WebSocket emits the actual join event/NVDA speech.
-        self._run_async(lambda: self.api.add_bot(rid), done)
+        self.room_controller.add_bot()
 
     def on_remove_bot(self):
-        if not self.current_room:
-            return
-        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
-        if not is_host:
-            reader.speak(tr("إزالة بوت متاح لمضيف الطاولة فقط."), interrupt=True)
-            return
-        bot_ids = [uid for uid in self.current_room.get("players", []) if uid < 0]
-        if not bot_ids:
-            reader.speak(tr("لا يوجد بوت"), interrupt=True)
-            return
-        rid = self.current_room.get("id")
-        def done(res):
-            if isinstance(res, dict) and "room" in res:
-                self.current_room = res["room"]
-        self._run_async(lambda: self.api.remove_bot(rid), done)
+        self.room_controller.remove_bot()
 
     def on_announce_players(self):
         if not self.current_room:
@@ -2210,58 +2129,10 @@ class TableVerseApp(QMainWindow):
                 reader.speak(tr("تم ضبط مستوى صوت {name} على {0}%.", val, name=target_name), interrupt=True)
 
     def on_toggle_room_privacy(self):
-        """Ctrl+H shortcut to toggle room privacy (public/private)."""
-        if not self.is_in_room() or not self.current_room:
-            return
-        is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
-        if not is_host:
-            reader.speak(tr("تغيير خصوصية الطاولة متاح لقائد الطاولة فقط."), interrupt=True)
-            return
-        rid = str(self.current_room.get("id") or "")
-        def done(r):
-            is_priv = bool(r.get("is_private"))
-            if self.current_room:
-                if self.current_room.get("rules") is None:
-                    self.current_room["rules"] = {}
-                self.current_room["rules"]["private"] = is_priv
-            msg = "تم تغيير الطاولة إلى خاصة." if is_priv else "تم تغيير الطاولة إلى عامة."
-            self.table_view.add_log(tr(msg), category="ALL")
-            reader.speak(tr(msg), interrupt=True)
-        def fail(e):
-            reader.speak(tr("تعذر تغيير خصوصية الطاولة: {error}", error=tr(str(e))), interrupt=True)
-        self._run_async(lambda: self.api.toggle_room_privacy(rid), done, fail)
+        self.room_controller.toggle_room_privacy()
 
     def on_toggle_spectator_shortcut(self):
-        """F4 shortcut to toggle spectator mode in room, or toggle default spectator mode across the game."""
-        if self.is_in_room() and self.current_room:
-            rid = str(self.current_room.get("id") or "")
-            def done(r):
-                if r.get("is_pending_spectator") is not None:
-                    is_pend = bool(r.get("is_pending_spectator"))
-                    if self.current_room:
-                        self.current_room["is_pending_spectator"] = is_pend
-                    msg = "ستتحول إلى وضع المتفرج بعد نهاية اللعبة الحالية." if is_pend else "تم إلغاء وضع المتفرج، ستستمر كلاعب في اللعبة القادمة."
-                    reader.speak(tr(msg), interrupt=True)
-                    return
-                is_spec = bool(r.get("is_spectator"))
-                if isinstance(r.get("room"), dict):
-                    self.current_room = r["room"]
-                elif self.current_room:
-                    self.current_room["is_spectator"] = is_spec
-                if self.current_room:
-                    my_id = int((self.user or {}).get("id") or 0)
-                    self.current_room["is_host"] = (int(self.current_room.get("host_id") or 0) == my_id)
-                msg = "أنت الآن في وضع المتفرج." if is_spec else "أنت الآن في وضع اللعب."
-                reader.speak(tr(msg), interrupt=True)
-            def fail(e):
-                reader.speak(tr("تعذر تغيير وضع المتفرج: {error}", error=tr(str(e))), interrupt=True)
-            self._run_async(lambda: self.api.toggle_spectator(rid), done, fail)
-            return
-
-        # Outside of a table: toggle default spectator state everywhere
-        self.default_as_spectator = not getattr(self, "default_as_spectator", False)
-        msg = "أنت الآن في وضع المتفرج." if self.default_as_spectator else "أنت الآن في وضع اللعب."
-        reader.speak(tr(msg), interrupt=True)
+        self.room_controller.toggle_spectator_shortcut()
 
     def _send_uno_action(self, act: str, card_id: str = "", color: str = ""):
         if not self.current_room or self._action_in_flight:
@@ -3785,30 +3656,7 @@ class TableVerseApp(QMainWindow):
             self.table_view.toggle_number_order()
 
     def on_leave_room_shortcut(self):
-        if not self.is_in_room():
-            return
-        if QApplication.activePopupWidget() is not None:
-            try:
-                QApplication.activePopupWidget().close()
-            except Exception:
-                pass
-            self._active_context_menu = None
-
-        from client.table_framework.adapter import get_adapter
-        game_type = str((self.current_room or {}).get("game") or "").upper()
-        adapter = get_adapter(game_type)
-        gname = adapter.display_name if adapter else (game_type or "اللعبة")
-        choice = ListMenu(
-            self, "هل تريد الخروج من الطاولة",
-            [("نعم", "leave"), ("لا", "stay")],
-        ).show_menu()
-        if choice == "leave":
-            self._menu_leave_room()
-        else:
-            if self.table_view.is_playing and self.table_view.get_active_card_list() is not None:
-                self.table_view.get_active_card_list().setFocus()
-            else:
-                self.table_view.main_table_widget.setFocus()
+        self.room_controller.on_leave_room_shortcut()
 
     def on_apps_key(self):
         if self.is_in_room():
@@ -4126,24 +3974,7 @@ class TableVerseApp(QMainWindow):
         self._run_async(lambda: self.api.add_bot(rid), done)
 
     def _menu_leave_room(self):
-        if not self.current_room:
-            return
-        rid = self.current_room.get("id")
-        def done(_):
-            sound_engine.play_event("TABLE_LEAVE")
-            self.current_room = None
-            self.voice.leave_room()
-            self.uno_state = None
-            self.poll_timer.stop()
-            self._poll_in_flight = False
-            self._action_in_flight = False
-            self._pending_wild_card_id = None
-            self._start_lobby_ws()
-            self.stack.setCurrentIndex(2)
-            self.setWindowTitle("")
-            self.rooms_menu_view.menu_list.setFocus()
-            reader.speak(tr("تمت مغادرة الطاولة والرجوع لقائمة الطاولات."))
-        self._run_async(lambda: self.api.leave_room(rid), done)
+        self.room_controller.leave_room_menu()
 
     def _handle_send_chat(self, text):
         if not self.current_room:
@@ -4263,62 +4094,13 @@ class TableVerseApp(QMainWindow):
 
 
     def on_save_table_shortcut(self):
-        if not self.is_in_room():
-            return
-        status = (self.current_room or {}).get("status")
-        players = (self.current_room or {}).get("players", [])
-        if status != "playing":
-            reader.speak(tr("لا يمكن حفظ الطاولة إلا أثناء اللعب الفعلي."), interrupt=True)
-            return
-        if len(players) <= 1:
-            reader.speak(tr("يجب أن تحتوي الطاولة على أكثر من لاعب لحفظها."), interrupt=True)
-            return
-        rid = str((self.current_room or {}).get("id") or "")
-        if not rid:
-            return
-        reader.speak(tr("جاري حفظ الطاولة..."), interrupt=True)
-        def done(res):
-            sound_engine.play_event("CONNECTED")
-            msg = res.get("message") or tr("تم حفظ الطاولة بنجاح مقابل عملتين.")
-            reader.speak(tr(msg), interrupt=True)
-            if self.current_room:
-                self._menu_leave_room()
-        def fail(err):
-            sound_engine.play_event("INVALID_ACTION")
-            reader.speak(str(err), interrupt=True)
-        self._run_async(lambda: self.api.save_room(rid), done, fail)
+        self.room_controller.save_table_shortcut()
 
     def _refresh_saved_tables(self):
-        def done(tables):
-            self.saved_tables_view.update_tables(tables)
-            self.saved_tables_view.tables_list.setFocus()
-            reader.speak(tr("قائمة الطاولات المحفوظة."))
-        def fail(err):
-            reader.speak(str(err), interrupt=True)
-        self._run_async(self.api.list_saved_tables, done, fail)
+        self.room_controller.refresh_saved_tables()
 
     def _handle_delete_saved_table(self, saved_id: int):
-        def done(res):
-            sound_engine.play_event("ACTION_CLICK")
-            reader.speak(tr("تم حذف الطاولة المحفوظة."), interrupt=True)
-            self._refresh_saved_tables()
-        def fail(err):
-            reader.speak(str(err), interrupt=True)
-        self._run_async(lambda: self.api.delete_saved_table(saved_id), done, fail)
+        self.room_controller.delete_saved_table(saved_id)
 
     def _handle_restore_saved_table(self, saved_id: int):
-        reader.speak(tr("استعادة الطاولة..."), interrupt=True)
-        def done(res):
-            room = res.get("room") if isinstance(res, dict) else None
-            if room:
-                self._enter_table(room)
-                sound_engine.play_event("TABLE_JOIN")
-                reader.speak(tr("تم استرجاع الطاولة بنجاح."), interrupt=True)
-            else:
-                rid = res.get("room_id") if isinstance(res, dict) else None
-                if rid:
-                    self._handle_join_room(rid)
-        def fail(err):
-            sound_engine.play_event("INVALID_ACTION")
-            reader.speak(str(err), interrupt=True)
-        self._run_async(lambda: self.api.restore_saved_table(saved_id), done, fail)
+        self.room_controller.restore_saved_table(saved_id)
