@@ -34,12 +34,17 @@ class ApiClient:
         p = "/" + path.lstrip("/") if path else ""
         return f"{ws_base}{p}"
 
+    def _ensure_http(self):
+        if self._http is None or getattr(self._http, "is_closed", False):
+            self._http = httpx.Client(timeout=10.0, follow_redirects=False, headers={"Content-Type": "application/json"})
+
     def _request(self, method: str, path: str, payload: Optional[dict] = None, timeout: float = 10) -> Any:
         url = f"{self.base_url}{path}"
         headers = {}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
         try:
+            self._ensure_http()
             response = self._http.request(method, url, json=payload, headers=headers, timeout=timeout)
             raw = response.text
             if response.status_code >= 400:
