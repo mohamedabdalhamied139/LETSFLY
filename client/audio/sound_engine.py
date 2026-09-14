@@ -331,7 +331,15 @@ class SoundEngine:
             effects = self.sounds.get(cue) or []
             for eff in effects:
                 try:
-                    _ = eff.status()
+                    if eff.status() == QSoundEffect.Status.Ready and not getattr(eff, "_warmed_up", False):
+                        vol = eff.volume()
+                        eff.setVolume(0.0)
+                        eff.play()
+                        eff.stop()
+                        eff.setVolume(vol)
+                        eff._warmed_up = True
+                    else:
+                        _ = eff.status()
                 except Exception:
                     pass
         from PySide6.QtWidgets import QApplication
