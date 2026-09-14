@@ -2527,7 +2527,7 @@ class TableVerseApp(QMainWindow):
                 reader.speak(tr("الطاولة فارغة."), interrupt=True)
             else:
                 from core_shared.uno_rules import card_display_ar
-                names = [card_display_ar(c) for c in table_cards]
+                names = [tr(card_display_ar(c)) for c in table_cards]
                 cards_str = ("، " if language() == "ar" else ", ").join(names)
                 reader.speak(cards_str, interrupt=True)
             return

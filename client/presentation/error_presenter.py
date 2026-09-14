@@ -38,5 +38,6 @@ class ErrorPresenter:
         text = self.clean_message(message)
         if self.is_invalid_action(text):
             self.sound_engine.play_event("INVALID_ACTION")
-        self.reader.speak(f"{self.tr('تنبيه:')} {text}".strip(), interrupt=True)
+        translated_text = str(self.tr(text))
+        self.reader.speak(f"{self.tr('تنبيه:')} {translated_text}".strip(), interrupt=True)
         return text
