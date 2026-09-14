@@ -34,7 +34,7 @@ a = Analysis(
         'uvicorn.protocols.websockets.auto',
         'uvicorn.lifespan.on',
         'passlib.handlers.bcrypt',
-        'jose',
+        'jwt',
         'sqlite3',
         'sqlalchemy.dialects.sqlite',
         'PySide6.QtMultimedia',
