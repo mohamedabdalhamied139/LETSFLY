@@ -40,6 +40,7 @@ from client.presentation.accessibility_presenter import AccessibilityPresenter
 from client.controllers.websocket_event_router import WebSocketEventRouter
 from client.controllers.auth_controller import AuthController
 from client.controllers.room_controller import RoomController
+from client.controllers.social_controller import SocialController
 
 class AsyncSignals(QObject):
     success = Signal(object)
@@ -60,6 +61,7 @@ class TableVerseApp(QMainWindow):
         self.ws_event_router = WebSocketEventRouter(self)
         self.auth_controller = AuthController(self)
         self.room_controller = RoomController(self)
+        self.social_controller = SocialController(self)
         self.user = None
         self.current_room = None
         self.uno_state = None
@@ -753,12 +755,7 @@ class TableVerseApp(QMainWindow):
             reader.speak(tr("تم تسجيل الخروج."))
 
     def on_private_messages(self):
-        if not self.api.token: return
-        return_focus = QApplication.focusWidget()
-        def done(r):
-            rows = r.get("messages", [])
-            self._show_pm_view(rows, return_focus)
-        self._run_async(self.api.private_messages, done, lambda e: reader.speak(tr(f"تعذر تحميل الرسائل: {e}"), interrupt=True))
+        self.social_controller.open_private_messages()
 
     def on_f4_exit(self):
         menu = ListMenu(
@@ -868,24 +865,7 @@ class TableVerseApp(QMainWindow):
         if return_focus is not None and return_focus.isVisible(): return_focus.setFocus()
 
     def on_notifications(self):
-        if not self.api.token: return
-        return_focus=QApplication.focusWidget()
-        def done(r):
-            rows=r.get("notifications",[])
-            dlg=NotificationsView(rows,self); result=dlg.exec()
-            selected=dlg.list.currentItem().data(Qt.UserRole) if dlg.list.currentItem() else None
-            if result==100 and isinstance(selected,dict) and selected.get("event_type")=="CHALLENGE_INVITATION":
-                invitation_id=(selected.get("payload") or {}).get("invitation_id") if isinstance(selected.get("payload"),dict) else None
-                if invitation_id:
-                    menu=ListMenu(self,"إجراء على الدعوة",[("قبول","accept"),("رفض","reject")])
-                    if menu.exec() and menu.result=="accept":
-                        self._run_async(lambda: self.api.accept_challenge(int(invitation_id)), lambda x: (reader.speak(tr("تم قبول الدعوة."), interrupt=True), self._handle_join_room(x.get("room_id")) if isinstance(x,dict) and x.get("room_id") else None), lambda e: reader.speak(tr(f"تعذر قبول الدعوة: {e}"), interrupt=True))
-                    elif menu.result=="reject":
-                        self._run_async(lambda: self.api.reject_challenge(int(invitation_id)), lambda _x: reader.speak(tr("تم رفض الدعوة."), interrupt=True), lambda e: reader.speak(tr(f"تعذر رفض الدعوة: {e}"), interrupt=True))
-            if return_focus is not None and return_focus.isVisible(): return_focus.setFocus()
-            ids=[x.get("id") for x in rows if x.get("id") is not None]
-            if ids: self._run_async(lambda: self.api.mark_activity_read(event_id=max(ids)), lambda _r: None, lambda _e: None)
-        self._run_async(self.api.notifications, done, lambda e: reader.speak(tr(f"تعذر تحميل الإشعارات: {e}"), interrupt=True))
+        self.social_controller.open_notifications()
 
     def _open_contact_dialog(self):
         from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QTextEdit, QPushButton, QHBoxLayout
@@ -951,152 +931,19 @@ class TableVerseApp(QMainWindow):
         self._run_async(self.api.online_users, done, lambda _e: None)
 
     def on_ctrl_friends(self):
-        if not self.api.token:
-            return
-        return_focus = QApplication.focusWidget()
-        def done(res):
-            res = res or {}
-            dialog = FriendsView(self)
-            def on_action(data, tab_name):
-                if tab_name == "friend":
-                    self._open_friend_actions(data, dialog)
-                elif tab_name == "incoming":
-                    self._handle_friend_request(data, "incoming", dialog)
-                elif tab_name == "outgoing":
-                    self._handle_friend_request(data, "outgoing", dialog)
-            dialog.set_action_callback(on_action)
-            dialog.show_data(res.get("friends", []), res.get("requests", []), res.get("sent", []))
-            if return_focus is not None and return_focus.isVisible():
-                return_focus.setFocus()
-        self._run_async(self.api.friends, done, lambda e: reader.speak(tr(f"تعذر تحميل الأصدقاء: {e}"), interrupt=True))
+        self.social_controller.open_friends()
 
     def _handle_friend_request(self, row, kind, friends_dialog):
-        rid=int(row.get("request_id"))
-        if kind=="incoming":
-            menu=ListMenu(self, "إجراءات طلب الصداقة", [("قبول", "accept"),("رفض", "reject")])
-            choice = menu.show_menu(speak_text="إجراءات طلب الصداقة")
-            if choice:
-                fn=self.api.accept_friend_request if choice=="accept" else self.api.reject_friend_request
-                def request_success(_r):
-                    reader.speak(tr("تم تنفيذ الطلب."), interrupt=True)
-                    if friends_dialog is not None and friends_dialog.isVisible():
-                        self._run_async(
-                            self.api.friends,
-                            lambda data: friends_dialog.set_data(
-                                (data or {}).get("friends", []),
-                                (data or {}).get("requests", []),
-                                (data or {}).get("sent", []),
-                            ),
-                            lambda _e: None,
-                        )
-                self._run_async(lambda: fn(rid), request_success, lambda e: reader.speak(tr(f"تعذر تنفيذ الطلب: {e}"), interrupt=True))
-        else:
-            self._run_async(lambda: self.api.cancel_friend_request(rid), lambda _r: reader.speak(tr("تم إلغاء طلب الصداقة."), interrupt=True), lambda e: reader.speak(tr(f"تعذر إلغاء الطلب: {e}"), interrupt=True))
+        self.social_controller.handle_friend_request(row, kind, friends_dialog)
 
     def _open_friend_actions(self, friend, friends_dialog):
-        if not isinstance(friend, dict) or not friend.get("id"): return
-        actions = FriendActionsDialog(friend, friends_dialog, can_invite=bool(self.current_room))
-        if actions.exec() != QDialog.Accepted or not actions.selected_tag:
-            return
-        tag = actions.selected_tag; uid = int(friend["id"]); name = str(friend.get("display_name") or friend.get("username") or "")
-        if tag == "profile":
-            self._run_async(lambda: self.api.user_profile(uid), lambda r: ProfileDialog(r, friends_dialog).exec(), lambda e: reader.speak(tr(f"تعذر فتح الملف الشخصي: {e}"), interrupt=True))
-        elif tag == "message":
-            dlg=SimpleMessageDialog(tr("إرسال رسالة إلى {name}", name=name), tr("اكتب رسالتك:"), friends_dialog)
-            if dlg.exec():
-                self._run_async(lambda: self.api.send_private_message(uid, dlg.editor.text().strip()), lambda _r: None, lambda e: reader.speak(tr(f"تعذر إرسال الرسالة: {e}"), interrupt=True))
-        elif tag == "join":
-            room_id = friend.get("room_id")
-            if room_id:
-                self._handle_join_room(room_id)
-        elif tag == "h2h":
-            self._run_async(lambda: self.api.head_to_head(uid), lambda r: HeadToHeadDialog(r, friends_dialog).exec(), lambda e: reader.speak(tr(f"تعذر تحميل الإحصائيات: {e}"), interrupt=True))
-        elif tag == "mute":
-            def got(flags):
-                dlg=MuteDialog(flags,friends_dialog)
-                if dlg.exec(): self._run_async(lambda: self.api.set_mutes(uid,dlg.values()), lambda _r: reader.speak(tr("تم حفظ إعدادات الكتم."), interrupt=True), lambda e: reader.speak(tr(f"تعذر حفظ الكتم: {e}"), interrupt=True))
-            self._run_async(lambda: self.api.get_mutes(uid), got, lambda e: reader.speak(tr(f"تعذر تحميل إعدادات الكتم: {e}"), interrupt=True))
-        elif tag == "challenge":
-            room_id = (self.current_room or {}).get("id")
-            if not room_id:
-                reader.speak(tr("يجب أن تكون داخل طاولة لإرسال الدعوة."), interrupt=True); return
-            self._run_async(lambda: self.api.invite_user_to_room(uid, room_id), lambda _r: reader.speak(tr("تم إرسال دعوة الانضمام للطاولة مقابل عملة واحدة."), interrupt=True), lambda e: reader.speak(tr(f"تعذر إرسال الدعوة: {e}"), interrupt=True))
-        elif tag == "direct_challenge":
-            from client.views.social_center_views import ChallengeDialog
-            dlg = ChallengeDialog(friends_dialog)
-            if dlg.exec() == QDialog.Accepted:
-                game = dlg.selected_game()
-                self._run_async(
-                    lambda: self.api.challenge_user(uid, game),
-                    lambda r: (reader.speak(tr("تم إرسال دعوة التحدي مقابل 3 عملات."), interrupt=True), self._handle_join_room(r.get("room_id")) if isinstance(r, dict) and r.get("room_id") else None),
-                    lambda e: reader.speak(tr(f"تعذر إرسال التحدي: {e}"), interrupt=True)
-                )
-        elif tag == "gift":
-            dlg=GiftDialog(friends_dialog)
-            if dlg.exec(): self._run_async(lambda: self.api.gift_user(uid,dlg.value()), lambda r: reader.speak(tr(f"تم إرسال هدية قدرها {r.get('amount')} عملة."), interrupt=True), lambda e: reader.speak(tr(f"تعذر إرسال الهدية: {e}"), interrupt=True))
-        elif tag == "unfriend":
-            menu = ListMenu(
-                self, "تأكيد إلغاء الصداقة",
-                [("نعم", "yes"), ("لا", "no")]
-            )
-            choice = menu.show_menu(speak_text=f"هل أنت متأكد من إلغاء الصداقة مع {name}؟")
-            if choice == "yes":
-                self._run_async(lambda: self.api.unfriend(uid), lambda _r: reader.speak(tr("تم إلغاء الصداقة."), interrupt=True), lambda e: reader.speak(tr(f"تعذر إلغاء الصداقة: {e}"), interrupt=True))
-        elif tag == "block":
-            self._run_async(lambda: self.api.block_user(uid), lambda _r: reader.speak(tr("تم حظر اللاعب."), interrupt=True), lambda e: reader.speak(tr(f"تعذر الحظر: {e}"), interrupt=True))
+        self.social_controller.open_friend_actions(friend, friends_dialog)
 
     def _open_online_user_actions(self, user, online_dialog):
-        if not isinstance(user, dict) or not user.get("id"): return
-        actions = OnlineUserActionsDialog(user, online_dialog, can_invite=bool(self.current_room))
-        if actions.exec() != QDialog.Accepted or not actions.selected_tag:
-            return
-        tag = actions.selected_tag; uid = int(user["id"]); name = str(user.get("display_name") or user.get("username") or "")
-        if tag == "profile":
-            self._run_async(lambda: self.api.user_profile(uid), lambda r: ProfileDialog(r, online_dialog).exec(), lambda e: reader.speak(tr(f"تعذر فتح الملف الشخصي: {e}"), interrupt=True))
-        elif tag == "add_friend":
-            self._run_async(lambda: self.api.send_friend_request(uid), lambda _r: reader.speak(tr("تم إرسال طلب الصداقة."), interrupt=True), lambda e: reader.speak(tr(f"تعذر إرسال طلب الصداقة: {e}"), interrupt=True))
-        elif tag == "message":
-            dlg=SimpleMessageDialog(tr("إرسال رسالة إلى {name}", name=name), tr("اكتب رسالتك:"), online_dialog)
-            if dlg.exec():
-                self._run_async(lambda: self.api.send_private_message(uid, dlg.editor.text().strip()), lambda _r: None, lambda e: reader.speak(tr(f"تعذر إرسال الرسالة: {e}"), interrupt=True))
-        elif tag == "join":
-            room_id = user.get("room_id")
-            if room_id:
-                self._handle_join_room(room_id)
-        elif tag == "h2h":
-            self._run_async(lambda: self.api.head_to_head(uid), lambda r: HeadToHeadDialog(r, online_dialog).exec(), lambda e: reader.speak(tr(f"تعذر تحميل الإحصائيات: {e}"), interrupt=True))
-        elif tag == "challenge":
-            if not bool(user.get("is_friend")):
-                reader.speak(tr("دعوة الطاولة متاحة للأصدقاء فقط."), interrupt=True); return
-            room_id = (self.current_room or {}).get("id")
-            if not room_id:
-                reader.speak(tr("يجب أن تكون داخل طاولة لإرسال الدعوة."), interrupt=True); return
-            self._run_async(lambda: self.api.invite_user_to_room(uid, room_id), lambda _r: reader.speak(tr("تم إرسال دعوة الانضمام للطاولة مقابل عملة واحدة."), interrupt=True), lambda e: reader.speak(tr(f"تعذر إرسال الدعوة: {e}"), interrupt=True))
-        elif tag == "block":
-            self._run_async(lambda: self.api.block_user(uid), lambda _r: reader.speak(tr("تم حظر اللاعب."), interrupt=True), lambda e: reader.speak(tr(f"تعذر الحظر: {e}"), interrupt=True))
+        self.social_controller.open_online_user_actions(user, online_dialog)
 
     def on_ctrl_online_users(self):
-        if not self.api.token:
-            return
-        return_focus = QApplication.focusWidget()
-        dialog = OnlineUsersView(self)
-        dialog.userActivated.connect(lambda user, d=dialog: self._open_online_user_actions(user, d))
-
-        def on_search(query):
-            def search_done(res):
-                res = res or {}
-                dialog.set_users(res.get("users", []))
-            self._run_async(lambda: self.api.search_users(query), search_done, lambda _e: None)
-
-        dialog.searchRequested.connect(on_search)
-
-        def done(res):
-            res = res or {}
-            dialog.set_users(res.get("users", []), is_initial=True)
-            dialog.exec()
-            if return_focus is not None and return_focus.isVisible():
-                return_focus.setFocus()
-        self._run_async(self.api.online_users, done, lambda e: reader.speak(tr(f"تعذر تحميل المتصلين: {e}"), interrupt=True))
+        self.social_controller.open_online_users()
 
     def _handle_rooms_menu_selection(self, tag: str):
         if tag == "create":
