@@ -1101,6 +1101,7 @@
   ". عدد الجولات": ". Number of rounds",
   "كارت، والمتبقي في البنك": "cards, and remaining in bank",
   "المتبقي في البنك {count}": "Remaining in bank {count}",
+  "معك {count} كروت برقم {num}": "you have {count} cards with {num}",
   "و": "and",
   "قفلت الطاولة! فاز": "Table locked! Won",
   "اختر قيمة Ace: +1 أو +11.": "Choose Ace value: +1 or +11.",

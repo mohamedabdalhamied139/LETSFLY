@@ -1117,11 +1117,11 @@ class TableView(QWidget):
         self.domino_side_list.blockSignals(True)
         self.domino_side_list.clear()
 
-        item_r = QListWidgetItem(tr(right_result))
+        item_r = QListWidgetItem(str(right_result))
         item_r.setData(Qt.UserRole, {"tile_index": tile_index, "side": "right"})
         self.domino_side_list.addItem(item_r)
 
-        item_l = QListWidgetItem(tr(left_result))
+        item_l = QListWidgetItem(str(left_result))
         item_l.setData(Qt.UserRole, {"tile_index": tile_index, "side": "left"})
         self.domino_side_list.addItem(item_l)
 
@@ -1159,7 +1159,29 @@ class TableView(QWidget):
         new_l = b if a == l_end else a
         left_result = f"{new_l}/{r_end}"
 
-        self.show_domino_side_selection(tile_index, tile, right_result, left_result)
+        # Calculate remaining cards count in hand with each target number
+        hand_tiles = []
+        for idx, item_data in enumerate(state.get("hand", [])):
+            if idx == tile_index:
+                continue
+            t = item_data.get("tile")
+            if t and len(t) == 2:
+                hand_tiles.append(t)
+
+        def count_matching_tiles(num: int) -> int:
+            return sum(1 for t in hand_tiles if t[0] == num or t[1] == num)
+
+        right_count = count_matching_tiles(new_r)
+        left_count = count_matching_tiles(new_l)
+
+        sep = "، " if get_language() == "ar" else ", "
+        right_info = tr("معك {count} كروت برقم {num}", count=right_count, num=new_r)
+        left_info = tr("معك {count} كروت برقم {num}", count=left_count, num=new_l)
+
+        right_text = f"{right_result}{sep}{right_info}"
+        left_text = f"{left_result}{sep}{left_info}"
+
+        self.show_domino_side_selection(tile_index, tile, right_text, left_text)
 
 
     def _on_domino_side_activated(self, item: QListWidgetItem):

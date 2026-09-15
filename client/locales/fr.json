@@ -1101,6 +1101,7 @@
   ". عدد الجولات": ". Nombre de tours",
   "كارت، والمتبقي في البنك": "cartes et reste en banque",
   "المتبقي في البنك {count}": "Restant dans la banque {count}",
+  "معك {count} كروت برقم {num}": "vous avez {count} cartes avec {num}",
   "و": "et",
   "قفلت الطاولة! فاز": "Table verrouillée ! Gagné",
   "اختر قيمة Ace: +1 أو +11.": "Choisissez la valeur de l'As : +1 ou +11.",
