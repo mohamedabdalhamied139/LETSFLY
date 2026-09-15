@@ -2561,6 +2561,7 @@ class TableVerseApp(QMainWindow):
             state = self.domino_state or {}
             hand = state.get("hand", [])
             players = state.get("players", [])
+            bcount = int(state.get("boneyard_count", 0) or 0)
             my_count = len(hand)
             my_id = (self.user or {}).get("id")
             parts = [tr(f"أنت {my_count}")]
@@ -2570,6 +2571,7 @@ class TableVerseApp(QMainWindow):
                 name = p.get("name", "اللاعب")
                 count = p.get("tile_count", 0)
                 parts.append(tr(f"{name} {count}"))
+            parts.append(tr(f"المتبقي في البنك {bcount}"))
             sep = "، " if language() == "ar" else ", "
             reader.speak(sep.join(parts), interrupt=True)
             return

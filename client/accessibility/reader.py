@@ -191,11 +191,17 @@ class NVDAController:
                 if result != self.SUCCESS:
                     self._emit("cancelSpeech فشل؛ سيتم إرسال النص على أي حال.")
 
+            import time
+            now = time.monotonic()
+            if hasattr(self, "_last_spoken_text") and self._last_spoken_text == text and (now - getattr(self, "_last_spoken_at", 0.0)) < 1.8:
+                return True
+
             result = self.dll.nvdaController_speakText(text)
             self._emit(f"speakText({text!r}) → return={result}.")
             if result == self.SUCCESS:
-                import time
-                self.last_speech_time = time.monotonic()
+                self.last_speech_time = now
+                self._last_spoken_text = text
+                self._last_spoken_at = now
                 return True
 
             self.last_error = f"speakText returned {result}"

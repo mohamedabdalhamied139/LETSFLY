@@ -10,11 +10,13 @@ def tile_display_name(tile: Tuple[int, int]) -> str:
     return f"{max(a, b)}/{min(a, b)}"
 
 
-def create_double_six_deck() -> List[Tuple[int, int]]:
-    """Generate all 28 tiles in standard double-six dominoes."""
+def create_double_six_deck(exclude_double_zero: bool = False) -> List[Tuple[int, int]]:
+    """Generate double-six domino tiles (28 standard, or 27 without 0/0 for 3-player mode)."""
     tiles = []
     for a in range(7):
         for b in range(a, 7):
+            if exclude_double_zero and a == 0 and b == 0:
+                continue
             tiles.append((a, b))
     return tiles
 
@@ -35,9 +37,12 @@ class DominoGame:
         self.player_names = {p[0]: p[1] for p in players}
         self.target_score = target_score
         self.rules = rules or {"mode": "draw", "hand_size": 7}
-        self.hand_size = int(self.rules.get("hand_size", 7))
-        if len(self.players) >= 3 and self.hand_size > 5:
-            self.hand_size = 5
+        if len(self.players) == 3:
+            self.hand_size = 9
+        else:
+            self.hand_size = int(self.rules.get("hand_size", 7))
+            if len(self.players) >= 4 and self.hand_size > 5:
+                self.hand_size = 5
 
         # Game state
         self.scores: Dict[int, int] = {p[0]: 0 for p in players}
@@ -88,7 +93,8 @@ class DominoGame:
         self.active = True
 
         # Deal tiles with fairness guard: reshuffle if any player holds >= 5 of the same number or >= 5 doubles
-        deck = create_double_six_deck()
+        exclude_zero = (len(self.players) == 3)
+        deck = create_double_six_deck(exclude_double_zero=exclude_zero)
         for _ in range(100):
             random.shuffle(deck)
             deck_copy = list(deck)
@@ -108,7 +114,7 @@ class DominoGame:
                 break
         else:
             # Clean standard fallback deal
-            deck_copy = create_double_six_deck()
+            deck_copy = create_double_six_deck(exclude_double_zero=exclude_zero)
             random.shuffle(deck_copy)
             for uid in self.player_ids:
                 self.hands[uid] = [deck_copy.pop() for _ in range(self.hand_size)]
