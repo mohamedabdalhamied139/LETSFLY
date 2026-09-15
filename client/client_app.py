@@ -196,7 +196,7 @@ class TableVerseApp(QMainWindow):
             ("Shift+T", "on_announce_table_time"),
             ("Alt+Shift+V", "on_toggle_voice_chat"),
             ("M", "on_toggle_voice_mute"),
-            ("F5", "on_manual_reconnect"),
+            ("F5", "on_table_settings"),
             ("R", "on_announce_top"),
             ("Shift+R", "on_announce_rules"),
             ("Shift+ق", "on_announce_rules"),
@@ -234,6 +234,9 @@ class TableVerseApp(QMainWindow):
             self.on_ctrl_friends(); return
         if method == "on_ctrl_online_users":
             self.on_ctrl_online_users(); return
+        if method in ("on_table_settings",):
+            self.on_table_settings()
+            return
         if method in ("on_manual_reconnect",):
             self.on_manual_reconnect()
             return
@@ -2221,6 +2224,13 @@ class TableVerseApp(QMainWindow):
             tr(f"وقت الطاولة {format_duration(table_seconds, cur_lang)}، ووقت الجولة {format_duration(round_seconds, cur_lang)}."),
             interrupt=True,
         )
+
+    def on_table_settings(self):
+        from client.views.settings_dialog import SettingsDialog
+        dialog = SettingsDialog(self)
+        dialog.exec()
+        if self.is_in_room() and hasattr(self, "table_view") and self.table_view:
+            self.table_view.focus_initial()
 
     def on_manual_reconnect(self):
         if not self.api.token:

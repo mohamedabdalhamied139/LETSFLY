@@ -148,11 +148,11 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                         self._call("on_open_voice_manager")
                         return True, 0
 
-            # F5 is a real network reconnect command and remains available even
-            # while an editable control has focus.
+            # F5 opens Settings dialog from anywhere in the table.
             if vk == 0x74:  # F5
-                if self._call("on_manual_reconnect"):
-                    return True, 0
+                if self.window.is_in_room():
+                    if self._call("on_table_settings"):
+                        return True, 0
 
             # Alt+Shift+V is a global table command. M is deliberately handled
             # only after the editable-control guard so typing an "m" in chat or
