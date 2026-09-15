@@ -3697,5 +3697,12 @@
       "user",
       "user"
     ]
+  },
+  {
+    "pattern": "^\\[الحالي\\]\\s*(.+)$",
+    "template": "[Current] {0}",
+    "roles": [
+      "text"
+    ]
   }
 ]

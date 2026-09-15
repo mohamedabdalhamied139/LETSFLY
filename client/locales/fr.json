@@ -2391,5 +2391,6 @@
   "جاك من هراوات": "Valet de Trèfle",
   "كوين من هراوات": "Dame de Trèfle",
   "ملك من هراوات": "Roi de Trèfle",
-  "{0} lost a token. {1} left the game.": "{0} a perdu un jeton. {1} a quitté la partie."
+  "{0} lost a token. {1} left the game.": "{0} a perdu un jeton. {1} a quitté la partie.",
+  "[Current] {0}": "[Actuel] {0}"
 }

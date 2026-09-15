@@ -57,9 +57,9 @@ class AccountSwitcherDialog(QDialog):
             u = p.get("username", "")
             d = p.get("display_name", u)
             is_act = p.get("is_active", False)
-            raw_tag = "[الحالي] " if is_act else ""
-            raw_text = f"{raw_tag}{d} ({u})"
-            disp_text = tr(raw_text)
+            tag_str = f"[{tr('[الحالي]')}] " if is_act else ""
+            raw_text = f"{tag_str}{d} ({u})"
+            disp_text = raw_text
             it = QListWidgetItem(disp_text)
             it.setData(Qt.UserRole, p)
             it.setData(Qt.UserRole + 1101, raw_text)
