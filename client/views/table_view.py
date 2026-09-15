@@ -72,6 +72,26 @@ def safe_set_focus(widget) -> None:
         pass
 
 
+def is_user_in_chat_or_log(table_view) -> bool:
+    """Returns True if user currently has focus in chat_input, activity_log, or activity_panel."""
+    if not safe_is_valid(table_view):
+        return False
+    from PySide6.QtWidgets import QApplication
+    fw = QApplication.focusWidget()
+    if fw is None:
+        return False
+    chat = getattr(table_view, "chat_input", None)
+    if chat and (fw == chat or (hasattr(chat, "isAncestorOf") and chat.isAncestorOf(fw))):
+        return True
+    log = getattr(table_view, "activity_log", None)
+    if log and (fw == log or (hasattr(log, "viewport") and fw == log.viewport()) or (hasattr(log, "isAncestorOf") and log.isAncestorOf(fw))):
+        return True
+    panel = getattr(table_view, "activity_panel", None)
+    if panel and (fw == panel or (hasattr(panel, "isAncestorOf") and panel.isAncestorOf(fw))):
+        return True
+    return False
+
+
 class FocusableWidget(QListWidget):
     """Focusable pre-game gameplay container with no table-name text exposed."""
     def __init__(self, parent=None):
@@ -541,10 +561,10 @@ class TableView(QWidget):
                 adapter.setup_ui(self, playing)
             
             # Prevent Qt from auto-shifting focus to Chat when main_table_widget is hidden
-            if not playing and (self._focus_target == "gameplay" or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus())):
+            if not playing and (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)):
                 self.main_table_widget.show()
                 safe_set_focus(self.main_table_widget)
-            elif playing and (self._focus_target == "gameplay" or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus())):
+            elif playing and (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)):
                 # Delay slightly to allow newly mounted widgets to become visible
                 for delay in (0, 30, 80, 150):
                     QTimer.singleShot(delay, lambda s=self: s.focus_initial() if safe_is_valid(s) else None)
@@ -562,7 +582,7 @@ class TableView(QWidget):
                     self.thief_answer_input.hide()
                 if hasattr(self, 'wild_color_list'): self.wild_color_list.hide()
                 if hasattr(self, 'domino_side_list'): self.domino_side_list.hide()
-                if self._focus_target == "gameplay" or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus()):
+                if self._focus_target == "gameplay" and not is_user_in_chat_or_log(self):
                     self.main_table_widget.show()
                     safe_set_focus(self.main_table_widget)
 
@@ -671,7 +691,7 @@ class TableView(QWidget):
         lst.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
         if lst.currentRow() < 0:
             lst.setCurrentRow(0)
-        if self._focus_target == "gameplay" or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus()):
+        if self._focus_target == "gameplay" and not is_user_in_chat_or_log(self):
             safe_set_focus(lst)
         self._update_tab_order()
 
@@ -982,7 +1002,7 @@ class TableView(QWidget):
             target_row = min(current_row, self.farkle_dice_list.count() - 1)
             self.farkle_dice_list.setCurrentRow(target_row)
             if self.is_playing and not self._is_modal_active():
-                if had_dice_focus or (self._focus_target == "gameplay") or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus()):
+                if had_dice_focus or (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)):
                     self.farkle_dice_list.setFocus()
 
 
@@ -1108,7 +1128,7 @@ class TableView(QWidget):
             target_row = min(current_row, self.domino_tile_list.count() - 1)
             self.domino_tile_list.setCurrentRow(target_row)
             if self.is_playing and not (hasattr(self, "domino_side_list") and self.domino_side_list.isVisible()) and not self._is_modal_active():
-                if had_tile_focus or (self._focus_target == "gameplay") or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus()):
+                if had_tile_focus or (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)):
                     self.domino_tile_list.setFocus()
 
 
@@ -1252,13 +1272,13 @@ class TableView(QWidget):
             pending = getattr(self, "_pending_uno_focus", False)
             if pending:
                 self._pending_uno_focus = False
-            take_focus = force_focus or pending or (self._focus_target == "gameplay") or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus())
+            take_focus = force_focus or pending or (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self))
             if not self._is_modal_active() and take_focus:
                 lst.setFocus()
                 for delay in (0, 30, 80, 150):
                     QTimer.singleShot(
                         delay,
-                        lambda w=lst: safe_set_focus(w) if safe_is_valid(w) and (self._focus_target == "gameplay" or not (self.chat_input.hasFocus() or self.activity_log.hasFocus())) else None
+                        lambda w=lst: safe_set_focus(w) if safe_is_valid(w) and (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)) else None
                     )
             if announce:
                 # Avoid repeating the same announcement.
@@ -1269,7 +1289,7 @@ class TableView(QWidget):
                     reader.speak(item_text, interrupt=True)
                     self._last_announced_widget = lst
         else:
-            take_focus = force_focus or (self._focus_target == "gameplay") or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus())
+            take_focus = force_focus or (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self))
             if not self._is_modal_active() and take_focus:
                 lst.setFocus()
         self._update_tab_order()
@@ -1322,10 +1342,13 @@ class TableView(QWidget):
         prev_row = 0
         prev_card_id = ""
         had_gameplay_focus = (
-            self._focus_target == "gameplay"
-            or any(lst.hasFocus() or (hasattr(lst, "viewport") and lst.viewport().hasFocus()) for lst in self.card_groups)
-            or getattr(self, "_pending_uno_focus", False)
-            or (self.is_playing and not (self.chat_input.hasFocus() or self.activity_log.hasFocus()))
+            not is_user_in_chat_or_log(self)
+            and (
+                self._focus_target == "gameplay"
+                or any(lst.hasFocus() or (hasattr(lst, "viewport") and lst.viewport().hasFocus()) for lst in self.card_groups)
+                or getattr(self, "_pending_uno_focus", False)
+                or self.is_playing
+            )
         )
 
         if self.card_groups and 0 <= self.active_card_group < len(self.card_groups):
@@ -1549,6 +1572,8 @@ class TableView(QWidget):
         """Initial focus when entering or displaying the shared table view."""
         if not safe_is_valid(self):
             return
+        if is_user_in_chat_or_log(self):
+            return
         try:
             if self._is_modal_active():
                 return
@@ -1633,7 +1658,7 @@ class TableView(QWidget):
             target_row = min(current_row, lst.count() - 1)
             lst.setCurrentRow(target_row)
             if self.is_playing and not self._is_modal_active():
-                if had_focus or (self._focus_target == "gameplay") or (not self.chat_input.hasFocus() and not self.activity_log.hasFocus()):
+                if had_focus or (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)):
                     lst.setFocus()
 
     def update_snakes_state(self, state: dict):
@@ -1861,19 +1886,16 @@ class TableView(QWidget):
                 self.scopa_card_list.setCurrentRow(target_row)
 
             if self.is_playing and not self._is_modal_active():
-                user_in_chat_or_log = bool(
-                    (hasattr(self, "chat_input") and self.chat_input.hasFocus())
-                    or (hasattr(self, "activity_log") and (self.activity_log.hasFocus() or (hasattr(self.activity_log, "viewport") and self.activity_log.viewport().hasFocus())))
-                )
+                user_in_chat_or_log = is_user_in_chat_or_log(self)
                 if had_scopa_focus:
                     self._scopa_gameplay_focus = True
                     self._focus_target = "gameplay"
-                    if not self.scopa_card_list.hasFocus():
+                    if not self.scopa_card_list.hasFocus() and not user_in_chat_or_log:
                         safe_set_focus(self.scopa_card_list)
                     for delay in (0, 30, 80, 150):
                         QTimer.singleShot(
                             delay,
-                            lambda w=self.scopa_card_list: safe_set_focus(w) if safe_is_valid(w) and (self._focus_target == "gameplay" or not (self.chat_input.hasFocus() or self.activity_log.hasFocus())) else None
+                            lambda w=self.scopa_card_list: safe_set_focus(w) if safe_is_valid(w) and (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)) else None
                         )
                 elif ((turn_changed or previous_turn_id is None) and is_my_turn) and not user_in_chat_or_log:
                     self._scopa_gameplay_focus = True
@@ -1883,7 +1905,7 @@ class TableView(QWidget):
                     for delay in (0, 30, 80, 150):
                         QTimer.singleShot(
                             delay,
-                            lambda w=self.scopa_card_list: safe_set_focus(w) if safe_is_valid(w) and (self._focus_target == "gameplay" or not (self.chat_input.hasFocus() or self.activity_log.hasFocus())) else None
+                            lambda w=self.scopa_card_list: safe_set_focus(w) if safe_is_valid(w) and (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)) else None
                         )
 
     def _on_scopa_card_activated(self, item: QListWidgetItem):
