@@ -11,7 +11,7 @@ SETTINGS_FILE = APP_DIR / "settings.json"
 
 DEFAULT_SETTINGS = {
     "general": {
-        "language": "system",
+        "language": "en",
         "auto_login": True,
         "keep_credentials": True,
     },
