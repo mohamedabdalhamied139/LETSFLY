@@ -177,7 +177,7 @@ class NVDAController:
     def available(self):
         return self.dll is not None
 
-    def speak(self, text, interrupt=False):
+    def speak(self, text, interrupt=False, allow_duplicate=False):
         text = tr(text)
         if not self.dll:
             self._emit("speakText لم يُنفذ: NVDA Controller غير متصل.")
@@ -193,7 +193,7 @@ class NVDAController:
 
             import time
             now = time.monotonic()
-            if hasattr(self, "_last_spoken_text") and self._last_spoken_text == text and (now - getattr(self, "_last_spoken_at", 0.0)) < 1.8:
+            if not allow_duplicate and hasattr(self, "_last_spoken_text") and self._last_spoken_text == text and (now - getattr(self, "_last_spoken_at", 0.0)) < 1.8:
                 return True
 
             result = self.dll.nvdaController_speakText(text)
@@ -241,10 +241,10 @@ class ScreenReader:
     def nvda_available(self):
         return self.controller.available
 
-    def speak(self, text: str, interrupt: bool = True):
+    def speak(self, text: str, interrupt: bool = True, allow_duplicate: bool = False):
         if self._muted:
             return False
-        return self.controller.speak(tr(text), interrupt=interrupt)
+        return self.controller.speak(tr(text), interrupt=interrupt, allow_duplicate=allow_duplicate)
 
     def braille(self, text: str):
         return self.controller.braille(tr(text))

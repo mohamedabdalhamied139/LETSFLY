@@ -34,7 +34,7 @@ def handle_list_boundary_navigation(list_widget: QListWidget, event) -> bool:
                 item = list_widget.currentItem() or list_widget.item(0)
                 if item and item.text().strip():
                     from client.accessibility.reader import reader
-                    reader.speak(item.text(), interrupt=True)
+                    reader.speak(item.text(), interrupt=True, allow_duplicate=True)
             event.accept()
             return True
     elif key == Qt.Key_Down:
@@ -45,7 +45,7 @@ def handle_list_boundary_navigation(list_widget: QListWidget, event) -> bool:
                 item = list_widget.currentItem() or list_widget.item(last_idx)
                 if item and item.text().strip():
                     from client.accessibility.reader import reader
-                    reader.speak(item.text(), interrupt=True)
+                    reader.speak(item.text(), interrupt=True, allow_duplicate=True)
             event.accept()
             return True
     return False
@@ -1063,8 +1063,7 @@ class TableView(QWidget):
 
         new_sig = (
             tuple((h.get("tile"), h.get("is_valid"), tuple(h.get("valid_sides") or [])) for h in hand),
-            left_end, right_end, is_my_turn, can_draw, can_pass, boneyard_count,
-            state.get("event_id"), state.get("current_player_id")
+            is_my_turn,
         )
         if getattr(self, "_last_domino_rendered_sig", None) == new_sig:
             return
