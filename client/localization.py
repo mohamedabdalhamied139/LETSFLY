@@ -82,15 +82,24 @@ class TranslationManager:
         self._en_catalog = self._catalogs.get("en", {})
 
         self._en_to_ar_reverse = {}
-        for ar_key, en_val in self._en_catalog.items():
-            if not en_val or not ar_key:
+        self._val_to_canonical: Dict[str, str] = {}
+        for cat_lang, cat_dict in self._catalogs.items():
+            if not isinstance(cat_dict, dict):
                 continue
-            if en_val not in self._en_to_ar_reverse:
-                self._en_to_ar_reverse[en_val] = ar_key
-            else:
-                prev = self._en_to_ar_reverse[en_val]
-                if (prev.endswith(".") or prev.endswith("!")) and not (ar_key.endswith(".") or ar_key.endswith("!")):
-                    self._en_to_ar_reverse[en_val] = ar_key
+            for ar_key, tr_val in cat_dict.items():
+                if not tr_val or not ar_key:
+                    continue
+                tr_val_str = str(tr_val)
+                ar_key_str = str(ar_key)
+                if tr_val_str not in self._val_to_canonical:
+                    self._val_to_canonical[tr_val_str] = ar_key_str
+                if cat_lang == "en":
+                    if tr_val_str not in self._en_to_ar_reverse:
+                        self._en_to_ar_reverse[tr_val_str] = ar_key_str
+                    else:
+                        prev = self._en_to_ar_reverse[tr_val_str]
+                        if (prev.endswith(".") or prev.endswith("!")) and not (ar_key_str.endswith(".") or ar_key_str.endswith("!")):
+                            self._en_to_ar_reverse[tr_val_str] = ar_key_str
 
     def _load_patterns(self) -> None:
         loc_dir = self._locales_dir()
@@ -290,6 +299,9 @@ class TranslationManager:
                 return self._ar_catalog[s]
             if s in self._en_to_ar_reverse:
                 return self._en_to_ar_reverse[s]
+            if s in self._val_to_canonical:
+                canonical = self._val_to_canonical[s]
+                return self._ar_catalog.get(canonical, canonical)
 
             stripped = s.strip()
             if stripped in self._ar_catalog:
@@ -333,6 +345,15 @@ class TranslationManager:
             leading = s[:len(s) - len(s.lstrip())]
             trailing = s[len(s.rstrip()):]
             return f"{leading}{translated}{trailing}"
+
+        # Cross-language translation fallback (e.g. French -> English or English -> French)
+        canonical = self._val_to_canonical.get(s) or self._val_to_canonical.get(stripped)
+        if canonical and canonical != s and canonical != stripped:
+            trans = catalog.get(canonical)
+            if trans:
+                leading = s[:len(s) - len(s.lstrip())]
+                trailing = s[len(s.rstrip()):]
+                return f"{leading}{trans}{trailing}"
 
         # Trailing punctuation handling:
         for punct in ("...", ".", "!", "؟", "?", ":", "،", ","):

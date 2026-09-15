@@ -274,6 +274,7 @@ class SettingsDialog(QDialog):
         super().closeEvent(event)
 
     def apply_settings(self):
+        old_lang = str(settings_store.load_settings().get("general", {}).get("language", "system") or "system").lower().strip()
         # General
         if "general" not in self.settings: self.settings["general"] = {}
         self.settings["general"]["auto_login"] = self.chk_auto_login.isChecked()
@@ -312,10 +313,9 @@ class SettingsDialog(QDialog):
             idx = max(0, min(combo.currentIndex(), len(priv_keys) - 1))
             self.settings["privacy"][k] = priv_keys[idx]
             
-        old_lang = str(settings_store.load_settings().get("general", {}).get("language", "system") or "system").lower().strip()
         new_lang = str(self.language_combo.currentData() or "system").lower().strip()
-        settings_store.save_settings(self.settings)
-        from client.localization import set_language, localize_widget_tree, language
+        self.settings["general"]["language"] = new_lang
+        from client.localization import set_language, localize_widget_tree, language, tr
         if new_lang != old_lang:
             set_language(new_lang)
             localize_widget_tree(self)
@@ -323,6 +323,8 @@ class SettingsDialog(QDialog):
                 localize_widget_tree(self.parent())
             from client.accessibility.reader import reader
             reader.speak(tr("تم تغيير اللغة."), interrupt=True)
+        else:
+            settings_store.save_settings(self.settings)
         
         # Send privacy to server if authenticated
         if self.parent() and hasattr(self.parent(), "api"):
