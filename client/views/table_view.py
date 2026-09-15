@@ -1097,15 +1097,11 @@ class TableView(QWidget):
                 })
                 self.domino_tile_list.addItem(item)
         else:
-            curr_name = state.get("current_player_name", "اللاعب")
             for item_data in hand:
                 label = item_data.get("label", "")
                 item = QListWidgetItem(tr(label))
                 item.setData(Qt.UserRole, {"type": "info"})
                 self.domino_tile_list.addItem(item)
-            wait_item = QListWidgetItem(tr(f"في انتظار دور {curr_name}..."))
-            wait_item.setData(Qt.UserRole, {"type": "info"})
-            self.domino_tile_list.addItem(wait_item)
 
         self.domino_tile_list.blockSignals(False)
 

@@ -2559,8 +2559,19 @@ class TableVerseApp(QMainWindow):
             return
         elif game in ("DOMINO", "AMERICAN_DOMINO"):
             state = self.domino_state or {}
-            bcount = int(state.get("boneyard_count", 0))
-            reader.speak(str(bcount), interrupt=True)
+            hand = state.get("hand", [])
+            players = state.get("players", [])
+            my_count = len(hand)
+            my_id = (self.user or {}).get("id")
+            parts = [tr(f"أنت {my_count}")]
+            for p in players:
+                if p.get("user_id") == my_id:
+                    continue
+                name = p.get("name", "اللاعب")
+                count = p.get("tile_count", 0)
+                parts.append(tr(f"{name} {count}"))
+            sep = "، " if language() == "ar" else ", "
+            reader.speak(sep.join(parts), interrupt=True)
             return
         elif game == "SCOPA":
             state = self.scopa_state or {}

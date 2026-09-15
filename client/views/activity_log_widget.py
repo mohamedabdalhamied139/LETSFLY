@@ -129,13 +129,24 @@ class ActivityLogWidget(QWidget):
         )
 
     def _event_exists(self, event):
-        event_id = event.get("id") if isinstance(event, dict) else None
+        if not isinstance(event, dict):
+            return False
+        event_id = event.get("id")
+        text = str(event.get("text", "")).strip()
         logical_key = self._logical_game_event_key(event)
         for existing in self._events:
             if event_id is not None and existing.get("id") is not None and str(existing.get("id")) == str(event_id):
                 return True
             if logical_key is not None and self._logical_game_event_key(existing) == logical_key:
                 return True
+            if text and str(existing.get("text", "")).strip() == text:
+                # Deduplicate identical text within same game/room
+                room_a = str(event.get("room_id") or "")
+                room_b = str(existing.get("room_id") or "")
+                cat_a = str(event.get("category", "")).upper()
+                cat_b = str(existing.get("category", "")).upper()
+                if (not room_a or not room_b or room_a == room_b) and (cat_a == cat_b or cat_a == "GAMEPLAY" or cat_b == "GAMEPLAY"):
+                    return True
         return False
 
     def _category_rows(self, category):

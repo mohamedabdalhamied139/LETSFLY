@@ -309,8 +309,29 @@ class DominoGame:
             raise ValueError("بنك السحب فارغ.")
         if self.get_valid_moves(user_id):
             raise ValueError("لديك قطعة صالحة للعب، لا يمكنك السحب.")
+        # Separate boneyard into non-matching and matching tiles to enhance randomness & suspense
+        non_matching_indices = []
+        matching_indices = []
+        for idx, t in enumerate(self.boneyard):
+            a, b = t
+            is_match = (
+                self.left_end is None or
+                a == self.left_end or b == self.left_end or
+                a == self.right_end or b == self.right_end
+            )
+            if is_match:
+                matching_indices.append(idx)
+            else:
+                non_matching_indices.append(idx)
 
-        draw_idx = random.randrange(len(self.boneyard))
+        # If non-matching tiles exist, give them a ~70% chance to be drawn, making the search more realistic and challenging
+        if non_matching_indices and (not matching_indices or random.random() < 0.70):
+            draw_idx = random.choice(non_matching_indices)
+        elif matching_indices:
+            draw_idx = random.choice(matching_indices)
+        else:
+            draw_idx = random.randrange(len(self.boneyard))
+
         tile = self.boneyard.pop(draw_idx)
         self.hands[user_id].append(tile)
         self.hands[user_id].sort(key=lambda t: (t[0] + t[1], max(t)), reverse=True)
