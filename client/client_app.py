@@ -2571,7 +2571,7 @@ class TableVerseApp(QMainWindow):
                 name = p.get("name", "اللاعب")
                 count = p.get("tile_count", 0)
                 parts.append(tr(f"{name} {count}"))
-            parts.append(tr(f"المتبقي في البنك {bcount}"))
+            parts.append(tr("المتبقي في البنك {count}", count=bcount))
             sep = "، " if language() == "ar" else ", "
             reader.speak(sep.join(parts), interrupt=True)
             return
