@@ -393,12 +393,7 @@ class TableVerseApp(QMainWindow):
                         can_make_symmetric_choice = True
 
             if can_make_symmetric_choice:
-                a, b = tile[0], tile[1]
-                new_r = b if a == r_end else a
-                right_result = f"{l_end}/{new_r}"
-                new_l = b if a == l_end else a
-                left_result = f"{new_l}/{r_end}"
-                self.table_view.show_domino_side_selection(tile_idx, tile, right_result, left_result)
+                self.table_view._prompt_domino_side_selection(tile_idx, tile, valid_sides)
                 return
             elif len(valid_sides) == 1:
                 side = valid_sides[0]
