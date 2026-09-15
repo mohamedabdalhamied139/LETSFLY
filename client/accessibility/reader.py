@@ -21,6 +21,8 @@ class NVDAController:
         self.architecture = None
         self.last_error = ""
         self.last_speech_time = 0.0
+        self._last_spoken_text = ""
+        self._last_spoken_at = 0.0
         self._load()
 
     def set_diagnostic(self, callback):
@@ -211,6 +213,10 @@ class NVDAController:
             self._emit(f"استثناء في speakText: {self.last_error}.")
             return False
 
+    def clear_duplicate_cache(self):
+        self._last_spoken_text = ""
+        self._last_spoken_at = 0.0
+
     def braille(self, text):
         if not self.dll or not hasattr(self.dll, "nvdaController_brailleMessage"):
             return False
@@ -248,6 +254,9 @@ class ScreenReader:
 
     def braille(self, text: str):
         return self.controller.braille(tr(text))
+
+    def clear_duplicate_cache(self):
+        self.controller.clear_duplicate_cache()
 
 
 reader = ScreenReader()

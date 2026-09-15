@@ -27,7 +27,8 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
         try:
             from .reader import reader
             from client.localization import tr
-            reader.speak(tr(text), interrupt=False)
+            reader.clear_duplicate_cache()
+            reader.speak(tr(text), interrupt=False, allow_duplicate=True)
         except Exception:
             pass
 
@@ -35,6 +36,12 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
         fn = getattr(self.window, method, None)
         if not callable(fn):
             return False
+        # Clear duplicate suppression cache so pressing a shortcut repeatedly always speaks
+        try:
+            from .reader import reader
+            reader.clear_duplicate_cache()
+        except Exception:
+            pass
         # Run UI action after the native event is returned to Qt.
         QTimer.singleShot(0, lambda: fn(*args))
         return True
