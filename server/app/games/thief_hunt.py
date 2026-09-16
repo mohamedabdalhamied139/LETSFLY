@@ -28,7 +28,7 @@ class ThiefHuntGame:
     as the thief for a round. Bots are never promoted to the thief role.
     """
 
-    DIRECTIONS_START = 5
+    DIRECTIONS_START = 3
     VIRTUAL_THIEF_NAME = "اللص"
 
     def __init__(self, players, total_rounds=5, allow_human_thief=False, elimination_mode=False):
@@ -135,21 +135,17 @@ class ThiefHuntGame:
         self.thief_id = thief.user_id
 
     def _generate_directions(self, floor: int):
-        count = self.DIRECTIONS_START + (self.round_number - 1) * 2
+        count = self.DIRECTIONS_START + (self.round_number - 1)
         result = []
         current = floor
-        last_dir = None
         for _ in range(count):
             if current <= 1:
                 direction = "أعلى"
             elif current >= 10:
                 direction = "أسفل"
             else:
-                # Add variation and reduce simple back-and-forth flipping to make mental tracking more challenging
-                weights = (0.6, 0.4) if last_dir == "أعلى" else (0.4, 0.6) if last_dir == "أسفل" else (0.5, 0.5)
-                direction = random.choices(["أعلى", "أسفل"], weights=weights)[0]
+                direction = random.choice(("أعلى", "أسفل"))
             result.append(direction)
-            last_dir = direction
             current = min(10, current + 1) if direction == "أعلى" else max(1, current - 1)
         self.directions = result
         self.current_floor = current
@@ -335,7 +331,10 @@ class ThiefHuntGame:
                 self.virtual_thief_wins += 1
             else:
                 self._find(self.thief_id).wins += 1
-            self.last_action = f"اللص كان في الطابق {floor_name}."
+            if not self.answers:
+                self.last_action = f"لقد هرب اللص قبل كتابة الإجابة. اللص كان في الطابق {floor_name}."
+            else:
+                self.last_action = f"يا إلهي لقد هرب اللص! اللص كان في الطابق {floor_name}."
             self.event_type = "THIEF_WIN"
         self.event_id += 1
         self._advance_match_or_round()
