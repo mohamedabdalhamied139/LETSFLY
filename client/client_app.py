@@ -2442,16 +2442,16 @@ class TableVerseApp(QMainWindow):
                 if len(board) == 1:
                     first = tuple(board[0])
                     if first[0] == first[1]:
-                        l_str = tr("دابل {end}/{end}", end=l_end)
-                        r_str = tr("دابل {end}/{end}", end=r_end)
+                        l_str = tr("دابل {num}", num=l_end)
+                        r_str = tr("دابل {num}", num=r_end)
                     else:
                         l_str = str(l_end)
                         r_str = str(r_end)
                 elif len(board) > 1:
                     first = tuple(board[0])
                     last = tuple(board[-1])
-                    l_str = tr("دابل {end}/{end}", end=l_end) if first[0] == first[1] else str(l_end)
-                    r_str = tr("دابل {end}/{end}", end=r_end) if last[0] == last[1] else str(r_end)
+                    l_str = tr("دابل {num}", num=l_end) if first[0] == first[1] else str(l_end)
+                    r_str = tr("دابل {num}", num=r_end) if last[0] == last[1] else str(r_end)
                 else:
                     l_str = str(l_end)
                     r_str = str(r_end)
@@ -2479,7 +2479,7 @@ class TableVerseApp(QMainWindow):
             t_tuple = tuple(t)
             name = tile_display_name(t_tuple)
             if game == "AMERICAN_DOMINO" and len(t_tuple) == 2 and t_tuple[0] == t_tuple[1]:
-                display = tr("دابل {tile}", tile=name)
+                display = tr("دابل {num}", num=t_tuple[0])
             else:
                 display = name
             items.append((display, i))

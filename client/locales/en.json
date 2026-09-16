@@ -3438,6 +3438,7 @@
   "ملك من هراوات": "King of Clubs",
   "ليفت": "Left",
   "رايت": "Right",
+  "دابل {num}": "Double {num}",
   "دابل {tile}": "Double {tile}",
   "دابل {end}/{end}": "Double {end}/{end}"
 }

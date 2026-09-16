@@ -2395,6 +2395,7 @@
   "[Current] {0}": "[Actuel] {0}",
   "ليفت": "Gauche",
   "رايت": "Droite",
+  "دابل {num}": "Double {num}",
   "دابل {tile}": "Double {tile}",
   "دابل {end}/{end}": "Double {end}/{end}"
 }
