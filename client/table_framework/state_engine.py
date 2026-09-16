@@ -27,7 +27,7 @@ class ClientStateEngine:
             or bool(state.get("match_finished"))
             or str(state.get("event_type", "")).upper() in ("MATCH_WON", "MATCH_FINISHED")
             or str(state.get("phase", "")).lower() == "match_finished"
-            or (getattr(app, "current_room", None) or {}).get("status") in ("match_finished", "waiting")
+            or (not is_active and (getattr(app, "current_room", None) or {}).get("status") in ("match_finished", "waiting"))
         )
         keep_scopa_hand = (
             game_type == "SCOPA"
@@ -43,6 +43,8 @@ class ClientStateEngine:
                 app.current_room["status"] = "waiting"
             if not getattr(app, "_match_over_focus_set", False):
                 app._match_over_focus_set = True
+                if hasattr(app, "_reset_game_runtime_state"):
+                    app._reset_game_runtime_state()
                 if hasattr(app.table_view, "clear_hand_for_round_transition"):
                     app.table_view.clear_hand_for_round_transition()
                 if hasattr(app.table_view, "main_table_widget"):
@@ -140,7 +142,7 @@ class ClientStateEngine:
             elif game_type == "SCOPA":
                 for event_cue in event_cues:
                     sound_engine.play_event(event_cue)
-            elif game_type in ("NINETY_NINE", "DOMINO") and len(event_cues) > 1:
+            elif game_type in ("NINETY_NINE", "DOMINO", "AMERICAN_DOMINO") and len(event_cues) > 1:
                 for delay, event_cue in enumerate(event_cues):
                     if delay == 0:
                         sound_engine.play_event(event_cue)
