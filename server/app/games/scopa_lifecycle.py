@@ -67,7 +67,10 @@ async def check_and_finalize_scopa_round(room: Room):
         if game.is_team_game:
             winning_ids=[uid for uid,tid in game.teams.items() if tid == game.winning_team]
             winner_label = getattr(game, "winner_label", f"الفريق {game.winning_team}")
-            await _persist_match(room, winning_ids)
+            try:
+                await _persist_match(room, winning_ids)
+            except Exception:
+                logger.exception("Failed to persist scopa match to database")
             ws_manager.broadcast_room(room.room_id, {
                 "type": "scopa_match_finished",
                 "room_id": room.room_id,
@@ -82,7 +85,10 @@ async def check_and_finalize_scopa_round(room: Room):
             })
         else:
             final_winner_id = game.winner_id
-            await _persist_match(room, [final_winner_id])
+            try:
+                await _persist_match(room, [final_winner_id])
+            except Exception:
+                logger.exception("Failed to persist scopa match to database")
             final_winner_name = room.player_names.get(final_winner_id, "الفائز")
             ws_manager.broadcast_room(room.room_id, {
                 "type": "scopa_match_finished",

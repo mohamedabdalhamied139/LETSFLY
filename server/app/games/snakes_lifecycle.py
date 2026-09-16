@@ -47,7 +47,7 @@ async def finalize_snakes_match(room: Room):
         game.coin_rewards = {}
     except Exception:
         logger.exception("Failed to persist snakes match rewards to database")
-        raise
+        pass
     ws_manager.broadcast_room(room.room_id, {
         "type": "snakes_match_finished",
         "room_id": room.room_id,

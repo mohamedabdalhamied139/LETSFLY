@@ -562,7 +562,13 @@ async def ninety_nine_action(room, user_id, req):
         wid = game.winner_id
         wname = room.player_names.get(wid, "لاعب")
         room.status = "match_finished"
-        await asyncio.to_thread(_record_match, room, "NINETY_NINE", [wid])
+        if room._round_transition_task and not room._round_transition_task.done():
+            room._round_transition_task.cancel()
+        room._round_transition_task = None
+        try:
+            await asyncio.to_thread(_record_match, room, "NINETY_NINE", [wid])
+        except Exception:
+            pass
         ws_manager.broadcast_lobby({"type": "room_updated", "room_id": room.room_id})
         ws_manager.broadcast_room(room.room_id, {
             "type": "match_finished",

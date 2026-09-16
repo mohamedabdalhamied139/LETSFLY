@@ -41,7 +41,10 @@ async def finalize_thief_match(room: Room):
     winner_id = game.match_winner_id
     winner_name = game.match_winner_name
     winner_type = game.match_winner_type
-    await _persist_match(room, [winner_id])
+    try:
+        await _persist_match(room, [winner_id])
+    except Exception:
+        logger.exception("Failed to persist thief hunt match to database")
     if room._bot_task and not room._bot_task.done():
         current = asyncio.current_task()
         if room._bot_task is not current:

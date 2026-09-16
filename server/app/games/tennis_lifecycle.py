@@ -33,7 +33,10 @@ async def finalize_tennis_match(room: "Room"):
     winner_id = int(winner_dict.get("id", 0))
     winner_name = winner_dict.get("name", room.player_names.get(winner_id, "الفائز"))
     score_snapshot = game.score.snapshot()
-    await _persist_match(room, [winner_id])
+    try:
+        await _persist_match(room, [winner_id])
+    except Exception:
+        logger.exception("Failed to persist tennis match to database")
     ws_manager.broadcast_room(room.room_id, {
         "type": "tennis_match_finished",
         "room_id": room.room_id,

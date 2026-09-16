@@ -929,8 +929,32 @@ async def start_game(room_id: str, req: StartGameRequest, background_tasks: Back
             raise HTTPException(403, "Access denied.")
         if is_host and not is_member:
             room.add_spectator(user.id, user.display_name)
+        if room.status == "match_finished":
+            from server.app.games.registry import get_plugin
+            plugin = get_plugin(room.game)
+            if plugin:
+                plugin.stop_handler(room, plugin)
+            room.status = "waiting"
+            room.target_score = None
+            room.rules = {}
+            room.scores = {uid: 0 for uid in room.players}
+            room.round_started_at = None
+
         if room.status != "waiting":
-            raise HTTPException(400, "Game already started.")
+            from server.app.games.registry import get_plugin
+            plugin = get_plugin(room.game)
+            engine = plugin.get_engine(room) if plugin else None
+            # If the engine is already inactive/done or missing, clean up and allow start
+            if not engine or not getattr(engine, "active", True):
+                if plugin:
+                    plugin.stop_handler(room, plugin)
+                room.status = "waiting"
+                room.target_score = None
+                room.rules = {}
+                room.scores = {uid: 0 for uid in room.players}
+                room.round_started_at = None
+            else:
+                raise HTTPException(400, "Game already started.")
         
         # Farkle filters out spectators. The other games don't explicitly do it here, but Farkle did it in its block.
         if room.game == "FARKLE":

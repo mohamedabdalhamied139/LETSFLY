@@ -53,7 +53,13 @@ async def check_and_finalize_uno_round(room: Room):
             "total": final_total, "target_score": target_score,
             "scores": {str(uid): room.scores.get(uid, 0) for uid in room.players}
         })
-        await _persist_match(room, [wid])
+        if room._round_transition_task and not room._round_transition_task.done():
+            room._round_transition_task.cancel()
+        room._round_transition_task = None
+        try:
+            await _persist_match(room, [wid])
+        except Exception:
+            logger.exception("Failed to persist uno match to database")
         if room._bot_task and not room._bot_task.done():
             current = asyncio.current_task()
             if room._bot_task is not current:

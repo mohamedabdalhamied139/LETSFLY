@@ -32,7 +32,10 @@ async def finalize_farkle_match(room: Room):
     winner_name = room.player_names.get(winner_id, "الفائز")
     final_state = game.state_for(room.host_id)
     room.scores = dict(game.scores)
-    await _persist_match(room, [winner_id])
+    try:
+        await _persist_match(room, [winner_id])
+    except Exception:
+        logger.exception("Failed to persist farkle match to database")
     ws_manager.broadcast_room(room.room_id, {
         "type": "farkle_match_finished",
         "room_id": room.room_id,

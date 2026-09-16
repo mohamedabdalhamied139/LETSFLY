@@ -49,7 +49,13 @@ async def check_and_finalize_american_domino_round(room: Room):
             "scores": {str(k): v for k, v in game.scores.items()},
             "target_score": target_score,
         })
-        await _persist_match(room, [final_winner_id])
+        if room._round_transition_task and not room._round_transition_task.done():
+            room._round_transition_task.cancel()
+        room._round_transition_task = None
+        try:
+            await _persist_match(room, [final_winner_id])
+        except Exception:
+            logger.exception("Failed to persist american domino match to database")
         if room._bot_task and not room._bot_task.done():
             current = asyncio.current_task()
             if room._bot_task is not current:
