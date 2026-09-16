@@ -515,11 +515,15 @@ class WebSocketEventRouter:
 
         if et == "tennis_match_finished":
             self.app._announce_terminal_result(event)
-            self.app.tennis_state = None
+            self.app._reset_game_runtime_state()
+            if self.app.current_room:
+                self.app.current_room["status"] = "waiting"
             self.app.table_view.set_game_type("TENNIS")
             self.app.table_view.set_playing_mode(False)
             self.app.table_view.clear_hand_for_round_transition()
-            self.app.table_view.main_table_widget.setFocus()
+            from client.views.table_view import is_user_in_chat_or_log
+            if not is_user_in_chat_or_log(self.app.table_view):
+                self.app.table_view.main_table_widget.setFocus()
             return
 
         if et in ("domino_match_finished", "american_domino_match_finished"):
@@ -532,17 +536,24 @@ class WebSocketEventRouter:
             self.app.table_view.set_playing_mode(False)
             self.app.table_view.clear_hand_for_round_transition()
             self.app.table_view.update_domino_state({"active": False})
-            self.app.table_view.main_table_widget.setFocus()
+            from client.views.table_view import is_user_in_chat_or_log
+            if not is_user_in_chat_or_log(self.app.table_view):
+                self.app.table_view.main_table_widget.setFocus()
             return
 
         if et == "farkle_match_finished":
             self.app._announce_terminal_result(event)
+            self.app._reset_game_runtime_state()
+            if self.app.current_room:
+                self.app.current_room["status"] = "waiting"
             self.app.farkle_state = event.get("state") or {}
             self.app.table_view.set_game_type("FARKLE")
             self.app.table_view.set_playing_mode(False)
             if hasattr(self.app.table_view, "farkle_dice_list") and self.app.table_view.farkle_dice_list:
                 self.app.table_view.farkle_dice_list.clear()
-            self.app.table_view.main_table_widget.setFocus()
+            from client.views.table_view import is_user_in_chat_or_log
+            if not is_user_in_chat_or_log(self.app.table_view):
+                self.app.table_view.main_table_widget.setFocus()
             return
 
         if et == "scopa_match_finished":
@@ -561,13 +572,15 @@ class WebSocketEventRouter:
 
         if et == "thief_match_finished":
             self.app._announce_terminal_result(event)
-            self.app.thief_state = None
-            self.app.uno_state = None
-            self.app.farkle_state = None
-            self.app._was_my_turn = False
+            self.app._reset_game_runtime_state()
+            if self.app.current_room:
+                self.app.current_room["status"] = "waiting"
             self.app.table_view.set_playing_mode(False)
             self.app.table_view.set_game_type("THIEF_HUNT")
-            self.app.table_view.main_table_widget.setFocus()
+            self.app.table_view.clear_hand_for_round_transition()
+            from client.views.table_view import is_user_in_chat_or_log
+            if not is_user_in_chat_or_log(self.app.table_view):
+                self.app.table_view.main_table_widget.setFocus()
             return
 
         if et == "scopa_round_finished":
@@ -611,12 +624,14 @@ class WebSocketEventRouter:
 
         if et == "match_finished":
             self.app._announce_terminal_result(event)
-            self.app.uno_state = None
-            self.app.thief_state = None
-            self.app._was_my_turn = False
+            self.app._reset_game_runtime_state()
+            if self.app.current_room:
+                self.app.current_room["status"] = "waiting"
             self.app.table_view.set_playing_mode(False)
             self.app.table_view.clear_hand_for_round_transition()
-            self.app.table_view.main_table_widget.setFocus()
+            from client.views.table_view import is_user_in_chat_or_log
+            if not is_user_in_chat_or_log(self.app.table_view):
+                self.app.table_view.main_table_widget.setFocus()
             return
 
         if et == "game_finished":
@@ -631,7 +646,9 @@ class WebSocketEventRouter:
             elif event.get("game") in ("DOMINO", "AMERICAN_DOMINO"):
                 self.app.table_view.clear_hand_for_round_transition()
                 self.app.table_view.update_domino_state({"active": False})
-            self.app.table_view.main_table_widget.setFocus()
+            from client.views.table_view import is_user_in_chat_or_log
+            if not is_user_in_chat_or_log(self.app.table_view):
+                self.app.table_view.main_table_widget.setFocus()
             return
 
         if et in (

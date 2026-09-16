@@ -1749,10 +1749,15 @@ class TableView(QWidget):
         return
 
     def clear_hand_for_round_transition(self):
-        # Move focus to main_table_widget first to prevent screen reader focus vanishing
-        self._focus_target = "gameplay"
+        # Update focus target
+        if not self.is_playing:
+            self._focus_target = "table"
+        else:
+            self._focus_target = "gameplay"
+
         self.main_table_widget.show()
-        safe_set_focus(self.main_table_widget)
+        if not is_user_in_chat_or_log(self):
+            safe_set_focus(self.main_table_widget)
 
         from client.table_framework.adapter import get_adapter
         adapter = get_adapter(self.game_type)
@@ -1773,8 +1778,8 @@ class TableView(QWidget):
             w = self.gameplay_layout.itemAt(i).widget()
             if w: w.hide()
 
-        safe_set_focus(self.main_table_widget)
-        QTimer.singleShot(0, lambda: safe_set_focus(self.main_table_widget))
+        if not is_user_in_chat_or_log(self):
+            safe_set_focus(self.main_table_widget)
 
     def contextMenuEvent(self, event):
         win = self.window()

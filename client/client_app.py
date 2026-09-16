@@ -2082,19 +2082,27 @@ class TableVerseApp(QMainWindow):
 
     def _finish_snakes_match(self, event: dict):
         self._announce_terminal_result(event)
-        self.snakes_state = None
+        self._reset_game_runtime_state()
+        if self.current_room:
+            self.current_room["status"] = "waiting"
         self.table_view.set_game_type("SNAKES_LADDERS")
         self.table_view.set_playing_mode(False)
         self.table_view.clear_hand_for_round_transition()
-        self.table_view.main_table_widget.setFocus()
+        from client.views.table_view import is_user_in_chat_or_log
+        if not is_user_in_chat_or_log(self.table_view):
+            self.table_view.main_table_widget.setFocus()
 
     def _finish_scopa_match(self, event: dict):
         self._announce_terminal_result(event)
-        self.scopa_state = None
+        self._reset_game_runtime_state()
+        if self.current_room:
+            self.current_room["status"] = "waiting"
         self.table_view.set_game_type("SCOPA")
         self.table_view.set_playing_mode(False)
         self.table_view.clear_hand_for_round_transition()
-        self.table_view.main_table_widget.setFocus()
+        from client.views.table_view import is_user_in_chat_or_log
+        if not is_user_in_chat_or_log(self.table_view):
+            self.table_view.main_table_widget.setFocus()
 
     def _announce_scopa_final_play(self, event: dict):
         """Speak and play the final Scopa card once, regardless of frame order."""

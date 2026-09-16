@@ -39,10 +39,12 @@ class ClientStateEngine:
         view_update_callback(is_active and not is_match_over, is_round_finished)
 
         if is_match_over:
-            if hasattr(app.table_view, "clear_hand_for_round_transition"):
-                app.table_view.clear_hand_for_round_transition()
+            if getattr(app, "current_room", None):
+                app.current_room["status"] = "waiting"
             if not getattr(app, "_match_over_focus_set", False):
                 app._match_over_focus_set = True
+                if hasattr(app.table_view, "clear_hand_for_round_transition"):
+                    app.table_view.clear_hand_for_round_transition()
                 if hasattr(app.table_view, "main_table_widget"):
                     app.table_view.main_table_widget.show()
                     from client.views.table_view import is_user_in_chat_or_log
