@@ -370,6 +370,8 @@ class ThiefAnswerInput(QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setText("")
+        self.setAccessibleName("")
+        self.setAccessibleDescription("")
         self.setFocusPolicy(Qt.StrongFocus)
 
     def focusInEvent(self, event):
@@ -580,13 +582,8 @@ class TableView(QWidget):
                 self.wild_color_list.addItem(QListWidgetItem(tr(color_name)))
         
         if hasattr(self, "thief_answer_input") and self.thief_answer_input:
-            mode = getattr(self, "_thief_input_mode", None)
-            if mode == "choose_floor":
-                self.thief_answer_input.setAccessibleName(tr("اختيار طابق اللص"))
-                self.thief_answer_input.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
-            elif mode == "answer":
-                self.thief_answer_input.setAccessibleName(tr("إجابة الطابق"))
-                self.thief_answer_input.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+            self.thief_answer_input.setAccessibleName("")
+            self.thief_answer_input.setAccessibleDescription("")
         
         self._last_hand_signature = None
         self._last_domino_rendered_sig = None
@@ -647,8 +644,12 @@ class TableView(QWidget):
                     safe_set_focus(self.main_table_widget)
 
     def mount_game_ui(self, widget: QWidget):
-        # Hide all OTHER widgets in gameplay_layout without hiding widget itself
-        for i in reversed(range(self.gameplay_layout.count())):
+        """Standard method to mount an adapter's UI into the TableView gameplay container."""
+        if not widget:
+            return
+            
+        # Hide all existing widgets in gameplay layout
+        for i in range(self.gameplay_layout.count()):
             w = self.gameplay_layout.itemAt(i).widget()
             if w and w != widget:
                 w.hide()
@@ -673,8 +674,8 @@ class TableView(QWidget):
         selectable = (phase == "choose_floor" and bool(state.get("is_thief"))) or (phase == "answering" and not bool(state.get("is_thief")))
         if selectable:
             self._thief_input_mode = phase
-            inp.setAccessibleName(tr("اختيار طابق اللص") if phase == "choose_floor" else tr("إجابة الطابق"))
-            inp.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+            inp.setAccessibleName("")
+            inp.setAccessibleDescription("")
             inp.setText("")
             inp.setReadOnly(False)
             inp.setEnabled(True)
@@ -684,6 +685,8 @@ class TableView(QWidget):
         elif phase in ("escape", "round_result") and not state.get("is_thief"):
             self._thief_input_mode = phase
             inp.setText("")
+            inp.setAccessibleName("")
+            inp.setAccessibleDescription("")
             inp.setReadOnly(True)
             inp.setEnabled(True)
             inp.show()
@@ -696,6 +699,8 @@ class TableView(QWidget):
             self._thief_answer_timer.stop()
             self._thief_answer_window_timer.stop()
             inp.setText("")
+            inp.setAccessibleName("")
+            inp.setAccessibleDescription("")
             if self.is_playing:
                 inp.setReadOnly(True)
                 inp.setEnabled(True)
@@ -713,6 +718,8 @@ class TableView(QWidget):
         inp = getattr(self, "thief_answer_input", None)
         if inp is not None:
             inp.setText("")
+            inp.setAccessibleName("")
+            inp.setAccessibleDescription("")
             inp.setReadOnly(True)
             inp.setEnabled(True)
             inp.show()
@@ -730,8 +737,8 @@ class TableView(QWidget):
         if inp is None:
             return
         self._thief_input_mode = "answer"
-        inp.setAccessibleName(tr("إجابة الطابق"))
-        inp.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+        inp.setAccessibleName("")
+        inp.setAccessibleDescription("")
         inp.setText("")
         inp.setReadOnly(False)
         inp.setEnabled(True)
@@ -756,8 +763,8 @@ class TableView(QWidget):
         inp.setReadOnly(False)
         inp.setEnabled(True)
         inp.show()
-        inp.setAccessibleName(tr("إجابة الطابق"))
-        inp.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+        inp.setAccessibleName("")
+        inp.setAccessibleDescription("")
         if self._focus_target == "gameplay" and not is_user_in_chat_or_log(self):
             safe_set_focus(inp)
         self._update_tab_order()

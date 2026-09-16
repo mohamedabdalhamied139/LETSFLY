@@ -27,8 +27,8 @@ def setup_thief_ui(table_view, playing):
         if not getattr(table_view, "thief_answer_input", None):
             from client.views.table_view import ThiefAnswerInput
             table_view.thief_answer_input = ThiefAnswerInput(table_view)
-            table_view.thief_answer_input.setAccessibleName(tr("اختيار طابق اللص"))
-            table_view.thief_answer_input.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+            table_view.thief_answer_input.setAccessibleName("")
+            table_view.thief_answer_input.setAccessibleDescription("")
             table_view.thief_answer_input.setFocusPolicy(Qt.StrongFocus)
         table_view.mount_game_ui(table_view.thief_answer_input)
 
