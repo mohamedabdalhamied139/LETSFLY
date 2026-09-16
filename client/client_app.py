@@ -1103,7 +1103,7 @@ class TableVerseApp(QMainWindow):
                 initial_delay_ms = 700
                 floor_timer = QTimer(self)
                 floor_timer.setSingleShot(True)
-                floor_msg = tr(f"الجولة {current_round}. اللص في الطابق {floor}") if current_round else tr(f"اللص في الطابق {floor}")
+                floor_msg = tr("الجولة {0}. اللص في الطابق {1}.", current_round, floor) if current_round else tr("اللص في الطابق {0}.", floor)
                 floor_timer.timeout.connect(lambda msg=floor_msg: reader.speak(msg, interrupt=False))
                 self._thief_narration_timers.append(floor_timer)
                 floor_timer.start(initial_delay_ms)

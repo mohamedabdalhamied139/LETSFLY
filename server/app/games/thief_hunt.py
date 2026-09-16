@@ -28,7 +28,7 @@ class ThiefHuntGame:
     as the thief for a round. Bots are never promoted to the thief role.
     """
 
-    DIRECTIONS_START = 3
+    DIRECTIONS_START = 5
     VIRTUAL_THIEF_NAME = "اللص"
 
     def __init__(self, players, total_rounds=5, allow_human_thief=False, elimination_mode=False):
@@ -135,17 +135,21 @@ class ThiefHuntGame:
         self.thief_id = thief.user_id
 
     def _generate_directions(self, floor: int):
-        count = self.DIRECTIONS_START + (self.round_number - 1)
+        count = self.DIRECTIONS_START + (self.round_number - 1) * 2
         result = []
         current = floor
+        last_dir = None
         for _ in range(count):
             if current <= 1:
                 direction = "أعلى"
             elif current >= 10:
                 direction = "أسفل"
             else:
-                direction = random.choice(("أعلى", "أسفل"))
+                # Add variation and reduce simple back-and-forth flipping to make mental tracking more challenging
+                weights = (0.6, 0.4) if last_dir == "أعلى" else (0.4, 0.6) if last_dir == "أسفل" else (0.5, 0.5)
+                direction = random.choices(["أعلى", "أسفل"], weights=weights)[0]
             result.append(direction)
+            last_dir = direction
             current = min(10, current + 1) if direction == "أعلى" else max(1, current - 1)
         self.directions = result
         self.current_floor = current
