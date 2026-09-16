@@ -364,22 +364,65 @@ class SnakesActionList(QListWidget):
         super().keyPressEvent(event)
 
 
-class ThiefFloorList(QListWidget):
-    """Pure-list floor selector for Thief Hunt gameplay."""
+class ThiefAnswerInput(QLineEdit):
+    """Accessible QLineEdit for Thief Hunt gameplay."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setText("")
+        self.setFocusPolicy(Qt.StrongFocus)
+
+    def focusInEvent(self, event):
+        try:
+            super().focusInEvent(event)
+        except TypeError:
+            pass
+        parent_table = self.parent()
+        while parent_table and not hasattr(parent_table, "_focus_target"):
+            parent_table = parent_table.parent()
+        if parent_table:
+            parent_table._focus_target = "gameplay"
+
+    def focusOutEvent(self, event):
+        super().focusOutEvent(event)
+        parent_table = self.parent()
+        while parent_table and not hasattr(parent_table, "game_type"):
+            parent_table = parent_table.parent()
+        if parent_table and getattr(parent_table, "game_type", None) == "THIEF_HUNT" and getattr(parent_table, "is_playing", False):
+            mode = getattr(parent_table, "_thief_input_mode", None)
+            focus_target = getattr(parent_table, "_focus_target", None)
+            is_navigating_to_chat_or_log = (
+                focus_target in ("chat", "activity_log")
+                or (hasattr(parent_table, "chat_input") and parent_table.chat_input.hasFocus())
+                or (hasattr(parent_table, "activity_log") and (parent_table.activity_log.hasFocus() or (hasattr(parent_table.activity_log, "viewport") and parent_table.activity_log.viewport().hasFocus())))
+            )
+            allowed_reasons = (
+                Qt.FocusReason.TabFocusReason,
+                Qt.FocusReason.BacktabFocusReason,
+                Qt.FocusReason.MouseFocusReason,
+                Qt.FocusReason.PopupFocusReason,
+            )
+            if event.reason() in allowed_reasons or is_navigating_to_chat_or_log:
+                return
+
+            if mode in ("choose_floor", "answer") and self.isVisible() and self.isEnabled():
+                def _repin(w=self, pt=parent_table):
+                    if safe_is_valid(w) and w.isVisible() and w.isEnabled() and getattr(pt, "_focus_target", None) == "gameplay" and not is_user_in_chat_or_log(pt):
+                        safe_set_focus(w)
+                for delay in (0, 30):
+                    QTimer.singleShot(delay, _repin)
+
     def keyPressEvent(self, event):
-        if handle_list_boundary_navigation(self, event):
-            return
-        if event.key() in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Space):
-            item = self.currentItem()
-            if item:
-                parent_table = self.parent()
-                while parent_table and not hasattr(parent_table, "_on_thief_floor_activated"):
-                    parent_table = parent_table.parent()
-                if parent_table:
-                    parent_table._on_thief_floor_activated(item)
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            parent_table = self.parent()
+            while parent_table and not hasattr(parent_table, "_on_thief_input_submitted"):
+                parent_table = parent_table.parent()
+            if parent_table:
+                parent_table._on_thief_input_submitted(self.text())
             event.accept()
             return
         super().keyPressEvent(event)
+
 
 
 class TableView(QWidget):
@@ -533,14 +576,10 @@ class TableView(QWidget):
             mode = getattr(self, "_thief_input_mode", None)
             if mode == "choose_floor":
                 self.thief_answer_input.setAccessibleName(tr("اختيار طابق اللص"))
-                self.thief_answer_input.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+                self.thief_answer_input.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
             elif mode == "answer":
                 self.thief_answer_input.setAccessibleName(tr("إجابة الطابق"))
-                self.thief_answer_input.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
-            for i in range(self.thief_answer_input.count()):
-                it = self.thief_answer_input.item(i)
-                val = it.data(Qt.UserRole) or str(i + 1)
-                it.setText(tr("الطابق {0}", val))
+                self.thief_answer_input.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
         
         self._last_hand_signature = None
         self._last_domino_rendered_sig = None
@@ -621,45 +660,47 @@ class TableView(QWidget):
         self.set_playing_mode(active)
         if self.game_type != "THIEF_HUNT":
             return
-        lst = getattr(self, "thief_answer_input", None)
-        if lst is None:
+        inp = getattr(self, "thief_answer_input", None)
+        if inp is None:
             return
         selectable = (phase == "choose_floor" and bool(state.get("is_thief"))) or (phase == "answering" and not bool(state.get("is_thief")))
         if selectable:
             self._thief_input_mode = phase
-            lst.setAccessibleName(tr("اختيار طابق اللص") if phase == "choose_floor" else tr("إجابة الطابق"))
-            lst.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
-            lst.setEnabled(True)
-            lst.show()
-            if lst.currentRow() < 0:
-                lst.setCurrentRow(0)
-            if not lst.hasFocus():
-                QTimer.singleShot(0, lambda w=lst: safe_set_focus(w))
+            inp.setAccessibleName(tr("اختيار طابق اللص") if phase == "choose_floor" else tr("إجابة الطابق"))
+            inp.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+            inp.setText("")
+            inp.setEnabled(True)
+            inp.show()
+            if not inp.hasFocus():
+                QTimer.singleShot(0, lambda w=inp: safe_set_focus(w))
         elif phase in ("escape", "round_result") and not state.get("is_thief"):
             self._thief_input_mode = phase
-            lst.setEnabled(False)
-            lst.show()
+            inp.setText("")
+            inp.setEnabled(False)
+            inp.show()
         else:
             self._thief_input_mode = None
             self._thief_narrating = False
             self._thief_narration_timer.stop()
             self._thief_answer_timer.stop()
             self._thief_answer_window_timer.stop()
+            inp.setText("")
             if self.is_playing:
-                lst.setEnabled(True)
-                lst.show()
+                inp.setEnabled(True)
+                inp.show()
             else:
-                lst.hide()
+                inp.hide()
         self._update_tab_order()
 
 
     def begin_thief_narration(self, duration_ms: int):
         self._thief_narrating = True
         self._thief_narration_timer.stop()
-        lst = getattr(self, "thief_answer_input", None)
-        if lst is not None:
-            lst.setEnabled(False)
-            lst.show()
+        inp = getattr(self, "thief_answer_input", None)
+        if inp is not None:
+            inp.setText("")
+            inp.setEnabled(False)
+            inp.show()
         self._update_tab_order()
         self._thief_narration_timer.start(max(0, int(duration_ms)))
 
@@ -668,23 +709,18 @@ class TableView(QWidget):
         self._thief_narrating = False
         if self.game_type != "THIEF_HUNT" or not self.is_playing:
             return
-        lst = getattr(self, "thief_answer_input", None)
-        if lst is None:
+        inp = getattr(self, "thief_answer_input", None)
+        if inp is None:
             return
         self._thief_input_mode = "answer"
-        lst.setAccessibleName(tr("إجابة الطابق"))
-        lst.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
-        for i in range(lst.count()):
-            it = lst.item(i)
-            val = it.data(Qt.UserRole) or str(i + 1)
-            it.setText(tr("الطابق {0}", val))
-        lst.setEnabled(True)
-        lst.show()
+        inp.setAccessibleName(tr("إجابة الطابق"))
+        inp.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+        inp.setText("")
+        inp.setEnabled(True)
+        inp.show()
         self._focus_target = "gameplay"
-        if lst.currentRow() < 0:
-            lst.setCurrentRow(0)
         self._update_tab_order()
-        safe_set_focus(lst)
+        safe_set_focus(inp)
         self._thief_answer_window_timer.stop()
         if open_server_window:
             self.thiefActionSubmitted.emit("begin_answering", "")
@@ -693,25 +729,23 @@ class TableView(QWidget):
     def ensure_thief_answer_input_visible(self):
         if self.game_type != "THIEF_HUNT" or not self.is_playing:
             return
-        lst = getattr(self, "thief_answer_input", None)
-        if lst is None:
+        inp = getattr(self, "thief_answer_input", None)
+        if inp is None:
             return
         self._thief_input_mode = "answer"
         self._thief_narrating = False
         self._thief_narration_timer.stop()
-        lst.setEnabled(True)
-        lst.show()
-        lst.setAccessibleName(tr("إجابة الطابق"))
-        lst.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
-        if lst.currentRow() < 0:
-            lst.setCurrentRow(0)
+        inp.setEnabled(True)
+        inp.show()
+        inp.setAccessibleName(tr("إجابة الطابق"))
+        inp.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
         if self._focus_target == "gameplay" and not is_user_in_chat_or_log(self):
-            safe_set_focus(lst)
+            safe_set_focus(inp)
         self._update_tab_order()
 
 
     def _thief_answer_window_expired(self):
-        """Disable the local floor selector after the answer window closes."""
+        """Disable the local floor input after the answer window closes."""
         if self.game_type != "THIEF_HUNT" or self._thief_input_mode != "answer":
             return
         if getattr(self, "thief_answer_input", None) is not None:
@@ -719,29 +753,40 @@ class TableView(QWidget):
         self._thief_input_mode = None
         self._update_tab_order()
 
-    def _on_thief_floor_activated(self, item: QListWidgetItem):
+    def _on_thief_input_submitted(self, text: str):
         if self.game_type != "THIEF_HUNT" or not self.is_playing:
             return
         if self._thief_input_mode not in ("choose_floor", "answer"):
             return
-        value = str(item.data(Qt.UserRole) or item.text()).strip()
-        if not value.isdigit() or not 1 <= int(value) <= 10:
+        value = str(text or "").strip()
+        # Translate Arabic digits to standard ascii digits if entered
+        arabic_digits = "٠١٢٣٤٥٦٧٨٩"
+        for i, ad in enumerate(arabic_digits):
+            value = value.replace(ad, str(i))
+        if not value.isdigit() or not (1 <= int(value) <= 10):
+            from client.accessibility.reader import reader
+            reader.speak(tr("يرجى إدخال رقم من 1 إلى 10"), interrupt=True)
+            if getattr(self, "thief_answer_input", None):
+                self.thief_answer_input.selectAll()
             return
         mode = self._thief_input_mode
         if mode == "choose_floor":
             self.thiefActionSubmitted.emit("choose_floor", value)
         else:
             self.thiefActionSubmitted.emit("answer", value)
-            self.thief_answer_input.setEnabled(False)
+            if getattr(self, "thief_answer_input", None):
+                self.thief_answer_input.setEnabled(False)
+
+    def _on_thief_floor_activated(self, item: QListWidgetItem):
+        # Compatibility stub
+        pass
 
     def _submit_thief_input(self):
-        lst = getattr(self, "thief_answer_input", None)
-        if lst is not None and lst.currentItem() is not None:
-            self._on_thief_floor_activated(lst.currentItem())
-
+        inp = getattr(self, "thief_answer_input", None)
+        if inp is not None:
+            self._on_thief_input_submitted(inp.text())
 
     def _thief_answer_changed(self, text: str):
-        # Compatibility hook retained for old callers; gameplay is now list based.
         return
 
 

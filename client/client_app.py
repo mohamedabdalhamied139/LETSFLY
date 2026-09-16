@@ -87,6 +87,7 @@ class TableVerseApp(QMainWindow):
         self._seen_scopa_final_plays = set()
         self._last_exchange_prompt_key = None
         self._match_result_sound_played = False
+        self._thief_narration_timers = []
         self._pre_deactivate_focus = None  # widget focused before window lost OS focus
         self._room_generation = 0
         self._table_join_fallback_monotonic = None
@@ -1003,6 +1004,7 @@ class TableVerseApp(QMainWindow):
         self._last_snakes_event_id = 0
         self._last_snakes_step_event_id = 0
         self._last_thief_event_key = None
+        self._cancel_thief_narration_timers()
         self._match_result_sound_played = False
         self._was_my_turn = False
         self._pending_wild_card_id = None
@@ -1051,6 +1053,15 @@ class TableVerseApp(QMainWindow):
             self._poll_in_flight = False
         self._run_async(lambda: self.api.thief_state(rid), done, fail)
 
+    def _cancel_thief_narration_timers(self):
+        for t in getattr(self, "_thief_narration_timers", []):
+            try:
+                t.stop()
+                t.deleteLater()
+            except Exception:
+                pass
+        self._thief_narration_timers = []
+
     def _apply_thief_state(self, state):
         previous = self.thief_state or {}
         self.thief_state = state or {}
@@ -1064,14 +1075,15 @@ class TableVerseApp(QMainWindow):
         if phase_changed or not previous:
             self.table_view.configure_thief_state(self.thief_state)
         if round_changed:
-            # The server's round_number is authoritative. Announce it once
-            # before the escape narration for every normal, tie-break, and
-            # elimination round. The supplied "game start" cue is used only
-            # for the first round; later rounds use the shared round-start cue.
             if current_round == 1:
                 sound_engine.play_event("THIEF_GAME_START")
             if self.thief_state.get("event_type") != "ESCAPE_START":
-                reader.speak(tr(f"الجولة {current_round}"), interrupt=False)
+                # Delay narration after round start sound to create a distinct pause
+                round_timer = QTimer(self)
+                round_timer.setSingleShot(True)
+                round_timer.timeout.connect(lambda r=current_round: reader.speak(tr(f"الجولة {r}"), interrupt=False))
+                self._thief_narration_timers.append(round_timer)
+                round_timer.start(800)
         eid = int(self.thief_state.get("event_id", 0) or 0)
         et = self.thief_state.get("event_type", "")
         key = f"{eid}:{et}"
@@ -1082,39 +1094,36 @@ class TableVerseApp(QMainWindow):
                 self.table_view.add_log(text)
             if et == "ESCAPE_START":
                 sound_engine.play_event("THIEF_ESCAPE")
+                self._cancel_thief_narration_timers()
                 floor = self.thief_state.get("start_floor")
-                dirs = self.thief_state.get("directions", [])
-                narration_parts = []
-                if current_round:
-                    narration_parts.append(f"الجولة {current_round}")
-                if floor:
-                    narration_parts.append(f"اللص في الطابق {floor}")
-                if dirs:
-                    narration_parts.append("، ".join(dirs))
-                narration = "، ".join(narration_parts)
-                if narration:
-                    # Send the narration as one NVDA utterance. This avoids a
-                    # second queued speech command whose duration was previously
-                    # omitted from the local transition estimate.
-                    reader.speak(tr(narration), interrupt=False)
-                # NVDA Controller has no speech-completion callback. Keep the
-                # answer field hidden and the table focused while the queued
-                # narration is spoken, then open the field immediately after
-                # an estimated speech duration. This is not a thinking delay.
-                # NVDA Controller's speakText is asynchronous and exposes no
-                # speech-completion callback. Use a short narration estimate
-                # only to separate the spoken phase from the answer phase.
-                # Crucially, once this estimate ends the input is shown locally
-                # immediately; it does not wait for the server HTTP response.
-                # Deterministic estimate based on floor narration + count of directions (approx 1.2s per direction + 1.8s for start floor)
-                dir_count = len(dirs) if dirs else 0
-                estimated_ms = max(4000, 1800 + (dir_count * 1200))
-                self.table_view.begin_thief_narration(estimated_ms)
+                dirs = list(self.thief_state.get("directions") or [])
+
+                # 1. Spacing and delay between round start sound and narration
+                # Start narration 800ms after escape sound
+                initial_delay_ms = 800
+                floor_timer = QTimer(self)
+                floor_timer.setSingleShot(True)
+                floor_msg = tr(f"الجولة {current_round}. اللص في الطابق {floor}") if current_round else tr(f"اللص في الطابق {floor}")
+                floor_timer.timeout.connect(lambda msg=floor_msg: reader.speak(msg, interrupt=False))
+                self._thief_narration_timers.append(floor_timer)
+                floor_timer.start(initial_delay_ms)
+
+                # 2. Sequential direction announcements spaced ~1.1s apart for thinking time
+                step_interval_ms = 1100
+                base_time = initial_delay_ms + 1800  # allow time for "الجولة X. اللص في الطابق Y"
+                for i, d in enumerate(dirs):
+                    d_timer = QTimer(self)
+                    d_timer.setSingleShot(True)
+                    d_timer.timeout.connect(lambda dir_text=d: reader.speak(tr(dir_text), interrupt=False, allow_duplicate=True))
+                    self._thief_narration_timers.append(d_timer)
+                    d_timer.start(base_time + (i * step_interval_ms))
+
+                # 3. Total narration time + buffer before showing answer input
+                total_duration_ms = base_time + (len(dirs) * step_interval_ms) + 600
+                self.table_view.begin_thief_narration(total_duration_ms)
                 return
             elif et == "ANSWER_START":
-                # The supplied answer-start recording is played as the prompt.
-                # The server's eight-second deadline remains authoritative and
-                # is not extended by the recording duration.
+                self._cancel_thief_narration_timers()
                 sound_engine.play_event("THIEF_ANSWER_START")
                 self.table_view.activate_thief_answer_input(open_server_window=False)
             elif et in ("ROUND_WIN", "THIEF_WIN", "ROUND_TIE", "TIE_BREAK_START", "MATCH_WIN"):

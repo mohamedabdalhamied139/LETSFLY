@@ -25,23 +25,16 @@ def focus_cards(table_view):
 def setup_thief_ui(table_view, playing):
     if playing:
         if not getattr(table_view, "thief_answer_input", None):
-            from client.views.table_view import ThiefFloorList
-            table_view.thief_answer_input = ThiefFloorList(table_view)
+            from client.views.table_view import ThiefAnswerInput
+            table_view.thief_answer_input = ThiefAnswerInput(table_view)
             table_view.thief_answer_input.setAccessibleName(tr("اختيار طابق اللص"))
-            table_view.thief_answer_input.setAccessibleDescription(tr("اختر رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
+            table_view.thief_answer_input.setAccessibleDescription(tr("اكتب رقم الطابق من 1 إلى 10 ثم اضغط Enter"))
             table_view.thief_answer_input.setFocusPolicy(Qt.StrongFocus)
-            for floor in range(1, 11):
-                item = QListWidgetItem(tr("الطابق {0}", floor))
-                item.setData(Qt.UserRole, str(floor))
-                table_view.thief_answer_input.addItem(item)
-            table_view.thief_answer_input.itemActivated.connect(table_view._on_thief_floor_activated)
         table_view.mount_game_ui(table_view.thief_answer_input)
 
 
 def focus_thief(table_view):
     if table_view.is_playing and getattr(table_view, "thief_answer_input", None) and table_view.thief_answer_input.isVisible():
-        if table_view.thief_answer_input.count() and table_view.thief_answer_input.currentRow() < 0:
-            table_view.thief_answer_input.setCurrentRow(0)
         table_view.thief_answer_input.setFocus()
     else:
         table_view.main_table_widget.setFocus()
