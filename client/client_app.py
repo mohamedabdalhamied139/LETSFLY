@@ -1108,9 +1108,17 @@ class TableVerseApp(QMainWindow):
                 self._thief_narration_timers.append(floor_timer)
                 floor_timer.start(initial_delay_ms)
 
-                # 2. Sequential direction announcements spaced slightly closer together (650ms)
+                # 2. Wait 1 second after floor announcement, then speak "يا إلهي لقد هرب اللص"
+                escape_alert_time = initial_delay_ms + 1200 + 1000  # floor speech + 1s pause
+                alert_timer = QTimer(self)
+                alert_timer.setSingleShot(True)
+                alert_timer.timeout.connect(lambda: reader.speak(tr("يا إلهي لقد هرب اللص"), interrupt=False))
+                self._thief_narration_timers.append(alert_timer)
+                alert_timer.start(escape_alert_time)
+
+                # 3. Sequential direction announcements after the escape alert
                 step_interval_ms = 650
-                base_time = initial_delay_ms + 1200  # allow time for "الجولة X. اللص في الطابق Y"
+                base_time = escape_alert_time + 1500  # allow time for "يا إلهي لقد هرب اللص"
                 for i, d in enumerate(dirs):
                     d_timer = QTimer(self)
                     d_timer.setSingleShot(True)
@@ -1118,7 +1126,7 @@ class TableVerseApp(QMainWindow):
                     self._thief_narration_timers.append(d_timer)
                     d_timer.start(base_time + (i * step_interval_ms))
 
-                # 3. Total narration time + buffer before showing answer input
+                # 4. Total narration time + buffer before showing answer input
                 total_duration_ms = base_time + (len(dirs) * step_interval_ms) + 250
                 self.table_view.begin_thief_narration(total_duration_ms)
                 return

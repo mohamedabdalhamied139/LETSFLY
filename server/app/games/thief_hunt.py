@@ -192,7 +192,7 @@ class ThiefHuntGame:
         self._generate_directions(self.start_floor)
         self.phase = "escape"
         self.answer_deadline = None
-        self.escape_deadline = time.monotonic() + 2.15 + len(self.directions) * 0.65
+        self.escape_deadline = time.monotonic() + 3.95 + len(self.directions) * 0.65
         self._set_event(f"الجولة {self.round_number}. اللص في الطابق {self.start_floor}.", "ESCAPE_START")
 
     def _begin_answering(self):
@@ -331,7 +331,7 @@ class ThiefHuntGame:
                 self.virtual_thief_wins += 1
             else:
                 self._find(self.thief_id).wins += 1
-            self.last_action = f"يا إلهي لقد هرب اللص! اللص كان في الطابق {floor_name}."
+            self.last_action = f"اللص كان في الطابق {floor_name}."
             self.event_type = "THIEF_WIN"
         self.event_id += 1
         self._advance_match_or_round()
