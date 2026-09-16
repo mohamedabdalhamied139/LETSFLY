@@ -1075,10 +1075,8 @@ class TableVerseApp(QMainWindow):
         if phase_changed or not previous:
             self.table_view.configure_thief_state(self.thief_state)
         if round_changed:
-            if current_round == 1:
-                sound_engine.play_event("THIEF_GAME_START")
             if self.thief_state.get("event_type") != "ESCAPE_START":
-                # Delay narration after round start sound to create a distinct pause
+                # Delay narration to create a distinct pause
                 round_timer = QTimer(self)
                 round_timer.setSingleShot(True)
                 round_timer.timeout.connect(lambda r=current_round: reader.speak(tr(f"الجولة {r}"), interrupt=False))
@@ -1093,14 +1091,12 @@ class TableVerseApp(QMainWindow):
             if text:
                 self.table_view.add_log(text)
             if et == "ESCAPE_START":
-                sound_engine.play_event("THIEF_ESCAPE")
                 self._cancel_thief_narration_timers()
                 floor = self.thief_state.get("start_floor")
                 dirs = list(self.thief_state.get("directions") or [])
 
-                # 1. Spacing and delay between round start sound and narration
-                # Start narration 700ms after escape sound to give adequate pause after round start
-                initial_delay_ms = 700
+                # 1. Start floor narration immediately without round-start sound
+                initial_delay_ms = 0
                 floor_timer = QTimer(self)
                 floor_timer.setSingleShot(True)
                 floor_msg = tr("الجولة {0}. اللص في الطابق {1}.", current_round, floor) if current_round else tr("اللص في الطابق {0}.", floor)
