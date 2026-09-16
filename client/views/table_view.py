@@ -1184,13 +1184,38 @@ class TableView(QWidget):
 
         a, b = tile[0], tile[1]
 
-        # Calculate what the table ends will become if played on right:
+        # Calculate what the table ends will become if played on right / left:
         new_r = b if a == r_end else a
-        right_result = f"{l_end}/{new_r}"
-
-        # Calculate what the table ends will become if played on left:
         new_l = b if a == l_end else a
-        left_result = f"{new_l}/{r_end}"
+
+        is_american = (getattr(self, "game_type", "") == "AMERICAN_DOMINO")
+        if is_american:
+            board = list(state.get("board") or [])
+            if len(board) == 1:
+                first = tuple(board[0])
+                l_is_double = (first[0] == first[1])
+                r_is_double = l_is_double
+            elif len(board) > 1:
+                first = tuple(board[0])
+                last = tuple(board[-1])
+                l_is_double = (first[0] == first[1])
+                r_is_double = (last[0] == last[1])
+            else:
+                l_is_double = False
+                r_is_double = False
+
+            # When played on right: left end stays unchanged, right end becomes new_r (and is double if played tile a==b)
+            l_part_for_r = tr("دابل {num}", num=l_end) if l_is_double else str(l_end)
+            r_part_for_r = tr("دابل {num}", num=new_r) if a == b else str(new_r)
+            right_result = f"{l_part_for_r}/{r_part_for_r}"
+
+            # When played on left: left end becomes new_l (double if a==b), right end stays unchanged
+            l_part_for_l = tr("دابل {num}", num=new_l) if a == b else str(new_l)
+            r_part_for_l = tr("دابل {num}", num=r_end) if r_is_double else str(r_end)
+            left_result = f"{l_part_for_l}/{r_part_for_l}"
+        else:
+            right_result = f"{l_end}/{new_r}"
+            left_result = f"{new_l}/{r_end}"
 
         # Calculate remaining cards count in hand with each target number
         hand_tiles = []

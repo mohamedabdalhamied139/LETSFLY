@@ -524,11 +524,14 @@ class WebSocketEventRouter:
 
         if et in ("domino_match_finished", "american_domino_match_finished"):
             self.app._announce_terminal_result(event)
-            self.app.domino_state = None
-            gtype = self.app.current_room.get("game", "DOMINO")
+            self.app._reset_game_runtime_state()
+            if self.app.current_room:
+                self.app.current_room["status"] = "waiting"
+            gtype = (self.app.current_room or {}).get("game", "DOMINO")
             self.app.table_view.set_game_type(gtype)
             self.app.table_view.set_playing_mode(False)
             self.app.table_view.clear_hand_for_round_transition()
+            self.app.table_view.update_domino_state({"active": False})
             self.app.table_view.main_table_widget.setFocus()
             return
 
@@ -619,12 +622,15 @@ class WebSocketEventRouter:
         if et == "game_finished":
             if event.get("game") == "SCOPA":
                 return
-            self.app.uno_state = None
-            self.app.thief_state = None
-            self.app._was_my_turn = False
+            self.app._reset_game_runtime_state()
+            if self.app.current_room:
+                self.app.current_room["status"] = "waiting"
             self.app.table_view.set_playing_mode(False)
             if event.get("game") in ("UNO", "NINETY_NINE"):
                 self.app.table_view.clear_hand_for_round_transition()
+            elif event.get("game") in ("DOMINO", "AMERICAN_DOMINO"):
+                self.app.table_view.clear_hand_for_round_transition()
+                self.app.table_view.update_domino_state({"active": False})
             self.app.table_view.main_table_widget.setFocus()
             return
 

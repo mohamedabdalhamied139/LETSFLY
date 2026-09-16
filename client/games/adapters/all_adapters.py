@@ -107,8 +107,8 @@ def focus_domino(table_view):
             if table_view.domino_tile_list.count() > 0 and table_view.domino_tile_list.currentRow() < 0:
                 table_view.domino_tile_list.setCurrentRow(0)
             table_view.domino_tile_list.setFocus()
-        else:
-            table_view.main_table_widget.setFocus()
+        elif getattr(table_view, "domino_container", None):
+            table_view.domino_container.setFocus()
     else:
         table_view.main_table_widget.setFocus()
 
