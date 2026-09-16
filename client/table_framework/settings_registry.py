@@ -151,7 +151,6 @@ def thief_hunt_mapper(values):
     rounds = int(values.get("rounds", 5))
     return rounds, {
         "rounds": rounds,
-        "allow_human_thief": bool(values.get("allow_human_thief")),
         "elimination_mode": bool(values.get("elimination_mode"))
     }
 
@@ -240,12 +239,11 @@ GAME_SETTINGS_REGISTRY = {
         game_type="THIEF_HUNT",
         title="مطاردة اللص",
         default_target_score=1,
-        default_rules={"rounds": 5, "allow_human_thief": False, "elimination_mode": False},
+        default_rules={"rounds": 5, "elimination_mode": False},
         state_getter="thief_state",
         state_applier="_apply_thief_state",
         custom_fields=[
-            SettingField("rounds", "عدد الجولات", kind="number", default_value=5, minimum=1, step=1),
-            SettingField("allow_human_thief", "السماح باللص البشري", kind="bool", default_value=False),
+            SettingField("rounds", "عدد الجولات", kind="number", default_value=5, minimum=1, maximum=100, step=1),
             SettingField("elimination_mode", "نظام الخروج المباشر", kind="bool", default_value=False),
         ],
         rule_mapper=thief_hunt_mapper

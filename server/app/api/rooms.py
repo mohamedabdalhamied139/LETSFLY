@@ -861,7 +861,7 @@ def _validate_game_configuration(game: str, target_score: int, rules: dict) -> t
     rules = dict(rules or {})
     specs = {
         "UNO": ({**{k: "bool" for k, _, _ in __import__("core_shared.rules_config", fromlist=["RULE_DEFINITIONS"]).RULE_DEFINITIONS}, "turn_timer": "any"}, (1, 9999)),
-        "THIEF_HUNT": ({"rounds": ("int", 1, 10), "allow_human_thief": "bool", "elimination_mode": "bool"}, (1, 1)),
+        "THIEF_HUNT": ({"rounds": ("int", 1, 100), "allow_human_thief": "bool", "elimination_mode": "bool"}, (1, 1)),
         "FARKLE": ({"min_bank": ("int", 30, 10000), "first_bank_min": ("int", 50, 10000)}, (1, 100000)),
         "DOMINO": ({"mode": ("choice", {"draw", "block"}), "hand_size": ("int", 1, 7)}, (1, 10000)),
         "AMERICAN_DOMINO": ({"hand_size": ("int", 1, 7), "scoring_mode": ("choice", {"standard", "unit"})}, (1, 10000)),

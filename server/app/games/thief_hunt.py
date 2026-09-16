@@ -29,13 +29,13 @@ class ThiefHuntGame:
     """
 
     DIRECTIONS_START = 3
-    VIRTUAL_THIEF_NAME = "اللص الوهمي"
+    VIRTUAL_THIEF_NAME = "اللص"
 
     def __init__(self, players, total_rounds=5, allow_human_thief=False, elimination_mode=False):
         self.players: List[HuntPlayer] = [
             HuntPlayer(uid, name, uid < 0) for uid, name in players
         ]
-        self.total_rounds = max(3, min(10, int(total_rounds)))
+        self.total_rounds = max(1, min(100, int(total_rounds)))
         self.allow_human_thief = bool(allow_human_thief)
         self.elimination_mode = bool(elimination_mode)
         self.sudden_death = False

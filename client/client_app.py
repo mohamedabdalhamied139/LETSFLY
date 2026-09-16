@@ -2539,7 +2539,6 @@ class TableVerseApp(QMainWindow):
             if rules.get("mystery_tiles"): active_rules.append("المربعات الغامضة")
         elif game == "THIEF_HUNT":
             active_rules.append(tr("عدد الجولات: {0}", rules.get('rounds', 5)))
-            if rules.get("allow_human_thief"): active_rules.append("السماح للاعبين بدور اللص")
             if rules.get("elimination_mode"): active_rules.append("نظام الإقصاء")
         elif game in ("DOMINO", "AMERICAN_DOMINO"):
             mode = rules.get("mode", "draw")

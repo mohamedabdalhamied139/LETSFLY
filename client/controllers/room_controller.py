@@ -101,7 +101,10 @@ class RoomController:
             sound_engine.play_event("TABLE_LEAVE")
             self.app.current_room = None
             self.app.voice.leave_room()
-            self.app.uno_state = None
+            self.app._reset_game_runtime_state()
+            if hasattr(self.app, "table_view") and self.app.table_view:
+                self.app.table_view.cleanup()
+                self.app.table_view.set_playing_mode(False)
             self.app.poll_timer.stop()
             self.app._poll_in_flight = False
             self.app._action_in_flight = False
