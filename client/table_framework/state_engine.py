@@ -41,9 +41,16 @@ class ClientStateEngine:
         if is_match_over:
             if hasattr(app.table_view, "clear_hand_for_round_transition"):
                 app.table_view.clear_hand_for_round_transition()
-            if hasattr(app.table_view, "main_table_widget"):
-                app.table_view.main_table_widget.show()
-                app.table_view.main_table_widget.setFocus()
+            if not getattr(app, "_match_over_focus_set", False):
+                app._match_over_focus_set = True
+                if hasattr(app.table_view, "main_table_widget"):
+                    app.table_view.main_table_widget.show()
+                    from client.views.table_view import is_user_in_chat_or_log
+                    if not is_user_in_chat_or_log(app.table_view):
+                        app.table_view.main_table_widget.setFocus()
+        else:
+            if getattr(app, "_match_over_focus_set", False):
+                app._match_over_focus_set = False
 
         if is_active and not is_round_finished:
             sound_engine.preload_game_sounds(game_type)

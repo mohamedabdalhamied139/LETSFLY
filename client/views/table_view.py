@@ -76,9 +76,6 @@ def is_user_in_chat_or_log(table_view) -> bool:
     """Returns True if user currently has focus in chat_input, activity_log, or activity_panel."""
     if not safe_is_valid(table_view):
         return False
-    # If focus target is gameplay, don't let transient focus in chat prevent game focus
-    if getattr(table_view, "_focus_target", None) == "gameplay":
-        return False
     from PySide6.QtWidgets import QApplication
     fw = QApplication.focusWidget()
     if fw is None:
@@ -567,6 +564,8 @@ class TableView(QWidget):
         self.is_playing = playing
         if playing:
             self._focus_target = "gameplay"
+        else:
+            self._focus_target = "table"
         self.main_table_widget.setVisible(not playing)
         
         if prev_playing != playing:
