@@ -2403,6 +2403,28 @@ class TableVerseApp(QMainWindow):
         curr = self.uno_state.get("current_player_name", "")
         reader.speak(tr("دور {name}", name=curr) if curr else tr("غير محدد"), interrupt=True)
 
+    def on_domino_toggle_side(self):
+        game = str((self.current_room or {}).get("game", "")).upper()
+        if game not in ("DOMINO", "AMERICAN_DOMINO"):
+            return
+        side_list = getattr(self.table_view, "domino_side_list", None) if hasattr(self, "table_view") else None
+        if side_list and side_list.isVisible() and side_list.count() >= 2:
+            new_row = 1 if side_list.currentRow() == 0 else 0
+            side_list.setCurrentRow(new_row)
+            item = side_list.item(new_row)
+            side_data = item.data(Qt.UserRole) if item else {}
+            side_name = side_data.get("side") if isinstance(side_data, dict) else ("left" if new_row == 1 else "right")
+            self._domino_selected_side = side_name
+            spoken = tr("ليفت") if side_name == "left" else tr("رايت")
+            reader.speak(spoken, interrupt=True)
+            return
+
+        current_side = getattr(self, "_domino_selected_side", "left")
+        new_side = "right" if current_side == "left" else "left"
+        self._domino_selected_side = new_side
+        spoken = tr("ليفت") if new_side == "left" else tr("رايت")
+        reader.speak(spoken, interrupt=True)
+
     def on_domino_announce_ends(self):
         game = str((self.current_room or {}).get("game", "")).upper()
         if game not in ("DOMINO", "AMERICAN_DOMINO"):
@@ -2415,8 +2437,25 @@ class TableVerseApp(QMainWindow):
         r_end = state.get("right_end")
         if l_end is not None and r_end is not None:
             if game == "AMERICAN_DOMINO":
+                board = list(state.get("board") or [])
                 open_sum = state.get("open_ends_sum", l_end + r_end)
-                reader.speak(tr(f"{l_end}/{r_end}، المجموع {open_sum}"), interrupt=True)
+                if len(board) == 1:
+                    first = tuple(board[0])
+                    if first[0] == first[1]:
+                        l_str = tr("دابل {end}/{end}", end=l_end)
+                        r_str = tr("دابل {end}/{end}", end=r_end)
+                    else:
+                        l_str = str(l_end)
+                        r_str = str(r_end)
+                elif len(board) > 1:
+                    first = tuple(board[0])
+                    last = tuple(board[-1])
+                    l_str = tr("دابل {end}/{end}", end=l_end) if first[0] == first[1] else str(l_end)
+                    r_str = tr("دابل {end}/{end}", end=r_end) if last[0] == last[1] else str(r_end)
+                else:
+                    l_str = str(l_end)
+                    r_str = str(r_end)
+                reader.speak(f"{l_str}/{r_str}، " + tr("المجموع {sum}", sum=open_sum), interrupt=True)
             else:
                 reader.speak(tr(f"{l_end}/{r_end}"), interrupt=True)
         else:
@@ -2435,7 +2474,15 @@ class TableVerseApp(QMainWindow):
             reader.speak(tr("لم تنزل أي قطع على الطاولة بعد."), interrupt=True)
             return
         from server.app.games.domino import tile_display_name
-        items = [(tile_display_name(tuple(t)), i) for i, t in enumerate(board)]
+        items = []
+        for i, t in enumerate(board):
+            t_tuple = tuple(t)
+            name = tile_display_name(t_tuple)
+            if game == "AMERICAN_DOMINO" and len(t_tuple) == 2 and t_tuple[0] == t_tuple[1]:
+                display = tr("دابل {tile}", tile=name)
+            else:
+                display = name
+            items.append((display, i))
         ListMenu(
             self, "قائمة القطع على الطاولة", items,
         ).show_menu(speak_text=f"قطع الطاولة، عددها {len(board)}")

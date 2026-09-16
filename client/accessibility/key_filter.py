@@ -299,6 +299,7 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                         0x20: "on_draw_shortcut",                # 'Space' = draw tile from boneyard
                         0x43: "on_c_shortcut",                   # 'C' = boneyard remaining count
                         0x56: "on_announce_domino_board_tiles",  # 'V' = display played tiles list dialog
+                        0x4C: "on_domino_toggle_side",           # 'L' = toggle side (Left/Right)
                     }
                     if not shift and vk in domino_actions:
                         self._call(domino_actions[vk])

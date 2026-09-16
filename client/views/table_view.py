@@ -227,6 +227,18 @@ class DominoSideList(QListWidget):
         if event.key() in (Qt.Key_Left, Qt.Key_Right):
             event.accept()
             return
+        if event.key() == Qt.Key_L:
+            parent_table = self.parent()
+            while parent_table and not hasattr(parent_table, "window"):
+                parent_table = parent_table.parent()
+            win = getattr(parent_table, "window", None) if parent_table else None
+            if win and hasattr(win, "on_domino_toggle_side"):
+                win.on_domino_toggle_side()
+            else:
+                new_row = 1 if self.currentRow() == 0 else 0
+                self.setCurrentRow(new_row)
+            event.accept()
+            return
         if event.key() == Qt.Key_Escape:
             parent_table = self.parent()
             while parent_table and not hasattr(parent_table, "hide_domino_side_selection"):

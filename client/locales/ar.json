@@ -3370,5 +3370,9 @@
   "Only the host can change voice chat mode.": "تغيير وضع المحادثة الصوتية متاح للقائد فقط.",
   "Invalid voice mode.": "وضع صوت غير صالح.",
   "{name}'s turn": "دور {name}",
-  "Game over!": "نهاية اللعبة!"
+  "Game over!": "نهاية اللعبة!",
+  "ليفت": "ليفت",
+  "رايت": "رايت",
+  "دابل {tile}": "دابل {tile}",
+  "دابل {end}/{end}": "دابل {end}/{end}"
 }
