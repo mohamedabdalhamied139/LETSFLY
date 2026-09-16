@@ -34,7 +34,9 @@ def setup_thief_ui(table_view, playing):
 
 
 def focus_thief(table_view):
-    if table_view.is_playing and getattr(table_view, "thief_answer_input", None) and table_view.thief_answer_input.isVisible():
+    if table_view.is_playing and getattr(table_view, "thief_answer_input", None):
+        if not table_view.thief_answer_input.isVisible():
+            table_view.thief_answer_input.show()
         table_view.thief_answer_input.setFocus()
     else:
         table_view.main_table_widget.setFocus()

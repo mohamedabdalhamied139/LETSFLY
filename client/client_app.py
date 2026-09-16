@@ -1099,8 +1099,8 @@ class TableVerseApp(QMainWindow):
                 dirs = list(self.thief_state.get("directions") or [])
 
                 # 1. Spacing and delay between round start sound and narration
-                # Start narration 800ms after escape sound
-                initial_delay_ms = 800
+                # Start narration 400ms after escape sound
+                initial_delay_ms = 400
                 floor_timer = QTimer(self)
                 floor_timer.setSingleShot(True)
                 floor_msg = tr(f"الجولة {current_round}. اللص في الطابق {floor}") if current_round else tr(f"اللص في الطابق {floor}")
@@ -1108,9 +1108,9 @@ class TableVerseApp(QMainWindow):
                 self._thief_narration_timers.append(floor_timer)
                 floor_timer.start(initial_delay_ms)
 
-                # 2. Sequential direction announcements spaced ~1.1s apart for thinking time
-                step_interval_ms = 1100
-                base_time = initial_delay_ms + 1800  # allow time for "الجولة X. اللص في الطابق Y"
+                # 2. Sequential direction announcements spaced 750ms apart
+                step_interval_ms = 750
+                base_time = initial_delay_ms + 1200  # allow time for "الجولة X. اللص في الطابق Y"
                 for i, d in enumerate(dirs):
                     d_timer = QTimer(self)
                     d_timer.setSingleShot(True)
@@ -1119,7 +1119,7 @@ class TableVerseApp(QMainWindow):
                     d_timer.start(base_time + (i * step_interval_ms))
 
                 # 3. Total narration time + buffer before showing answer input
-                total_duration_ms = base_time + (len(dirs) * step_interval_ms) + 600
+                total_duration_ms = base_time + (len(dirs) * step_interval_ms) + 300
                 self.table_view.begin_thief_narration(total_duration_ms)
                 return
             elif et == "ANSWER_START":

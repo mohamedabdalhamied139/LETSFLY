@@ -192,7 +192,7 @@ class ThiefHuntGame:
         self._generate_directions(self.start_floor)
         self.phase = "escape"
         self.answer_deadline = None
-        self.escape_deadline = time.monotonic() + 3.0 + len(self.directions) * 1.15
+        self.escape_deadline = time.monotonic() + 1.9 + len(self.directions) * 0.75
         self._set_event(f"الجولة {self.round_number}. اللص في الطابق {self.start_floor}.", "ESCAPE_START")
 
     def _begin_answering(self):
