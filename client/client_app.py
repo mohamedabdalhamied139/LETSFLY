@@ -2358,7 +2358,8 @@ class TableVerseApp(QMainWindow):
                 status_parts.append(tr("مجمد"))
             if p.get("has_shield"):
                 status_parts.append(tr("مع درع"))
-            status_str = f" ({'، '.join(status_parts)})" if status_parts else ""
+            sep = "، " if language() == "ar" else ", "
+            status_str = f" ({sep.join(status_parts)})" if status_parts else ""
             parts.append(tr("المركز {rank}: {name} في المربع {position}{status}", rank=idx, name=pname, position=pos, status=status_str))
         reader.speak(("، " if language() == "ar" else ", ").join(parts), interrupt=True)
 
