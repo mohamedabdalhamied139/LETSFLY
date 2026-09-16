@@ -1108,8 +1108,8 @@ class TableVerseApp(QMainWindow):
                 self._thief_narration_timers.append(floor_timer)
                 floor_timer.start(initial_delay_ms)
 
-                # 2. Wait 1 second after floor announcement, then speak "يا إلهي لقد هرب اللص"
-                escape_alert_time = initial_delay_ms + 1200 + 1000  # floor speech + 1s pause
+                # 2. Wait 0.5 second (half a second) after floor announcement, then speak "يا إلهي لقد هرب اللص"
+                escape_alert_time = initial_delay_ms + 1200 + 500  # floor speech + 0.5s pause
                 alert_timer = QTimer(self)
                 alert_timer.setSingleShot(True)
                 alert_timer.timeout.connect(lambda: reader.speak(tr("يا إلهي لقد هرب اللص"), interrupt=False))
@@ -1126,8 +1126,8 @@ class TableVerseApp(QMainWindow):
                     self._thief_narration_timers.append(d_timer)
                     d_timer.start(base_time + (i * step_interval_ms))
 
-                # 4. Total narration time + buffer before showing answer input
-                total_duration_ms = base_time + (len(dirs) * step_interval_ms) + 250
+                # 4. Total narration time + 1 second (1000ms) buffer after NVDA finishes before activating answer input
+                total_duration_ms = base_time + (len(dirs) * step_interval_ms) + 1000
                 self.table_view.begin_thief_narration(total_duration_ms)
                 return
             elif et == "ANSWER_START":
