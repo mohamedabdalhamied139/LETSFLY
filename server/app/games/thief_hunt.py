@@ -331,10 +331,7 @@ class ThiefHuntGame:
                 self.virtual_thief_wins += 1
             else:
                 self._find(self.thief_id).wins += 1
-            if not self.answers:
-                self.last_action = f"لقد هرب اللص قبل كتابة الإجابة. اللص كان في الطابق {floor_name}."
-            else:
-                self.last_action = f"يا إلهي لقد هرب اللص! اللص كان في الطابق {floor_name}."
+            self.last_action = f"يا إلهي لقد هرب اللص! اللص كان في الطابق {floor_name}."
             self.event_type = "THIEF_WIN"
         self.event_id += 1
         self._advance_match_or_round()
