@@ -192,7 +192,11 @@ class ClientStateEngine:
             elif et in ("ROUND_START", "ROUND_STARTED", "GAME_STARTED"):
                 if hasattr(app, "table_view") and app.table_view:
                     app.table_view._focus_target = "gameplay"
-                    app.table_view.focus_initial()
+                    for delay in (0, 40, 100, 200):
+                        QTimer.singleShot(delay, lambda: (
+                            setattr(app.table_view, "_focus_target", "gameplay"),
+                            app.table_view.focus_initial()
+                        ) if hasattr(app, "table_view") and app.table_view else None)
                 announce_game_event(action_text, interrupt=True)
                 spoke_event = True
             else:

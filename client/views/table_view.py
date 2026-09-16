@@ -578,7 +578,7 @@ class TableView(QWidget):
             if not playing and (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)):
                 self.main_table_widget.show()
                 safe_set_focus(self.main_table_widget)
-            elif playing and (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)):
+            elif playing and self._focus_target == "gameplay":
                 # Delay slightly to allow newly mounted widgets to become visible
                 for delay in (0, 30, 80, 150):
                     QTimer.singleShot(delay, lambda s=self: s.focus_initial() if safe_is_valid(s) else None)
@@ -1142,7 +1142,7 @@ class TableView(QWidget):
             target_row = min(current_row, self.domino_tile_list.count() - 1)
             self.domino_tile_list.setCurrentRow(target_row)
             if self.is_playing and not (hasattr(self, "domino_side_list") and self.domino_side_list.isVisible()) and not self._is_modal_active():
-                if had_tile_focus or (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)):
+                if had_tile_focus or self._focus_target == "gameplay":
                     self.domino_tile_list.setFocus()
 
 
@@ -1611,7 +1611,7 @@ class TableView(QWidget):
         """Initial focus when entering or displaying the shared table view."""
         if not safe_is_valid(self):
             return
-        if is_user_in_chat_or_log(self):
+        if is_user_in_chat_or_log(self) and self._focus_target != "gameplay":
             return
         try:
             if self._is_modal_active():
