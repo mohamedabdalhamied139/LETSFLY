@@ -1112,7 +1112,10 @@ class TableVerseApp(QMainWindow):
                 escape_alert_time = initial_delay_ms + 1200 + 500  # floor speech + 0.5s pause
                 alert_timer = QTimer(self)
                 alert_timer.setSingleShot(True)
-                alert_timer.timeout.connect(lambda: reader.speak(tr("يا إلهي لقد هرب اللص"), interrupt=False))
+                def _play_alert():
+                    sound_engine.play_event("THIEF_ESCAPE")
+                    reader.speak(tr("يا إلهي لقد هرب اللص"), interrupt=False)
+                alert_timer.timeout.connect(_play_alert)
                 self._thief_narration_timers.append(alert_timer)
                 alert_timer.start(escape_alert_time)
 
@@ -1142,6 +1145,7 @@ class TableVerseApp(QMainWindow):
                     sound_engine.play_event("THIEF_ROUND_WINNER")
                     sound_engine.play_event("THIEF_ROUND_END")
                 elif et == "THIEF_WIN":
+                    sound_engine.play_event("THIEF_ESCAPE")
                     sound_engine.play_event("THIEF_ROUND_END")
                 elif et == "ROUND_TIE":
                     sound_engine.play_event("THIEF_ROUND_END")
