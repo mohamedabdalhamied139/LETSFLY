@@ -110,6 +110,10 @@ class TennisGameplayWidget(QListWidget):
             event.accept()
             return
 
+        elif key == Qt.Key_Space:
+            event.accept()
+            return
+
         # Allow default behavior for other keys so chat/shortcuts still work!
         super().keyPressEvent(event)
 
