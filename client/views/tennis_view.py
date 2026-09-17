@@ -98,12 +98,12 @@ class TennisGameplayWidget(QListWidget):
             return
 
         if key == Qt.Key_Left:
-            self._set_lane(self._current_lane - 1)
+            self._set_lane(LANE_LEFT)
             self.keyPressed.emit()
             event.accept()
             return
         elif key == Qt.Key_Right:
-            self._set_lane(self._current_lane + 1)
+            self._set_lane(LANE_RIGHT)
             self.keyPressed.emit()
             event.accept()
             return

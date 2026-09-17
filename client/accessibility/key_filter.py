@@ -352,11 +352,11 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                                 if now - getattr(self, "_last_tennis_arrow_time", 0.0) < 0.05:
                                     return True, 0
                                 self._last_tennis_arrow_time = now
-                                if vk == 0x25:  # VK_LEFT
-                                    tennis_game._set_lane(tennis_game.current_lane() - 1)
-                                elif vk == 0x27:  # VK_RIGHT
-                                    tennis_game._set_lane(tennis_game.current_lane() + 1)
-                                elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN
+                                if vk == 0x25:  # VK_LEFT -> Left lane
+                                    tennis_game._set_lane(-1)
+                                elif vk == 0x27:  # VK_RIGHT -> Right lane
+                                    tennis_game._set_lane(1)
+                                elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN -> Center lane
                                     tennis_game._set_lane(0)
                                 tennis_game.keyPressed.emit()
                                 return True, 0

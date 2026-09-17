@@ -88,8 +88,8 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
             if QApplication.activeModalWidget() is not None:
                 return False, 0
 
-            # Ignore auto-repeat for character shortcuts ('A'..'Z') and game arrow keys
-            if (0x41 <= vk <= 0x5A) or (0x25 <= vk <= 0x28):
+            # Ignore auto-repeat only for character shortcut keys ('A'..'Z')
+            if 0x41 <= vk <= 0x5A:
                 if vk in self._down:
                     return True, 0
                 self._down.add(vk)
@@ -332,9 +332,6 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                     if not shift and vk in scopa_actions:
                         self._call(scopa_actions[vk])
                         return True, 0
-
-
-
                 # --- 8. Tennis Game-Specific Shortcuts & Gameplay Keys ---
                 elif game == "TENNIS":
                     table_view = getattr(self.window, "table_view", None)
@@ -355,11 +352,11 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                                 if now - getattr(self, "_last_tennis_arrow_time", 0.0) < 0.05:
                                     return True, 0
                                 self._last_tennis_arrow_time = now
-                                if vk == 0x25:  # VK_LEFT
-                                    tennis_game._set_lane(tennis_game.current_lane() - 1)
-                                elif vk == 0x27:  # VK_RIGHT
-                                    tennis_game._set_lane(tennis_game.current_lane() + 1)
-                                elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN
+                                if vk == 0x25:  # VK_LEFT -> Left lane
+                                    tennis_game._set_lane(-1)
+                                elif vk == 0x27:  # VK_RIGHT -> Right lane
+                                    tennis_game._set_lane(1)
+                                elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN -> Center lane
                                     tennis_game._set_lane(0)
                                 tennis_game.keyPressed.emit()
                                 return True, 0
@@ -409,7 +406,6 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                             table_view._on_scopa_card_activated(item)
                             return True, 0
                 # TENNIS: Enter ignored (no serve via Enter)
-
 
                 wild_color_list = getattr(table_view, "wild_color_list", None) if table_view else None
                 if focus is not None and (focus is wild_color_list or (hasattr(wild_color_list, "viewport") and focus is wild_color_list.viewport())):

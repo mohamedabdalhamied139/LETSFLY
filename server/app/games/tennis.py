@@ -216,6 +216,7 @@ class TennisGame:
         self.ball        = BallState()
         self.player_pos  = {0: LANE_CENTER, 1: LANE_CENTER}
         self.player_last_action_time = {0: 0.0, 1: 0.0}
+        self.trip_visited_lanes = {0: {LANE_CENTER}, 1: {LANE_CENTER}}
         self.rally_hits  = 0          # Accelerates speed with each hit in the current rally
 
     def current_travel_time(self) -> float:
@@ -236,6 +237,7 @@ class TennisGame:
         self.score      = RealTennisScore()
         self.player_pos = {0: LANE_CENTER, 1: LANE_CENTER}
         self.player_last_action_time = {0: 0.0, 1: 0.0}
+        self.trip_visited_lanes = {0: {LANE_CENTER}, 1: {LANE_CENTER}}
         self.rally_hits = 0
         self.timestamp  = Timestamp.WAITING_KEY
         return self.full_state()
@@ -252,11 +254,21 @@ class TennisGame:
             lane = max(LANE_LEFT, min(LANE_RIGHT, int(data.get("lane", 0))))
             self.player_pos[idx] = lane
             self.player_last_action_time[idx] = time.monotonic()
+            if not hasattr(self, "trip_visited_lanes"):
+                self.trip_visited_lanes = {0: set(), 1: set()}
+            if idx not in self.trip_visited_lanes:
+                self.trip_visited_lanes[idx] = set()
+            self.trip_visited_lanes[idx].add(lane)
             return {"type": "position_ack", "lane": lane}
 
         if action == "serve" and self.timestamp == Timestamp.WAITING_KEY:
             lane = max(LANE_LEFT, min(LANE_RIGHT, int(data.get("lane", self.player_pos.get(idx, LANE_CENTER)))))
             self.player_pos[idx] = lane
+            if not hasattr(self, "trip_visited_lanes"):
+                self.trip_visited_lanes = {0: set(), 1: set()}
+            if idx not in self.trip_visited_lanes:
+                self.trip_visited_lanes[idx] = set()
+            self.trip_visited_lanes[idx].add(lane)
 
             if idx != self.score.server_idx:
                 return {"error": "not_your_serve"}
@@ -363,9 +375,11 @@ class TennisGame:
         """
         player_lane = self.player_pos.get(0, LANE_CENTER)
         ball_lane   = self.ball.target
-        last_action = self.player_last_action_time.get(0, 0.0)
+        visited     = self.trip_visited_lanes.get(0, set()) if hasattr(self, "trip_visited_lanes") else set()
 
-        if player_lane == ball_lane:
+        if player_lane == ball_lane or (ball_lane in visited):
+            # Ensure player position is recorded in the ball's lane
+            self.player_pos[0] = ball_lane
             # ===== Player 0 successfully hits ball → shoots to random lane on opponent side =====
             self.rally_hits += 1
             
@@ -506,8 +520,11 @@ class TennisGame:
             # Real Human Player 1: check if Player 1 is in the correct lane!
             p1_lane = self.player_pos.get(1, LANE_CENTER)
             ball_lane = self.ball.target
+            p1_visited = self.trip_visited_lanes.get(1, set()) if hasattr(self, "trip_visited_lanes") else set()
 
-            if p1_lane == ball_lane:
+            if p1_lane == ball_lane or (ball_lane in p1_visited):
+                # Ensure player 1 position is recorded in the ball's lane
+                self.player_pos[1] = ball_lane
                 # Player 1 hits the ball back to a random lane on Player 0's court!
                 self.rally_hits += 1
                 new_target = random.choice(ALL_LANES)
@@ -555,6 +572,10 @@ class TennisGame:
             target = random.choice(ALL_LANES)
         t_time = self.current_travel_time()
         self.ball.launch(target=target, direction=1, travel_time=t_time)
+        if not hasattr(self, "trip_visited_lanes"):
+            self.trip_visited_lanes = {}
+        # Start tracking visited lanes for receiving player 0
+        self.trip_visited_lanes[0] = {self.player_pos.get(0, LANE_CENTER)}
         return {
             "type":        "tennis_action_result",
             "ball":        self.ball.as_dict(),
@@ -568,6 +589,10 @@ class TennisGame:
             target = random.choice(ALL_LANES)
         t_time = self.current_travel_time()
         self.ball.launch(target=target, direction=-1, travel_time=t_time)
+        if not hasattr(self, "trip_visited_lanes"):
+            self.trip_visited_lanes = {}
+        # Start tracking visited lanes for receiving player 1
+        self.trip_visited_lanes[1] = {self.player_pos.get(1, LANE_CENTER)}
         return {
             "type":        "tennis_action_result",
             "ball":        self.ball.as_dict(),
