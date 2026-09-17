@@ -4,6 +4,7 @@ import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 import os
 import logging
 import json
@@ -193,6 +194,7 @@ if "*" in _cors_origins:
 if _environment in {"production", "prod"} and any(not origin.lower().startswith("https://") for origin in _cors_origins):
     raise RuntimeError("Production CORS origins must use HTTPS.")
 
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,

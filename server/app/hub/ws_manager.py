@@ -17,7 +17,7 @@ class ConnectionManager:
         self.connection_rooms: Dict[WebSocket, str] = {}
         self._ws_locks: Dict[WebSocket, asyncio.Lock] = {}
         self._connection_times: Dict[WebSocket, float] = {}
-        self.send_timeout = 2.0
+        self.send_timeout = 5.0
         self.max_connections_per_user = 5
         self.max_total_connections = 1000
         self._connect_lock = asyncio.Lock()

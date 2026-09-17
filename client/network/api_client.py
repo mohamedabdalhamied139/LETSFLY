@@ -18,7 +18,16 @@ class ApiClient:
         # Keep one pooled HTTP client for the lifetime of the desktop app.
         # urllib.request creates a fresh connection for each call, which can
         # repeatedly pay TCP/TLS setup latency on every game action.
-        self._http = httpx.Client(timeout=10.0, follow_redirects=False, headers={"Content-Type": "application/json"})
+        # Enable gzip/deflate decompression to significantly reduce bandwidth on weak networks.
+        self._http = httpx.Client(
+            timeout=httpx.Timeout(15.0, connect=10.0),
+            follow_redirects=False,
+            headers={
+                "Content-Type": "application/json",
+                "Accept-Encoding": "gzip, deflate",
+            },
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20, keepalive_expiry=30.0),
+        )
 
     def get_ws_url(self, path: str = "") -> str:
         """Derive the matching ws:// or wss:// URL from the configured HTTP base URL."""
@@ -36,7 +45,15 @@ class ApiClient:
 
     def _ensure_http(self):
         if self._http is None or getattr(self._http, "is_closed", False):
-            self._http = httpx.Client(timeout=10.0, follow_redirects=False, headers={"Content-Type": "application/json"})
+            self._http = httpx.Client(
+                timeout=httpx.Timeout(15.0, connect=10.0),
+                follow_redirects=False,
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept-Encoding": "gzip, deflate",
+                },
+                limits=httpx.Limits(max_keepalive_connections=10, max_connections=20, keepalive_expiry=30.0),
+            )
 
     def _request(self, method: str, path: str, payload: Optional[dict] = None, timeout: float = 10) -> Any:
         url = f"{self.base_url}{path}"

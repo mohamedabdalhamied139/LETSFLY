@@ -1,6 +1,7 @@
 """Threaded WebSocket client with safe restart and outgoing chat support."""
 import json
 import logging
+import socket
 import threading
 import time
 from typing import Callable, Optional
@@ -145,8 +146,16 @@ class WebSocketClient:
                 with self._lock:
                     curr_token = self._auth_token or token
                 headers = [f"Authorization: Bearer {curr_token}"] if curr_token else []
-                ws = websocket.create_connection(ws_url, timeout=5, header=headers)
+                ws = websocket.create_connection(ws_url, timeout=8, header=headers)
                 ws.settimeout(2)
+                if hasattr(ws, "sock") and ws.sock:
+                    try:
+                        if hasattr(socket, "TCP_NODELAY"):
+                            ws.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                        if hasattr(socket, "SO_KEEPALIVE"):
+                            ws.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                    except Exception:
+                        pass
                 with self._lock:
                     current = generation == self._generation
                     if not current:
@@ -161,7 +170,7 @@ class WebSocketClient:
                         now = time.monotonic()
                         if now - connected_at >= 15:
                             retry_delay = 1
-                        if now - last_ping >= 15:
+                        if now - last_ping >= 10:
                             try:
                                 with self._send_lock:
                                     ws.send(json.dumps({"type": "ping"}))
