@@ -66,9 +66,8 @@ class TennisGameplayWidget(QListWidget):
 
     def _set_lane(self, lane: int):
         lane = max(LANE_LEFT, min(LANE_RIGHT, int(lane)))
-        if self._current_lane != lane:
-            self._current_lane = lane
-            self._emit_position()
+        self._current_lane = lane
+        self._emit_position()
 
     def _emit_position(self):
         self.positionChanged.emit(self.current_lane())
@@ -183,15 +182,13 @@ class TennisGameWidget(TennisGameplayWidget):
             self.tennisActionSubmitted.emit("serve", {"lane": self.current_lane()})
 
     def _on_position_changed(self, lane: int):
-        """Called whenever lane changes or on tick."""
-        if lane == self._prev_lane:
-            return
-        self._prev_lane = lane
+        """Called whenever lane changes or arrow key is pressed."""
+        # Play spatial 'just moved' sound if lane changed
+        if lane != self._prev_lane:
+            self._prev_lane = lane
+            self.audio.play_move(lane)
 
-        # Play spatial 'just moved' sound (jm_left, jm_center, jm_right)
-        self.audio.play_move(lane)
-
-        # Send position update to server so player is tracked during both serving and in-play
+        # Always send position update to server on key press so active arrow action is recorded
         self.tennisActionSubmitted.emit("position", {"lane": lane})
 
     # ------------------------------------------------------------------ #

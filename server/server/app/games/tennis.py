@@ -215,6 +215,7 @@ class TennisGame:
         self.timestamp   = Timestamp.INIT
         self.ball        = BallState()
         self.player_pos  = {0: LANE_CENTER, 1: LANE_CENTER}
+        self.player_last_action_time = {0: 0.0, 1: 0.0}
         self.rally_hits  = 0          # Accelerates speed with each hit in the current rally
 
     def current_travel_time(self) -> float:
@@ -234,6 +235,7 @@ class TennisGame:
         self.players    = players
         self.score      = RealTennisScore()
         self.player_pos = {0: LANE_CENTER, 1: LANE_CENTER}
+        self.player_last_action_time = {0: 0.0, 1: 0.0}
         self.rally_hits = 0
         self.timestamp  = Timestamp.WAITING_KEY
         return self.full_state()
@@ -249,6 +251,7 @@ class TennisGame:
         if action == "position":
             lane = max(LANE_LEFT, min(LANE_RIGHT, int(data.get("lane", 0))))
             self.player_pos[idx] = lane
+            self.player_last_action_time[idx] = time.monotonic()
             return {"type": "position_ack", "lane": lane}
 
         if action == "serve" and self.timestamp == Timestamp.WAITING_KEY:
@@ -360,8 +363,13 @@ class TennisGame:
         """
         player_lane = self.player_pos.get(0, LANE_CENTER)
         ball_lane   = self.ball.target
+        last_action = self.player_last_action_time.get(0, 0.0)
 
-        if player_lane == ball_lane:
+        # The player must be in the correct lane AND must have actively moved/pressed an arrow key
+        # while the ball was in flight towards them (between launch_time - 0.25 and reach_time + 0.15)
+        ball_in_flight_active = (last_action >= (self.ball.launch_time - 0.25))
+
+        if player_lane == ball_lane and ball_in_flight_active:
             # ===== Player 0 successfully hits ball → shoots to random lane on opponent side =====
             self.rally_hits += 1
             
