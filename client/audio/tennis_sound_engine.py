@@ -166,7 +166,21 @@ class TennisSoundEngine(QObject):
                 if os.path.exists(p_alt):
                     p = p_alt
                 else:
-                    for sub in ("arabic_umpire", "arabic_commentary"):
+                    # Select umpire subfolder matching current interface language
+                    try:
+                        from client.localization import TranslationManager
+                        lang = TranslationManager().language()
+                    except Exception:
+                        lang = "ar"
+
+                    if lang.startswith("en"):
+                        sub_folders = ("english_umpire", "arabic_umpire")
+                    elif lang.startswith("fr"):
+                        sub_folders = ("french_umpire", "english_umpire", "arabic_umpire")
+                    else:
+                        sub_folders = ("arabic_umpire", "arabic_commentary")
+
+                    for sub in sub_folders:
                         sp = os.path.join(self.audio_dir, sub, f)
                         if os.path.exists(sp):
                             p = sp
