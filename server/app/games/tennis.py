@@ -262,6 +262,7 @@ class TennisGame:
                 return {"error": "waiting_for_applause"}
             self.rally_hits = 0
             self.timestamp = Timestamp.IN_PLAY
+            self._bot_serve_time = None  # Cancel auto-serve timer
 
             if self.score.server_idx == 0:
                 result = self._launch_toward_wall()
@@ -284,8 +285,8 @@ class TennisGame:
         """
         if self.timestamp == Timestamp.WAITING_KEY:
             is_bot = (len(self.players) < 2) or (int(self.players[1].get("id", 0)) < 0)
-            if is_bot and self.score.server_idx == 1:
-                # Wait for crowd applause to complete (4.5s rest) before bot serves
+            if is_bot:
+                # Auto-serve after timeout for both player and bot turns
                 if not hasattr(self, "_bot_serve_time") or self._bot_serve_time is None:
                     self._bot_serve_time = max(now + 4.5, getattr(self, "serve_ready_time", now + 4.5))
                 elif now >= self._bot_serve_time:
@@ -293,13 +294,24 @@ class TennisGame:
                     self.timestamp = Timestamp.IN_PLAY
                     self.rally_hits = 0
                     target = random.choice(ALL_LANES)
-                    traj = self._launch_toward_player(target=target)
-                    traj.update({
-                        "hit_type":   "racket",
-                        "sound":      "opponent_racket_hit",
-                        "player_idx": 1,
-                        "state":      self.full_state(),
-                    })
+                    if self.score.server_idx == 0:
+                        # Player's turn to serve → launch toward wall (opponent side)
+                        traj = self._launch_toward_wall(target=target)
+                        traj.update({
+                            "hit_type":   "racket",
+                            "sound":      "player_racket_hit",
+                            "player_idx": 0,
+                            "state":      self.full_state(),
+                        })
+                    else:
+                        # Bot's turn to serve → launch toward player
+                        traj = self._launch_toward_player(target=target)
+                        traj.update({
+                            "hit_type":   "racket",
+                            "sound":      "opponent_racket_hit",
+                            "player_idx": 1,
+                            "state":      self.full_state(),
+                        })
                     return [traj]
             else:
                 self._bot_serve_time = None
