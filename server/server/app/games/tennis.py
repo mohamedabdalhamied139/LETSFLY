@@ -249,13 +249,6 @@ class TennisGame:
         if action == "position":
             lane = max(LANE_LEFT, min(LANE_RIGHT, int(data.get("lane", 0))))
             self.player_pos[idx] = lane
-
-            # If it's the player's turn to serve and applause has ended → flag pending serve
-            if (self.timestamp == Timestamp.WAITING_KEY
-                    and idx == self.score.server_idx
-                    and time.monotonic() >= getattr(self, "serve_ready_time", 0)):
-                self._player_serve_pending = True
-
             return {"type": "position_ack", "lane": lane}
 
         if action == "serve" and self.timestamp == Timestamp.WAITING_KEY:
@@ -293,42 +286,26 @@ class TennisGame:
         """
         if self.timestamp == Timestamp.WAITING_KEY:
             is_bot = (len(self.players) < 2) or (int(self.players[1].get("id", 0)) < 0)
-            if is_bot:
-                if self.score.server_idx == 1:
-                    # Bot's turn → auto-serve after applause ends
-                    if not hasattr(self, "_bot_serve_time") or self._bot_serve_time is None:
-                        self._bot_serve_time = max(now + 1.5, getattr(self, "serve_ready_time", now + 1.5))
-                    elif now >= self._bot_serve_time:
-                        self._bot_serve_time = None
-                        self.timestamp = Timestamp.IN_PLAY
-                        self.rally_hits = 0
-                        target = random.choice(ALL_LANES)
-                        traj = self._launch_toward_player(target=target)
-                        traj.update({
-                            "hit_type":   "racket",
-                            "sound":      "opponent_racket_hit",
-                            "player_idx": 1,
-                            "state":      self.full_state(),
-                        })
-                        return [traj]
-                else:
-                    # Player's turn → ONLY serve when player presses arrow key
+            if is_bot and self.score.server_idx == 1:
+                # Bot's turn → auto-serve after applause ends
+                if not hasattr(self, "_bot_serve_time") or self._bot_serve_time is None:
+                    self._bot_serve_time = max(now + 1.5, getattr(self, "serve_ready_time", now + 1.5))
+                elif now >= self._bot_serve_time:
                     self._bot_serve_time = None
-                    if getattr(self, "_player_serve_pending", False):
-                        self._player_serve_pending = False
-                        self.timestamp = Timestamp.IN_PLAY
-                        self.rally_hits = 0
-                        target = random.choice(ALL_LANES)
-                        traj = self._launch_toward_wall(target=target)
-                        traj.update({
-                            "hit_type":   "racket",
-                            "sound":      "player_racket_hit",
-                            "player_idx": 0,
-                            "state":      self.full_state(),
-                        })
-                        return [traj]
+                    self.timestamp = Timestamp.IN_PLAY
+                    self.rally_hits = 0
+                    target = random.choice(ALL_LANES)
+                    traj = self._launch_toward_player(target=target)
+                    traj.update({
+                        "hit_type":   "racket",
+                        "sound":      "opponent_racket_hit",
+                        "player_idx": 1,
+                        "state":      self.full_state(),
+                    })
+                    return [traj]
             else:
                 self._bot_serve_time = None
+            # Player's turn: waiting for arrow key → "serve" action from client
             return []
 
         self._bot_serve_time = None
