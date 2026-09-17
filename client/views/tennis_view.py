@@ -94,21 +94,19 @@ class TennisGameplayWidget(QListWidget):
             super().keyPressEvent(event)
             return
 
-        if key in (Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
-            self._emit_position()
-            self.keyPressed.emit()
-            event.accept()
-            return
-        elif key == Qt.Key_Left:
+        if key == Qt.Key_Left:
             self._set_lane(self._current_lane - 1)
+            self.keyPressed.emit()
             event.accept()
             return
         elif key == Qt.Key_Right:
             self._set_lane(self._current_lane + 1)
+            self.keyPressed.emit()
             event.accept()
             return
         elif key in (Qt.Key_Up, Qt.Key_Down):
             self._set_lane(LANE_CENTER)
+            self.keyPressed.emit()
             event.accept()
             return
 
@@ -120,7 +118,7 @@ class TennisGameplayWidget(QListWidget):
             event.accept()
             return
         key = event.key()
-        if key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down, Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
+        if key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
             event.accept()
             return
             
