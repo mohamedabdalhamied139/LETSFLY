@@ -353,12 +353,10 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                         elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN
                             tennis_game._set_lane(0)
                             return True, 0
-                        elif vk == 0x20:  # VK_SPACE
-                            tennis_game._emit_position()
-                            tennis_game.keyPressed.emit()
+                        elif vk == 0x20:  # VK_SPACE → ignored in tennis
                             return True, 0
 
-            # Enter is context-sensitive. Farkle/Domino/Snakes/Scopa/Tennis owns Enter only while its
+            # Enter is context-sensitive. Farkle/Domino/Snakes/Scopa owns Enter only while its
             # gameplay area has focus; otherwise native Qt controls retain
             # normal Enter behavior (buttons, edits, dialogs, etc.).
             if vk == 0x0D:  # Enter / Numpad Enter (VK_RETURN)
@@ -400,14 +398,7 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                         if item is not None and table_view:
                             table_view._on_scopa_card_activated(item)
                             return True, 0
-                elif cur_game == "TENNIS":
-                    tennis_game = getattr(table_view, "tennis_game", None) if table_view else None
-                    if focus is not None and (focus is tennis_game or (hasattr(tennis_game, "viewport") and focus is tennis_game.viewport())):
-                        if tennis_game and hasattr(tennis_game, "keyPressed"):
-                            tennis_game._emit_position()
-                            tennis_game.keyPressed.emit()
-                            return True, 0
-
+                # TENNIS: Enter ignored (no serve via Enter)
 
                 wild_color_list = getattr(table_view, "wild_color_list", None) if table_view else None
                 if focus is not None and (focus is wild_color_list or (hasattr(wild_color_list, "viewport") and focus is wild_color_list.viewport())):
