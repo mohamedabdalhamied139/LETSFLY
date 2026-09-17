@@ -142,7 +142,9 @@ class WebSocketClient:
         while not self._stop.is_set() and self._is_current(generation):
             ws = None
             try:
-                headers = [f"Authorization: Bearer {token}"] if token else []
+                with self._lock:
+                    curr_token = self._auth_token or token
+                headers = [f"Authorization: Bearer {curr_token}"] if curr_token else []
                 ws = websocket.create_connection(ws_url, timeout=5, header=headers)
                 ws.settimeout(2)
                 with self._lock:

@@ -115,7 +115,26 @@ class WebSocketEventRouter:
 
             if self.app.current_room:
                 self.app.poll_timer.start()
-                QTimer.singleShot(0, self.app._poll_table_state)
+                room_id = self.app.current_room.get("id")
+                if was_reconnecting and room_id:
+                    self.app.stack.setCurrentIndex(4)
+                    if hasattr(self.app, "table_view") and self.app.table_view:
+                        self.app.table_view.focus_initial()
+                    generation = self.app._room_generation
+                    def done(fresh_room):
+                        if generation != self.app._room_generation or not self.app.current_room or str(self.app.current_room.get("id")) != str(room_id):
+                            return
+                        self.app.current_room = fresh_room
+                        self.app._poll_table_state()
+                    def fail(err):
+                        text = str(err)
+                        if "HTTP 404" in text or "not found" in text.lower() or "غير موجود" in text:
+                            self.app._leave_table_after_failed_reconnect()
+                        else:
+                            self.app._poll_table_state()
+                    self.app._run_async(lambda: self.app.api.get_room(room_id), done, fail)
+                else:
+                    QTimer.singleShot(0, self.app._poll_table_state)
             return
 
         if et == "ws_disconnected":
@@ -133,7 +152,7 @@ class WebSocketEventRouter:
             if self.app.current_room:
                 self.app.poll_timer.start()
             if self.app.current_room and self.app.voice.in_voice_chat:
-                self.app._voice_restore_after_reconnect = True
+                self.app._voice_restore_after_reconnect = False
                 self.app.voice.suspend_for_reconnect()
                 self.app.voice.stateChanged.emit("الاتصال الصوتي غير متاح.")
             return

@@ -7,6 +7,7 @@ from server.app.db.database import get_db, User
 from server.app.api.users import get_current_user
 from server.app.core.security import get_password_hash, verify_password, create_access_token
 from server.app.hub.ws_manager import ws_manager
+from server.app.hub.room_manager import room_manager
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -173,10 +174,17 @@ def login(request: Request, req: UserLogin, db: Session = Depends(get_db)):
     with _login_lock:
         _login_failures.pop(_login_global_ip_key(request), None)
     token = create_access_token({"sub": str(user.id), "username": user.username, "ver": int(user.token_version or 0)})
+    current_room_id = room_manager.get_user_room_id(user.id)
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": {"id": user.id, "username": user.username, "display_name": user.display_name, "coins": user.coins},
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "display_name": user.display_name,
+            "coins": user.coins,
+            "current_room_id": current_room_id,
+        },
     }
 
 @router.post("/logout")

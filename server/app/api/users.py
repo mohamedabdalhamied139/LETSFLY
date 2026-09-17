@@ -38,6 +38,7 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
         token_version = int(payload.get("ver"))
     except (TypeError, ValueError):
         raise HTTPException(401, "Invalid token")
+
     if token_version != int(user.token_version or 0):
         raise HTTPException(401, "Token revoked")
     if payload.get("typ") != "access":
@@ -54,7 +55,16 @@ def wallet(user: User = Depends(get_current_user)):
 
 @router.get("/auth/me")
 def get_me(user: User = Depends(get_current_user)):
-    return {"id": user.id, "username": user.username, "display_name": user.display_name, "gender": user.gender or "", "bio": user.bio or "", "coins": user.coins}
+    current_room_id = room_manager.get_user_room_id(user.id)
+    return {
+        "id": user.id,
+        "username": user.username,
+        "display_name": user.display_name,
+        "gender": user.gender or "",
+        "bio": user.bio or "",
+        "coins": user.coins,
+        "current_room_id": current_room_id,
+    }
 
 @router.delete("/users/me")
 @router.delete("/me")

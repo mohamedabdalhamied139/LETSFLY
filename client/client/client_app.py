@@ -1075,10 +1075,8 @@ class TableVerseApp(QMainWindow):
         if phase_changed or not previous:
             self.table_view.configure_thief_state(self.thief_state)
         if round_changed:
-            if current_round == 1:
-                sound_engine.play_event("THIEF_GAME_START")
             if self.thief_state.get("event_type") != "ESCAPE_START":
-                # Delay narration after round start sound to create a distinct pause
+                # Delay narration to create a distinct pause
                 round_timer = QTimer(self)
                 round_timer.setSingleShot(True)
                 round_timer.timeout.connect(lambda r=current_round: reader.speak(tr(f"الجولة {r}"), interrupt=False))
@@ -1093,24 +1091,33 @@ class TableVerseApp(QMainWindow):
             if text:
                 self.table_view.add_log(text)
             if et == "ESCAPE_START":
-                sound_engine.play_event("THIEF_ESCAPE")
                 self._cancel_thief_narration_timers()
                 floor = self.thief_state.get("start_floor")
                 dirs = list(self.thief_state.get("directions") or [])
 
-                # 1. Spacing and delay between round start sound and narration
-                # Start narration 800ms after escape sound
-                initial_delay_ms = 800
+                # 1. Start floor narration immediately without round-start sound
+                initial_delay_ms = 0
                 floor_timer = QTimer(self)
                 floor_timer.setSingleShot(True)
-                floor_msg = tr(f"الجولة {current_round}. اللص في الطابق {floor}") if current_round else tr(f"اللص في الطابق {floor}")
+                floor_msg = tr("الجولة {0}. اللص في الطابق {1}.", current_round, floor) if current_round else tr("اللص في الطابق {0}.", floor)
                 floor_timer.timeout.connect(lambda msg=floor_msg: reader.speak(msg, interrupt=False))
                 self._thief_narration_timers.append(floor_timer)
                 floor_timer.start(initial_delay_ms)
 
-                # 2. Sequential direction announcements spaced ~1.1s apart for thinking time
-                step_interval_ms = 1100
-                base_time = initial_delay_ms + 1800  # allow time for "الجولة X. اللص في الطابق Y"
+                # 2. Wait 0.5 second (half a second) after floor announcement, then speak "يا إلهي لقد هرب اللص"
+                escape_alert_time = initial_delay_ms + 1200 + 500  # floor speech + 0.5s pause
+                alert_timer = QTimer(self)
+                alert_timer.setSingleShot(True)
+                def _play_alert():
+                    sound_engine.play_event("THIEF_ESCAPE")
+                    reader.speak(tr("يا إلهي لقد هرب اللص"), interrupt=False)
+                alert_timer.timeout.connect(_play_alert)
+                self._thief_narration_timers.append(alert_timer)
+                alert_timer.start(escape_alert_time)
+
+                # 3. Sequential direction announcements after the escape alert
+                step_interval_ms = 650
+                base_time = escape_alert_time + 1500  # allow time for "يا إلهي لقد هرب اللص"
                 for i, d in enumerate(dirs):
                     d_timer = QTimer(self)
                     d_timer.setSingleShot(True)
@@ -1118,8 +1125,8 @@ class TableVerseApp(QMainWindow):
                     self._thief_narration_timers.append(d_timer)
                     d_timer.start(base_time + (i * step_interval_ms))
 
-                # 3. Total narration time + buffer before showing answer input
-                total_duration_ms = base_time + (len(dirs) * step_interval_ms) + 600
+                # 4. Total narration time + 1 second (1000ms) buffer after NVDA finishes before activating answer input
+                total_duration_ms = base_time + (len(dirs) * step_interval_ms) + 1000
                 self.table_view.begin_thief_narration(total_duration_ms)
                 return
             elif et == "ANSWER_START":
@@ -1134,6 +1141,7 @@ class TableVerseApp(QMainWindow):
                     sound_engine.play_event("THIEF_ROUND_WINNER")
                     sound_engine.play_event("THIEF_ROUND_END")
                 elif et == "THIEF_WIN":
+                    sound_engine.play_event("THIEF_ESCAPE")
                     sound_engine.play_event("THIEF_ROUND_END")
                 elif et == "ROUND_TIE":
                     sound_engine.play_event("THIEF_ROUND_END")
@@ -2030,15 +2038,7 @@ class TableVerseApp(QMainWindow):
         self.setWindowTitle("")
         self.voice.join_room(str(room.get("id") or ""))
         self._maybe_auto_join_voice(room)
-        if self._voice_restore_after_reconnect:
-            self._voice_restore_after_reconnect = False
-            v_mode = str(room.get("voice_mode") or "all").lower()
-            my_id = int((self.user or {}).get("id") or 0)
-            host_id = int(room.get("host_id") or 0)
-            is_host = (my_id == host_id)
-            if v_mode != "owner_only" or is_host:
-                if self.voice.activate_voice_session(start_microphone=True):
-                    self.voice.stateChanged.emit("الاتصال الصوتي عاد.")
+        self._voice_restore_after_reconnect = False
         self.table_view.set_game_type(game_type)
         # For Thief Hunt, the game snapshot is authoritative for whether the
         # gameplay area is active. A stale room-status snapshot must never hide
@@ -2350,7 +2350,8 @@ class TableVerseApp(QMainWindow):
                 status_parts.append(tr("مجمد"))
             if p.get("has_shield"):
                 status_parts.append(tr("مع درع"))
-            status_str = f" ({'، '.join(status_parts)})" if status_parts else ""
+            sep = "، " if language() == "ar" else ", "
+            status_str = f" ({sep.join(status_parts)})" if status_parts else ""
             parts.append(tr("المركز {rank}: {name} في المربع {position}{status}", rank=idx, name=pname, position=pos, status=status_str))
         reader.speak(("، " if language() == "ar" else ", ").join(parts), interrupt=True)
 
@@ -2417,8 +2418,23 @@ class TableVerseApp(QMainWindow):
         if not self.uno_state or not self.uno_state.get("active"):
             reader.speak(tr("المباراة لم تبدأ بعد."), interrupt=True)
             return
-        curr = self.uno_state.get("current_player_name", "")
         reader.speak(tr("دور {name}", name=curr) if curr else tr("غير محدد"), interrupt=True)
+
+    def on_tennis_crosscourt_left(self):
+        game = str((self.current_room or {}).get("game", "")).upper()
+        if game != "TENNIS":
+            return
+        tg = getattr(self.table_view, "tennis_game", None) if hasattr(self, "table_view") else None
+        if tg and hasattr(tg, "_set_lane"):
+            tg._set_lane(-1)
+
+    def on_tennis_crosscourt_right(self):
+        game = str((self.current_room or {}).get("game", "")).upper()
+        if game != "TENNIS":
+            return
+        tg = getattr(self.table_view, "tennis_game", None) if hasattr(self, "table_view") else None
+        if tg and hasattr(tg, "_set_lane"):
+            tg._set_lane(1)
 
     def on_domino_toggle_side(self):
         game = str((self.current_room or {}).get("game", "")).upper()
@@ -2539,7 +2555,6 @@ class TableVerseApp(QMainWindow):
             if rules.get("mystery_tiles"): active_rules.append("المربعات الغامضة")
         elif game == "THIEF_HUNT":
             active_rules.append(tr("عدد الجولات: {0}", rules.get('rounds', 5)))
-            if rules.get("allow_human_thief"): active_rules.append("السماح للاعبين بدور اللص")
             if rules.get("elimination_mode"): active_rules.append("نظام الإقصاء")
         elif game in ("DOMINO", "AMERICAN_DOMINO"):
             mode = rules.get("mode", "draw")

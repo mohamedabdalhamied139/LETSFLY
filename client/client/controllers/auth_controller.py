@@ -42,7 +42,17 @@ class AuthController:
                 clear_credentials()
 
             self.app.home_view.set_user_greeting(dname)
-            self.app._start_session_clean(dname)
+            current_room_id = self.app.user.get("current_room_id")
+            if current_room_id:
+                def on_room_found(room):
+                    self.app.home_view.activity_panel.clear()
+                    self.app._enter_table(room)
+                    reader.speak(tr("تمت إعادتك إلى طاولتك السابقة."))
+                def on_room_error(_err):
+                    self.app._start_session_clean(dname)
+                self.app._run_async(lambda: self.app.api.get_room(current_room_id), on_room_found, on_room_error)
+            else:
+                self.app._start_session_clean(dname)
 
         def fail(err: str):
             sound_engine.stop_looping("CONNECTING")
@@ -114,7 +124,18 @@ class AuthController:
                     self.app.user = res or {}
                     dname = self.app.user.get("display_name", self.app.user.get("username", ""))
                     self.app.home_view.set_user_greeting(dname)
-                    self.app._start_session_clean(dname, returning=True)
+                    current_room_id = self.app.user.get("current_room_id")
+                    if current_room_id:
+                        def on_room_found(room):
+                            self.app.home_view.activity_panel.clear()
+                            self._start_lobby_ws() if hasattr(self, "_start_lobby_ws") else None
+                            self.app._enter_table(room)
+                            reader.speak(tr("تمت إعادتك إلى طاولتك السابقة."))
+                        def on_room_error(_err):
+                            self.app._start_session_clean(dname, returning=True)
+                        self.app._run_async(lambda: self.app.api.get_room(current_room_id), on_room_found, on_room_error)
+                    else:
+                        self.app._start_session_clean(dname, returning=True)
 
                 def failed(_):
                     sound_engine.stop_looping("CONNECTING")

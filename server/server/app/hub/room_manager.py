@@ -267,6 +267,13 @@ class RoomManager:
         with self._lock:
             return any((int(user_id) in r.players or int(user_id) in r.spectators) for r in self.rooms.values())
 
+    def get_user_room_id(self, user_id: int) -> Optional[str]:
+        with self._lock:
+            for r in self.rooms.values():
+                if int(user_id) in r.players or int(user_id) in r.spectators:
+                    return r.room_id
+            return None
+
     def add_player_exclusive(self, room: Room, user_id: int, name: str) -> bool:
         """Atomically enforce one-table-per-user within this server process."""
         with self._lock:
