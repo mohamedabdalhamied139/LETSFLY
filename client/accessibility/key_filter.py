@@ -331,10 +331,34 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                     if not shift and vk in scopa_actions:
                         self._call(scopa_actions[vk])
                         return True, 0
+                # --- 8. Tennis Game-Specific Shortcuts & Gameplay Keys ---
+                elif game == "TENNIS":
+                    tennis_actions = {
+                        0x41: "on_tennis_crosscourt_left",   # 'A' = Crosscourt Left
+                        0x44: "on_tennis_crosscourt_right",  # 'D' = Crosscourt Right
+                    }
+                    if not shift and vk in tennis_actions:
+                        self._call(tennis_actions[vk])
+                        return True, 0
 
+                    table_view = getattr(self.window, "table_view", None)
+                    tennis_game = getattr(table_view, "tennis_game", None) if table_view else None
+                    if tennis_game and getattr(table_view, "is_playing", False):
+                        if vk == 0x25:  # VK_LEFT
+                            tennis_game._set_lane(tennis_game.current_lane() - 1)
+                            return True, 0
+                        elif vk == 0x27:  # VK_RIGHT
+                            tennis_game._set_lane(tennis_game.current_lane() + 1)
+                            return True, 0
+                        elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN
+                            tennis_game._set_lane(0)
+                            return True, 0
+                        elif vk == 0x20:  # VK_SPACE
+                            tennis_game._emit_position()
+                            tennis_game.keyPressed.emit()
+                            return True, 0
 
-
-            # Enter is context-sensitive. Farkle/Domino/Snakes/Scopa owns Enter only while its
+            # Enter is context-sensitive. Farkle/Domino/Snakes/Scopa/Tennis owns Enter only while its
             # gameplay area has focus; otherwise native Qt controls retain
             # normal Enter behavior (buttons, edits, dialogs, etc.).
             if vk == 0x0D:  # Enter / Numpad Enter (VK_RETURN)
@@ -375,6 +399,13 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                         item = scopa_list.currentItem()
                         if item is not None and table_view:
                             table_view._on_scopa_card_activated(item)
+                            return True, 0
+                elif cur_game == "TENNIS":
+                    tennis_game = getattr(table_view, "tennis_game", None) if table_view else None
+                    if focus is not None and (focus is tennis_game or (hasattr(tennis_game, "viewport") and focus is tennis_game.viewport())):
+                        if tennis_game and hasattr(tennis_game, "keyPressed"):
+                            tennis_game._emit_position()
+                            tennis_game.keyPressed.emit()
                             return True, 0
 
 

@@ -1,0 +1,14 @@
+1. Raccourcis pour lancer les dés et jouer :
+• Entrez : lancez les dés et avancez sur le plateau.
+2. Raccourcis de demande de renseignements et de localisation :
+• P : Annoncer la liste et le nombre de joueurs présents à la table.
+• T : Annoncez le nom du joueur dont c'est actuellement le tour.
+• R : Radar embarqué (connaître l'échelle ou le serpent le plus proche de vous).
+• V : Annoncez les emplacements et les cases de tous les joueurs sur le plateau.
+• S : Annoncer la localisation des joueurs et le but (case 100).
+• D : Ré-annoncer le dernier lancer de dés.
+3. Raccourcis de gestion du jeu (pour l'hôte de la salle) :
+• Enter : démarrez le jeu en vous tenant debout sur l'élément de la table.
+• Maj + X : Terminez la partie en cours.
+• B : Ajoutez un joueur robot (bot) à la salle.
+• Maj + B : supprime le dernier bot ajouté.

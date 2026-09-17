@@ -1,0 +1,148 @@
+Comprehensive Guide and Rules for Farkle (The Game of Dice and Risk)
+
+Section One: Introduction and Basic Gameplay
+
+Game Concept and Main Objective
+Farkle is one of the most famous and enjoyable strategic dice games that relies on risk management, calculating probabilities, and smartly balancing greed and caution.
+The game is played with six classic six-sided dice numbered from 1 to 6.
+The main objective in each round is to roll the dice to get winning combinations that score you as many points as possible, and to bank these points into your cumulative score to be the first to reach the final set target of the match, which is 1500 points.
+
+Step-by-Step Turn Progression
+Turns proceed between players sequentially in a clockwise direction.
+When it is your turn, you follow these steps:
+First: Roll the available dice by pressing the roll option (Roll 6 dice) or the Enter key.
+Second: Check the result and look for the winning combinations that appeared.
+Third: You must choose and isolate at least one winning combination by clicking on it in the list, and its points are immediately added to your current turn score, and its dice are set aside from the table.
+Fourth: After isolating a combination, two crucial options appear before you:
+The First Option: Continue and risk rolling the remaining dice to try to earn extra points and raise the turn score.
+The Second Option: Stop and bank the points (Bank) by pressing the bank option to add the full total points of the turn to your cumulative match score and pass the turn to the next player.
+
+Practical Example of the Beginning of a Turn and the Banking Option Between Two Players:
+Suppose the match started between two players, and the first player's turn came, they rolled 6 dice, and the following numbers appeared: 1, 5, 2, 3, 4, 6.
+What does the first player do and what happens to their points?
+These dice contain a number 1 (10 points), a number 5 (5 points), and a large straight from 1 to 6 (200 points).
+The first player chooses to isolate the large straight from 1 to 6, earning 200 points in their current turn score.
+Since all six dice have been isolated, the hot dice rule is triggered, and the player can either bank 200 points immediately or roll 6 completely new dice!
+
+Practical Example of a Normal Turn and a Safe Stop Between Three Players:
+Suppose the turn is with the second player among three players, and their previous score was 100 points.
+They rolled 6 dice and got: 1, 1, 1, 2, 3, 4.
+They isolated the triplet of ones (75 points), leaving 3 unscored dice.
+The second player chose to stop and bank the points instead of risking rolling the three dice.
+What happens to their score?
+75 points are added to their previous score (100 points), making their new score 175 points, and the turn passes directly to the third player.
+
+
+Section Two: Winning Combinations and Detailed Point Values
+
+Farkle in this project relies on a precise and balanced point system for single and combined combinations:
+
+First: Single Numbers
+A single number 1: Grants you 10 points.
+A single number 5: Grants you 5 points.
+Other numbers (2, 3, 4, 6) singly: Do not grant any points on their own and must come in groups of three or more.
+
+Second: Triplets (Three dice of the same number)
+Three ones (1, 1, 1): Grant you 75 points.
+Three twos (2, 2, 2): Grant you 20 points.
+Three threes (3, 3, 3): Grant you 30 points.
+Three fours (4, 4, 4): Grant you 40 points.
+Three fives (5, 5, 5): Grant you 50 points.
+Three sixes (6, 6, 6): Grant you 60 points.
+
+Third: Quads (Four dice of the same number)
+Four ones: 110 points.
+Four twos: 120 points.
+Four threes: 130 points.
+Four fours: 140 points.
+Four fives: 150 points.
+Four sixes: 160 points.
+
+Fourth: Quintuplets (Five dice of the same number)
+Five ones: 320 points.
+Five twos: 340 points.
+Five threes: 360 points.
+Five fours: 380 points.
+Five fives: 400 points.
+Five sixes: 420 points.
+
+Fifth: Sextuplets (Six dice of the same number)
+Six ones: 625 points.
+Six twos: 650 points.
+Six threes: 675 points.
+Six fours: 700 points.
+Six fives: 725 points.
+Six sixes: 750 points.
+
+Sixth: Straights and Special Groups from a Single Roll
+Small Straight: The appearance of a sequence of five numbers like 1, 2, 3, 4, 5 or 2, 3, 4, 5, 6 grants you 100 points.
+Large Straight: The appearance of the full sequence of six numbers from 1 to 6 grants you 200 points.
+Three Pairs: The appearance of three different pairs, such as a pair of twos, a pair of fours, and a pair of sixes, grants you 150 points.
+Full House: The appearance of four dice of the same number with a pair of another number grants you 250 points.
+Two Triplets: The appearance of two triplets in the same roll, such as three twos and three fives, grants you 250 points.
+
+Practical Example of Isolating Multiple Combinations:
+Suppose a player rolled 6 dice and got: 1, 5, 5, 5, 2, 3.
+What are the options available to them?
+The player can isolate the number 1 alone (10 points), isolate the triplet of fives alone (50 points), or isolate the number 1 with the triplet of fives together to get 60 points in one go, leaving two dice (2 and 3) that they can roll again.
+
+
+Section Three: Banking Rules and Minimum Thresholds
+
+Minimum Bank Rule (Min Bank)
+In order to be able to bank your turn's points, your total collected points in this turn must reach at least 30 points.
+If your turn's total is less than 30 points, the game prevents you from banking and obliges you to continue rolling until you reach 30 points or more.
+
+First Bank Minimum Rule from Zero Score (First Bank Minimum)
+If your overall score in the match is zero and you have not scored any points yet, the game requires that for your official entry onto the scoreboard, you must collect at least 50 points in your turn for the first bank.
+Once you successfully bank 50 points or more for the first time, you can bank starting from just 30 points in all subsequent turns.
+
+Practical Example of the First Bank from Zero Score:
+Suppose the match started, the player's score is zero, they rolled the dice and got a single number 1 (10 points) and a single number 5 (5 points), totaling 15 points.
+Can the player bank?
+They cannot bank because their current score is zero and the minimum for the first bank is 50 points. They must roll the remaining dice and try to collect at least 35 additional points to reach 50 points and bank them successfully.
+
+
+Section Four: Hot Dice and Farkle
+
+Hot Dice Rule
+This great bonus occurs when a player successfully isolates and uses all six dice in scoring points during the same turn.
+When this happens:
+The player keeps all the points they collected up to that moment.
+The game unlocks six entirely new dice for the player to roll for free and continue gathering more and more points in the same turn!
+There is no limit to how many times hot dice can be repeated as long as the player continues to successfully isolate all six dice.
+
+Farkle Rule and Loss of Turn Points
+If you roll the remaining dice at any stage of your turn, and no scoring tile appears (no 1, no 5, no triplets or winning combinations), this is called a Farkle!
+When a Farkle happens:
+All the points you collected in that turn are immediately lost and become zero.
+Your overall score saved from previous turns is not affected.
+Your turn ends immediately, and the turn automatically passes to the next player.
+
+Practical Example of Hot Dice:
+Suppose the player had two remaining dice, rolled them, and got: 1 and 5.
+The player isolated the 1 and the 5 (15 points), and thus used all six dice.
+The game announces hot dice, so they can roll 6 new dice and add their points on top of their previous points!
+
+Practical Example of a Farkle:
+Suppose the player collected 120 points in their turn, isolated 4 dice, decided to be greedy, and rolled the remaining two dice, getting: 2 and 4.
+Since the numbers 2 and 4 do not score any points, the game announces a Farkle, they lose the 120 points completely, and the turn passes to their opponent.
+
+
+Section Five: End of the Match and Announcing the Winner
+
+Objective and Crowning Conditions
+The default official target for the match is 1500 points (or the target set by the room host).
+The first player who successfully banks points that raise their cumulative total score to 1500 points or more is immediately declared the winner of the match, and the match ends by crowning them the champion.
+
+Comprehensive Practical Example of the Decisive Round and Crowning the Winner:
+Suppose the score among four players before the final round was as follows:
+First Player: 1450 points.
+Second Player: 1200 points.
+Third Player: 900 points.
+Fourth Player: 600 points.
+It was the first player's turn, they rolled 6 dice and got a triplet of twos (20 points), a number 1 (10 points), and a number 5 (5 points), totaling 35 points in this turn.
+The first player banked the 35 points.
+What happens to the score and who wins?
+The first player's total score becomes: 1450 plus 35 equals 1485 points (they have not reached the target yet), so the turn passes to the second player.
+If the second player rolls, collects 350 points, and banks them, their score becomes 1550 points, surpassing the target (1500) to win the match immediately!

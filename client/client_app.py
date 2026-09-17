@@ -2426,8 +2426,23 @@ class TableVerseApp(QMainWindow):
         if not self.uno_state or not self.uno_state.get("active"):
             reader.speak(tr("المباراة لم تبدأ بعد."), interrupt=True)
             return
-        curr = self.uno_state.get("current_player_name", "")
         reader.speak(tr("دور {name}", name=curr) if curr else tr("غير محدد"), interrupt=True)
+
+    def on_tennis_crosscourt_left(self):
+        game = str((self.current_room or {}).get("game", "")).upper()
+        if game != "TENNIS":
+            return
+        tg = getattr(self.table_view, "tennis_game", None) if hasattr(self, "table_view") else None
+        if tg and hasattr(tg, "_set_lane"):
+            tg._set_lane(-1)
+
+    def on_tennis_crosscourt_right(self):
+        game = str((self.current_room or {}).get("game", "")).upper()
+        if game != "TENNIS":
+            return
+        tg = getattr(self.table_view, "tennis_game", None) if hasattr(self, "table_view") else None
+        if tg and hasattr(tg, "_set_lane"):
+            tg._set_lane(1)
 
     def on_domino_toggle_side(self):
         game = str((self.current_room or {}).get("game", "")).upper()
