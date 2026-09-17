@@ -138,13 +138,29 @@ class ThiefHuntGame:
         count = self.DIRECTIONS_START + (self.round_number - 1)
         result = []
         current = floor
-        for _ in range(count):
-            if current <= 1:
-                direction = "أعلى"
-            elif current >= 10:
-                direction = "أسفل"
-            else:
-                direction = random.choice(("أعلى", "أسفل"))
+        for step in range(count):
+            valid = []
+            if current > 1:
+                valid.append("أسفل")
+            if current < 10:
+                valid.append("أعلى")
+
+            weights = []
+            for d in valid:
+                w = 1.0
+                # Penalize trivial ping-pong oscillation (e.g. up, down, up, down)
+                if len(result) >= 2 and result[-1] != result[-2] and d == result[-2]:
+                    w *= 0.3
+                # Avoid excessively long runs in the exact same direction
+                if len(result) >= 3 and result[-1] == result[-2] == result[-3] == d:
+                    w *= 0.1
+                # Discourage simply ending right back at the starting floor when other choices exist
+                next_f = current + 1 if d == "أعلى" else current - 1
+                if step == count - 1 and next_f == floor and len(valid) > 1:
+                    w *= 0.25
+                weights.append(w)
+
+            direction = random.choices(valid, weights=weights)[0]
             result.append(direction)
             current = min(10, current + 1) if direction == "أعلى" else max(1, current - 1)
         self.directions = result
