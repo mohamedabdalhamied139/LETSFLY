@@ -297,7 +297,7 @@ class TennisGame:
                     self._bot_serve_time = None
                     self.timestamp = Timestamp.IN_PLAY
                     self.rally_hits = 0
-                    target = random.choice(ALL_LANES)
+                    target = self._bot_choose_target_lane()
                     traj = self._launch_toward_player(target=target)
                     traj.update({
                         "hit_type":   "racket",
@@ -412,33 +412,44 @@ class TennisGame:
 
     def _bot_should_hit(self) -> bool:
         """
-        Determines whether the bot successfully returns the ball or makes an unforced error/miss.
-        Accounts for bot difficulty setting, rally speed/hits, and cross-court movement.
+        Pro-level autonomous bot engine:
+        High consistency (97%+ base accuracy), tactical endurance, and tournament agility.
         """
-        rules = getattr(self.room, "rules", {}) or {}
-        difficulty = str(rules.get("bot_difficulty", "NORMAL")).upper()
+        hit_rate = 0.97
 
-        # Base success rate per difficulty
-        base_hit_rates = {
-            "EASY": 0.65,     # 35% miss rate on easy
-            "NORMAL": 0.80,   # 20% miss rate on normal
-            "HARD": 0.90,     # 10% miss rate on hard
-            "EXPERT": 0.96,   # 4% miss rate on expert
-        }
-        hit_rate = base_hit_rates.get(difficulty, 0.80)
+        # In intense, rapid rallies (rally_hits > 8), fatigue very slightly factors in
+        if self.rally_hits > 8:
+            decay = (self.rally_hits - 8) * 0.015
+            hit_rate = max(0.85, hit_rate - decay)
 
-        # Longer rallies add fatigue/pressure and increase unforced errors
-        if self.rally_hits > 2:
-            decay = (self.rally_hits - 2) * 0.035
-            hit_rate = max(0.25, hit_rate - decay)
-
-        # Cross-court penalty: if the ball came from opposite lane (e.g. -1 to 1)
+        # Extreme cross-court wide ball
         ball_lane = self.ball.target
         prev_bot_lane = self.player_pos.get(1, LANE_CENTER)
         if abs(ball_lane - prev_bot_lane) == 2:
-            hit_rate -= 0.08
+            hit_rate -= 0.03
 
         return random.random() < hit_rate
+
+    def _bot_choose_target_lane(self) -> int:
+        """
+        Tactical Pro Shot Selection:
+        The bot analyzes player 0's current positioning and aims towards open space / wrong-footing the player.
+        """
+        p0_pos = self.player_pos.get(0, LANE_CENTER)
+        # Tactical options: cross-court away from player or unexpected center punch
+        if p0_pos == LANE_LEFT:
+            # Player is on the left -> aim predominantly center or wide right
+            weights = {LANE_LEFT: 0.15, LANE_CENTER: 0.35, LANE_RIGHT: 0.50}
+        elif p0_pos == LANE_RIGHT:
+            # Player is on the right -> aim predominantly center or wide left
+            weights = {LANE_LEFT: 0.50, LANE_CENTER: 0.35, LANE_RIGHT: 0.15}
+        else:
+            # Player is centered -> aim for deep corners left or right to move the player
+            weights = {LANE_LEFT: 0.45, LANE_CENTER: 0.10, LANE_RIGHT: 0.45}
+
+        choices = list(weights.keys())
+        probabilities = list(weights.values())
+        return random.choices(choices, weights=probabilities, k=1)[0]
 
     def _handle_wall_reach(self) -> List[Dict]:
         """
@@ -452,10 +463,10 @@ class TennisGame:
             bot_hits = self._bot_should_hit()
 
             if bot_hits:
-                # Bot moves to the ball's lane and successfully returns it!
+                # Bot moves to the ball's lane and returns with a tactical pro shot!
                 self.player_pos[1] = ball_lane
                 self.rally_hits += 1
-                new_target = random.choice(ALL_LANES)
+                new_target = self._bot_choose_target_lane()
                 traj = self._launch_toward_player(target=new_target)
                 traj.update({
                     "hit_type":   "racket",
