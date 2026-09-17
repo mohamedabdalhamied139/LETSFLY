@@ -122,7 +122,7 @@ class TennisGameplayWidget(QListWidget):
             event.accept()
             return
         key = event.key()
-        if key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down):
+        if key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down, Qt.Key_Space):
             event.accept()
             return
             
