@@ -1,5 +1,6 @@
 """Windows keyboard filter for accessible game shortcuts."""
 import sys
+import time
 import ctypes
 import logging
 from PySide6.QtCore import QAbstractNativeEventFilter, QTimer
@@ -87,8 +88,8 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
             if QApplication.activeModalWidget() is not None:
                 return False, 0
 
-            # Ignore auto-repeat for character shortcuts ('A'..'Z') and game arrow keys
-            if (0x41 <= vk <= 0x5A) or (0x25 <= vk <= 0x28):
+            # Ignore auto-repeat only for character shortcut keys ('A'..'Z')
+            if 0x41 <= vk <= 0x5A:
                 if vk in self._down:
                     return True, 0
                 self._down.add(vk)
@@ -343,11 +344,12 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
 
                     table_view = getattr(self.window, "table_view", None)
                     tennis_game = getattr(table_view, "tennis_game", None) if table_view else None
-                    if tennis_game and getattr(table_view, "is_playing", False):
+                    if tennis_game:
                         if vk in (0x25, 0x26, 0x27, 0x28):
-                            if vk in self._down:
+                            now = time.monotonic()
+                            if now - getattr(self, "_last_tennis_arrow_time", 0.0) < 0.05:
                                 return True, 0
-                            self._down.add(vk)
+                            self._last_tennis_arrow_time = now
                             if vk == 0x25:  # VK_LEFT
                                 tennis_game._set_lane(tennis_game.current_lane() - 1)
                             elif vk == 0x27:  # VK_RIGHT
