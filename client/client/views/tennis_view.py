@@ -54,16 +54,11 @@ class TennisGameplayWidget(QListWidget):
 
         self._current_lane = LANE_CENTER
 
-        # Unity-style Update() polling timer — ~33fps
-        self._poll = QTimer(self)
-        self._poll.setInterval(30)
-        self._poll.timeout.connect(self._emit_position)
-
     def start_tracking(self):
-        self._poll.start()
+        self._emit_position()
 
     def stop_tracking(self):
-        self._poll.stop()
+        pass
 
     def current_lane(self) -> int:
         """left=−1, center=0, right=+1."""
@@ -175,7 +170,7 @@ class TennisGameWidget(TennisGameplayWidget):
     # ------------------------------------------------------------------ #
 
     def _on_key_pressed(self):
-        """Serve when resting pause ends, or swing to hit incoming ball during rally."""
+        """Serve when resting pause ends."""
         if self.game_state in ("SERVING", "WAITING"):
             server_idx = self.score.get("server_idx", 0)
             if server_idx is not None and int(server_idx) != self.local_idx:
@@ -184,8 +179,6 @@ class TennisGameWidget(TennisGameplayWidget):
                 return  # Still resting / applause in progress
             self.game_state = "IN_PLAY"
             self.tennisActionSubmitted.emit("serve", {"lane": self.current_lane()})
-        elif self.game_state == "IN_PLAY":
-            self.tennisActionSubmitted.emit("hit", {"lane": self.current_lane()})
 
     def _on_position_changed(self, lane: int):
         """Called whenever lane changes or on tick."""

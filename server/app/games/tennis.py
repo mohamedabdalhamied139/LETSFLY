@@ -251,86 +251,26 @@ class TennisGame:
             self.player_pos[idx] = lane
             return {"type": "position_ack", "lane": lane}
 
-        if action in ("serve", "hit") and self.timestamp in (Timestamp.WAITING_KEY, Timestamp.IN_PLAY):
+        if action == "serve" and self.timestamp == Timestamp.WAITING_KEY:
             lane = max(LANE_LEFT, min(LANE_RIGHT, int(data.get("lane", self.player_pos.get(idx, LANE_CENTER)))))
             self.player_pos[idx] = lane
 
-            if self.timestamp == Timestamp.WAITING_KEY:
-                if idx != self.score.server_idx:
-                    return {"error": "not_your_serve"}
-                now = time.monotonic()
-                if now < getattr(self, "serve_ready_time", 0):
-                    return {"error": "waiting_for_applause"}
-                self.rally_hits = 0
-                self.timestamp = Timestamp.IN_PLAY
+            if idx != self.score.server_idx:
+                return {"error": "not_your_serve"}
+            now = time.monotonic()
+            if now < getattr(self, "serve_ready_time", 0):
+                return {"error": "waiting_for_applause"}
+            self.rally_hits = 0
+            self.timestamp = Timestamp.IN_PLAY
 
-                if self.score.server_idx == 0:
-                    result = self._launch_toward_wall()
-                    result.update({"sender": 0, "hit_type": "racket", "sound": "player_racket_hit", "player_idx": 0})
-                else:
-                    result = self._launch_toward_player()
-                    result.update({"sender": 1, "hit_type": "racket", "sound": "opponent_racket_hit", "player_idx": 1})
+            if self.score.server_idx == 0:
+                result = self._launch_toward_wall()
+                result.update({"sender": 0, "hit_type": "racket", "sound": "player_racket_hit", "player_idx": 0})
+            else:
+                result = self._launch_toward_player()
+                result.update({"sender": 1, "hit_type": "racket", "sound": "opponent_racket_hit", "player_idx": 1})
 
-                return result
-
-            elif self.timestamp == Timestamp.IN_PLAY:
-                # Local player swinging at the ball
-                ball = self.ball
-                now = time.monotonic()
-                # Ball must be incoming towards player (direction == 1 for player 0)
-                is_incoming = (ball.direction == 1 and idx == 0) or (ball.direction == -1 and idx == 1)
-                if is_incoming and not ball.reached:
-                    # Valid hit window: ball passed net (or near reach time)
-                    in_window = (now >= ball.net_time - 0.15) and (now <= ball.reach_time + 0.35)
-                    if in_window:
-                        if lane == ball.target:
-                            ball.reached = True
-                            if idx == 0:
-                                self.rally_hits += 1
-                                target_lane = random.choice(ALL_LANES)
-                                traj = self._launch_toward_wall(target=target_lane)
-                                traj.update({
-                                    "hit_type":   "racket",
-                                    "sound":      "player_racket_hit",
-                                    "player_idx": 0,
-                                })
-                                return traj
-                            else:
-                                self.rally_hits += 1
-                                target_lane = random.choice(ALL_LANES)
-                                traj = self._launch_toward_player(target=target_lane)
-                                traj.update({
-                                    "hit_type":   "racket",
-                                    "sound":      "opponent_racket_hit",
-                                    "player_idx": 1,
-                                })
-                                return traj
-                        else:
-                            # Swing in wrong lane -> immediate miss
-                            ball.reached = True
-                            self.rally_hits = 0
-                            winner = 1 - idx
-                            result = self.score.add_point(winner_idx=winner)
-                            target_sets = int(getattr(self.room, "target_score", 1) or 1)
-                            if self.score.sets[winner] >= target_sets:
-                                self.timestamp = Timestamp.GAME_OVER_A
-                                self.winner_idx = winner
-                                result["events"].append("match_won")
-                            else:
-                                self.timestamp = Timestamp.WAITING_KEY
-                                self.serve_ready_time = time.monotonic() + 4.5
-                                self._bot_serve_time = time.monotonic() + 4.8
-                            return {
-                                "type":         "tennis_action_result",
-                                "hit_type":     "boundary",
-                                "sound":        "new_game_miss",
-                                "player_idx":   idx,
-                                "score_result": result,
-                                "miss":         True,
-                                "player_lane":  lane,
-                                "ball_lane":    ball.target,
-                                "state":        self.full_state(),
-                            }
+            return result
 
         return {"error": "invalid_action"}
 
