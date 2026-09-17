@@ -3445,6 +3445,20 @@ class TableVerseApp(QMainWindow):
                 self.api.clear_activity(timeout=3)
             except Exception:
                 pass
+
+        # If user is in a room and intentionally closes the game, leave the room
+        # explicitly so server knows the player left on purpose and won't hold the seat
+        # as a network disconnection reconnection.
+        try:
+            if self.is_in_room() and self.current_room and self.current_room.get("id"):
+                rid = self.current_room.get("id")
+                try:
+                    self.api.leave_room(rid)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         try:
             self.voice.shutdown()
             self.ws.stop()

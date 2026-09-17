@@ -340,21 +340,31 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                     table_view = getattr(self.window, "table_view", None)
                     tennis_game = getattr(table_view, "tennis_game", None) if table_view else None
                     if tennis_game and table_view and getattr(table_view, "is_playing", False):
-                        if vk in (0x25, 0x26, 0x27, 0x28):
-                            now = time.monotonic()
-                            if now - getattr(self, "_last_tennis_arrow_time", 0.0) < 0.05:
+                        focus = QApplication.focusWidget()
+                        in_chat_or_log = (
+                            focus is not None and (
+                                focus == getattr(table_view, "chat_input", None)
+                                or focus == getattr(table_view, "activity_log", None)
+                                or (hasattr(table_view, "activity_log") and hasattr(table_view.activity_log, "viewport") and focus == table_view.activity_log.viewport())
+                                or (hasattr(table_view, "activity_panel") and (focus == table_view.activity_panel or (hasattr(focus, "parent") and focus.parent() == table_view.activity_panel)))
+                            )
+                        )
+                        if not in_chat_or_log:
+                            if vk in (0x25, 0x26, 0x27, 0x28):
+                                now = time.monotonic()
+                                if now - getattr(self, "_last_tennis_arrow_time", 0.0) < 0.05:
+                                    return True, 0
+                                self._last_tennis_arrow_time = now
+                                if vk == 0x25:  # VK_LEFT
+                                    tennis_game._set_lane(tennis_game.current_lane() - 1)
+                                elif vk == 0x27:  # VK_RIGHT
+                                    tennis_game._set_lane(tennis_game.current_lane() + 1)
+                                elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN
+                                    tennis_game._set_lane(0)
+                                tennis_game.keyPressed.emit()
                                 return True, 0
-                            self._last_tennis_arrow_time = now
-                            if vk == 0x25:  # VK_LEFT
-                                tennis_game._set_lane(tennis_game.current_lane() - 1)
-                            elif vk == 0x27:  # VK_RIGHT
-                                tennis_game._set_lane(tennis_game.current_lane() + 1)
-                            elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN
-                                tennis_game._set_lane(0)
-                            tennis_game.keyPressed.emit()
-                            return True, 0
-                        elif vk == 0x20:  # VK_SPACE → ignored in tennis
-                            return True, 0
+                            elif vk == 0x20:  # VK_SPACE → ignored in tennis
+                                return True, 0
 
             # Enter is context-sensitive. Farkle/Domino/Snakes/Scopa owns Enter only while its
             # gameplay area has focus; otherwise native Qt controls retain
