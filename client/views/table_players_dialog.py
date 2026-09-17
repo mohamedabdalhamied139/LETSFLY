@@ -105,7 +105,10 @@ class TablePlayerActionsDialog(QDialog):
         if not is_bot:
             actions.append(("زيارة الملف الشخصي", "profile"))
             if not is_me:
-                actions.append(("إضافة صديق", "add_friend"))
+                if target_user.get("has_pending_request"):
+                    actions.append(("إلغاء طلب الصداقة", "cancel_friend_request"))
+                else:
+                    actions.append(("إضافة صديق", "add_friend"))
                 actions.append(("إرسال رسالة", "message"))
 
         for label, tag in actions:

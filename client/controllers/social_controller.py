@@ -44,6 +44,8 @@ class SocialController:
                 elif tab_name == "outgoing":
                     self.handle_friend_request(data, "outgoing", dialog)
 
+            self.app._pending_outgoing_requests.clear()
+            self.app._pending_outgoing_requests.update(int(s.get("id")) for s in (res.get("sent") or []) if s.get("id"))
             dialog.set_action_callback(on_action)
             dialog.show_data(res.get("friends", []), res.get("requests", []), res.get("sent", []))
             if return_focus is not None and return_focus.isVisible():
@@ -75,9 +77,28 @@ class SocialController:
 
                 self.app._run_async(lambda: fn(rid), request_success, lambda e: reader.speak(tr(f"تعذر تنفيذ الطلب: {e}"), interrupt=True))
         else:
+            uid = int(row.get("id") or 0)
+            def cancel_outgoing_ok(_r):
+                if uid:
+                    self.app._pending_outgoing_requests.discard(uid)
+                reader.speak(tr("تم إلغاء طلب الصداقة."), interrupt=True)
+                if friends_dialog is not None and friends_dialog.isVisible():
+                    self.app._run_async(
+                        self.app.api.friends,
+                        lambda data: (
+                            self.app._pending_outgoing_requests.clear(),
+                            self.app._pending_outgoing_requests.update(int(s.get("id")) for s in (data or {}).get("sent", []) if s.get("id")),
+                            friends_dialog.set_data(
+                                (data or {}).get("friends", []),
+                                (data or {}).get("requests", []),
+                                (data or {}).get("sent", []),
+                            )
+                        ),
+                        lambda _e: None,
+                    )
             self.app._run_async(
                 lambda: self.app.api.cancel_friend_request(rid),
-                lambda _r: reader.speak(tr("تم إلغاء طلب الصداقة."), interrupt=True),
+                cancel_outgoing_ok,
                 lambda e: reader.speak(tr(f"تعذر إلغاء الطلب: {e}"), interrupt=True)
             )
 
@@ -191,7 +212,17 @@ class SocialController:
         if tag == "profile":
             self.app._run_async(lambda: self.app.api.user_profile(uid), lambda r: ProfileDialog(r, online_dialog).exec(), lambda e: reader.speak(tr(f"تعذر فتح الملف الشخصي: {e}"), interrupt=True))
         elif tag == "add_friend":
-            self.app._run_async(lambda: self.app.api.send_friend_request(uid), lambda _r: reader.speak(tr("تم إرسال طلب الصداقة."), interrupt=True), lambda e: reader.speak(tr(f"تعذر إرسال طلب الصداقة: {e}"), interrupt=True))
+            def add_ok(_r):
+                user["has_pending_request"] = True
+                self.app._pending_outgoing_requests.add(uid)
+                reader.speak(tr("تم إرسال طلب الصداقة."), interrupt=True)
+            self.app._run_async(lambda: self.app.api.send_friend_request(uid), add_ok, lambda e: reader.speak(tr(f"تعذر إرسال طلب الصداقة: {e}"), interrupt=True))
+        elif tag == "cancel_friend_request":
+            def cancel_ok(_r):
+                user["has_pending_request"] = False
+                self.app._pending_outgoing_requests.discard(uid)
+                reader.speak(tr("تم إلغاء طلب الصداقة."), interrupt=True)
+            self.app._run_async(lambda: self.app.api.cancel_friend_request_to_user(uid), cancel_ok, lambda e: reader.speak(tr(f"تعذر إلغاء طلب الصداقة: {e}"), interrupt=True))
         elif tag == "message":
             dlg = SimpleMessageDialog(tr("إرسال رسالة إلى {name}", name=name), tr("اكتب رسالتك:"), online_dialog)
             if dlg.exec():

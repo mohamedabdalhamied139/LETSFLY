@@ -226,7 +226,8 @@ class OnlineUserActionsDialog(QDialog):
         self.setModal(True)
         l=QVBoxLayout(self)
         self.list=_FriendActionsListWidget(self); self.list.setAccessibleName(tr("قائمة الإجراءات"))
-        actions=[("زيارة الملف الشخصي","profile"),("إضافة صديق","add_friend"),("إرسال رسالة","message"),("انضمام","join"),("أنت ضده","h2h"),("دعوة للتحدي","challenge"),("حظر","block")]
+        friend_action = ("إلغاء طلب الصداقة", "cancel_friend_request") if user.get("has_pending_request") else ("إضافة صديق", "add_friend")
+        actions=[("زيارة الملف الشخصي","profile"),friend_action,("إرسال رسالة","message"),("انضمام","join"),("أنت ضده","h2h"),("دعوة للتحدي","challenge"),("حظر","block")]
         for label,tag in actions:
             disp_label = tr(label)
             it=QListWidgetItem(disp_label); it.setData(Qt.UserRole,tag)

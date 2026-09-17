@@ -53,11 +53,13 @@ def _user_row(u): return {"id":u.id,"username":u.username,"display_name":u.displ
 
 def _friend_ids(db,user_id): return friend_ids(db,user_id)
 
-def _enrich_user(u, online_set, friends_set=None):
+def _enrich_user(u, online_set, friends_set=None, pending_outgoing_set=None):
     d = _user_row(u)
     d["online"] = u.id in online_set
     if friends_set is not None:
         d["is_friend"] = u.id in friends_set
+    if pending_outgoing_set is not None:
+        d["has_pending_request"] = u.id in pending_outgoing_set
     in_table = False
     room_id = None
     room_private = False
@@ -83,7 +85,8 @@ def search_users(q: str = "", user=Depends(get_current_user), db:Session=Depends
     if len(q) < 2: return {"users": []}
     rows=db.query(User).filter(User.username.ilike(f"%{q}%"), User.id!=user.id).order_by(func.lower(User.username)).limit(50).all()
     online=set(ws_manager.online_user_ids()); friends_set=_friend_ids(db,user.id)
-    return {"users":[_enrich_user(u, online, friends_set) for u in rows]}
+    pending_outgoing=set(db.scalars(select(FriendRequest.recipient_id).where(FriendRequest.sender_id==user.id, FriendRequest.status=="pending")).all())
+    return {"users":[_enrich_user(u, online, friends_set, pending_outgoing) for u in rows]}
 
 @router.get("/notifications")
 def notifications(limit:int=100,user=Depends(get_current_user),db:Session=Depends(get_db)):
@@ -131,9 +134,10 @@ def online_users(user=Depends(get_current_user), db: Session=Depends(get_db)):
     rows = db.query(User).filter(User.id.in_(ids)).all() if ids else []
     friend_set = _friend_ids(db, user.id)
     online_set = set(ws_manager.online_user_ids())
+    pending_outgoing = set(db.scalars(select(FriendRequest.recipient_id).where(FriendRequest.sender_id==user.id, FriendRequest.status=="pending")).all())
     result = []
     for u in rows:
-        d = _enrich_user(u, online_set, friend_set)
+        d = _enrich_user(u, online_set, friend_set, pending_outgoing)
         d["connected_at"] = timing.get(u.id, time.monotonic())
         result.append(d)
     result.sort(key=lambda x: str(x["display_name"]).casefold())
@@ -165,6 +169,12 @@ def accept_friend_request(request_id: int, user=Depends(get_current_user), db: S
             logger.warning("Friend-accept notification failed for request %s", request_id, exc_info=True)
 
     return {"ok": True}
+
+@router.delete("/friends/requests/to/{recipient_id}")
+def cancel_friend_request_to_user(recipient_id: int, user=Depends(get_current_user), db: Session=Depends(get_db)):
+    req = db.query(FriendRequest).filter(FriendRequest.sender_id==user.id, FriendRequest.recipient_id==recipient_id, FriendRequest.status=="pending").first()
+    if not req: raise HTTPException(404, "طلب الصداقة غير موجود.")
+    db.delete(req); db.commit(); return {"ok": True}
 
 @router.delete("/friends/requests/{request_id}")
 def cancel_friend_request(request_id:int,user=Depends(get_current_user),db:Session=Depends(get_db)):

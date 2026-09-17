@@ -99,6 +99,7 @@ class TableVerseApp(QMainWindow):
         self._ws_action_pending = {}
         self._force_close = False
         self.default_as_spectator = False
+        self._pending_outgoing_requests = set()
 
         # Central Stack
         self.stack = QStackedWidget(self)
@@ -1856,6 +1857,8 @@ class TableVerseApp(QMainWindow):
         voice_muted_list = self.current_room.get("voice_muted") or []
         is_target_muted = target_id in voice_muted_list
 
+        if target_id in self._pending_outgoing_requests:
+            target_user["has_pending_request"] = True
         act_dlg = TablePlayerActionsDialog(target_user, is_host, my_id, is_target_muted, is_co_host=is_co_host, parent=self)
         if act_dlg.exec() != QDialog.Accepted or not act_dlg.selected_tag:
             return
@@ -1931,10 +1934,24 @@ class TableVerseApp(QMainWindow):
                 lambda e: reader.speak(tr(f"تعذر فتح الملف الشخصي: {e}"), interrupt=True)
             )
         elif tag == "add_friend":
+            def add_ok(_r):
+                target_user["has_pending_request"] = True
+                self._pending_outgoing_requests.add(target_id)
+                reader.speak(tr("تم إرسال طلب الصداقة."), interrupt=True)
             self._run_async(
                 lambda: self.api.send_friend_request(target_id),
-                lambda _r: reader.speak(tr("تم إرسال طلب الصداقة."), interrupt=True),
+                add_ok,
                 lambda e: reader.speak(tr(f"تعذر إرسال طلب الصداقة: {e}"), interrupt=True)
+            )
+        elif tag == "cancel_friend_request":
+            def cancel_ok(_r):
+                target_user["has_pending_request"] = False
+                self._pending_outgoing_requests.discard(target_id)
+                reader.speak(tr("تم إلغاء طلب الصداقة."), interrupt=True)
+            self._run_async(
+                lambda: self.api.cancel_friend_request_to_user(target_id),
+                cancel_ok,
+                lambda e: reader.speak(tr(f"تعذر إلغاء طلب الصداقة: {e}"), interrupt=True)
             )
         elif tag == "message":
             msg_dlg = SimpleMessageDialog(tr("إرسال رسالة إلى {name}", name=target_name), tr("اكتب رسالتك:"), self)

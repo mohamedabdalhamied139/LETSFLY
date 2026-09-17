@@ -121,6 +121,7 @@ class ApiClient:
     def accept_friend_request(self, request_id): return self._request("POST", f"/api/friends/requests/{int(request_id)}/accept")
     def reject_friend_request(self, request_id): return self._request("POST", f"/api/friends/requests/{int(request_id)}/reject")
     def cancel_friend_request(self, request_id): return self._request("DELETE", f"/api/friends/requests/{int(request_id)}")
+    def cancel_friend_request_to_user(self, recipient_id): return self._request("DELETE", f"/api/friends/requests/to/{int(recipient_id)}")
 
     def wallet(self):
         return self._request("GET", "/api/wallet")

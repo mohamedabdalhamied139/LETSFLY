@@ -84,7 +84,6 @@ class FriendsView(QDialog):
     def _focus_current(self, index):
         if 0 <= index < len(self._lists):
             self._active_tab = index
-            self._lists[index].setFocus()
         labels = ["قائمة الإجراءات", "إجراءات الطلب", "إجراءات الطلب المرسل"]
         raw = labels[index] if index < len(labels) else labels[0]
         self.actions_button.setText(tr(raw))
