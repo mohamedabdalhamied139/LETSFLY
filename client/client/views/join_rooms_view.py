@@ -77,7 +77,14 @@ class JoinRoomsView(QWidget):
         self.rooms_list.setAccessibleName(tr("قائمة الطاولات المتاحة"))
         self.update_rooms(self._last_rooms)
 
-    def update_rooms(self, rooms: list):
+    def update_rooms(self, rooms: list, preserve_selection: bool = False):
+        selected_rid = None
+        selected_row = self.rooms_list.currentRow()
+        if preserve_selection:
+            current_item = self.rooms_list.currentItem()
+            if current_item:
+                selected_rid = current_item.data(Qt.UserRole)
+
         self._last_rooms = list(rooms or [])
         self.rooms_list.clear()
         if not self._last_rooms:
@@ -89,7 +96,8 @@ class JoinRoomsView(QWidget):
             self.rooms_list.addItem(it)
             return
 
-        for r in self._last_rooms:
+        target_row = 0
+        for idx, r in enumerate(self._last_rooms):
             rid = r.get("id")
             host = r.get("host_name") or "مجهول"
             count = len(r.get("players", []))
@@ -104,9 +112,13 @@ class JoinRoomsView(QWidget):
             it.setData(Qt.UserRole + 1101, raw_text)
             it.setData(Qt.UserRole + 1102, disp_text)
             self.rooms_list.addItem(it)
+            if selected_rid is not None and str(rid) == str(selected_rid):
+                target_row = idx
 
         if self.rooms_list.count():
-            self.rooms_list.setCurrentRow(0)
+            if preserve_selection and selected_rid is None and 0 <= selected_row < self.rooms_list.count():
+                target_row = selected_row
+            self.rooms_list.setCurrentRow(target_row)
 
     def _on_activated(self, item: QListWidgetItem):
         rid = item.data(Qt.UserRole)

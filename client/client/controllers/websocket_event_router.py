@@ -59,6 +59,21 @@ class WebSocketEventRouter:
             self.handle_activity_event(event)
             return
 
+        # 4b. Real-time Online Count Update
+        if et == "online_count_updated":
+            count = event.get("count", 0)
+            if hasattr(self.app, "home_view") and self.app.home_view:
+                self.app.home_view.set_online_count(count)
+            if hasattr(self.app, "social_controller") and self.app.social_controller:
+                self.app.social_controller.refresh_online_users_if_active()
+            return
+
+        # 4c. Real-time Lobby Rooms Updates (creation, deletion, status, privacy)
+        if et in ("room_created", "room_deleted", "room_updated"):
+            if hasattr(self.app, "room_controller") and self.app.room_controller:
+                self.app.room_controller.handle_lobby_room_event(event)
+            return
+
         if not self.app.current_room:
             return
 

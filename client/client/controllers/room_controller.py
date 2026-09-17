@@ -29,6 +29,19 @@ class RoomController:
             reader.speak(tr("قائمة الطاولات المتاحة."))
         self.app._run_async(self.app.api.list_rooms, done)
 
+    def refresh_available_rooms_silent(self) -> None:
+        """Fetch list of open tables in background without disturbing focus or speech."""
+        def done(rooms):
+            if hasattr(self.app, "join_rooms_view") and self.app.join_rooms_view:
+                self.app.join_rooms_view.update_rooms(rooms, preserve_selection=True)
+        self.app._run_async(self.app.api.list_rooms, done, lambda _e: None)
+
+    def handle_lobby_room_event(self, event: dict) -> None:
+        """Handle real-time lobby room updates (created, deleted, updated, privacy)."""
+        # If currently browsing open tables (index 3), refresh list immediately
+        if hasattr(self.app, "stack") and self.app.stack.currentIndex() == 3:
+            self.refresh_available_rooms_silent()
+
     def create_new_room(self, game: str = "UNO") -> None:
         """Create a new room for the selected game type."""
         self.app._room_generation += 1
@@ -101,7 +114,10 @@ class RoomController:
             sound_engine.play_event("TABLE_LEAVE")
             self.app.current_room = None
             self.app.voice.leave_room()
-            self.app.uno_state = None
+            self.app._reset_game_runtime_state()
+            if hasattr(self.app, "table_view") and self.app.table_view:
+                self.app.table_view.cleanup()
+                self.app.table_view.set_playing_mode(False)
             self.app.poll_timer.stop()
             self.app._poll_in_flight = False
             self.app._action_in_flight = False

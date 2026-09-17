@@ -143,6 +143,7 @@ class SocialController:
             return
         return_focus = QApplication.focusWidget()
         dialog = OnlineUsersView(self.app)
+        self._active_online_dialog = dialog
         dialog.userActivated.connect(lambda user, d=dialog: self.open_online_user_actions(user, d))
 
         def on_search(query):
@@ -157,10 +158,24 @@ class SocialController:
             res = res or {}
             dialog.set_users(res.get("users", []), is_initial=True)
             dialog.exec()
+            self._active_online_dialog = None
             if return_focus is not None and return_focus.isVisible():
                 return_focus.setFocus()
 
         self.app._run_async(self.app.api.online_users, done, lambda e: reader.speak(tr(f"تعذر تحميل المتصلين: {e}"), interrupt=True))
+
+    def refresh_online_users_if_active(self) -> None:
+        """Silently refresh online users list if the OnlineUsersView dialog is currently open."""
+        dialog = getattr(self, "_active_online_dialog", None)
+        if not dialog or not dialog.isVisible() or not self.app.api.token:
+            return
+        # Only refresh if the user is not actively typing a search query
+        if dialog.search.text().strip():
+            return
+        def done(res):
+            if self._active_online_dialog is dialog and dialog.isVisible() and not dialog.search.text().strip():
+                dialog.set_users((res or {}).get("users", []), is_initial=True)
+        self.app._run_async(self.app.api.online_users, done, lambda _e: None)
 
     def open_online_user_actions(self, user: dict, online_dialog: Any) -> None:
         """Open action dialog for an online user."""

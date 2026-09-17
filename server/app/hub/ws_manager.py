@@ -126,6 +126,7 @@ class ConnectionManager:
                     pass
             if not was_online:
                 self._notify_friend_presence(int(user_id), True)
+                self.broadcast_all({"type": "online_count_updated", "count": len(self.online_user_ids())})
             return True
 
     def room_user_connected(self, room_id: str, user_id: int) -> bool:
@@ -154,6 +155,7 @@ class ConnectionManager:
                 became_offline = not any(uid == user_id for uid in self.connection_users.values())
         if became_offline and user_id is not None:
             self._notify_friend_presence(int(user_id), False)
+            self.broadcast_all({"type": "online_count_updated", "count": len(self.online_user_ids())})
 
     def online_user_ids(self):
         """Return unique authenticated users with at least one live socket."""
@@ -344,6 +346,12 @@ class ConnectionManager:
     def broadcast_lobby(self, message: dict):
         with self._state_lock:
             sockets = list(self.active_connections)
+        if sockets:
+            self._schedule_broadcast(self._broadcast(sockets, message))
+
+    def broadcast_all(self, message: dict):
+        with self._state_lock:
+            sockets = list(self.connection_users.keys())
         if sockets:
             self._schedule_broadcast(self._broadcast(sockets, message))
 
