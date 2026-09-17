@@ -437,8 +437,11 @@ class TranslationManager:
                             translated_args.append("points" if val.startswith("\u0646") else "units")
                     elif role == "score_list":
                         score_unit = "points" if active in ("en", "fr") else "نقاط"
+                        rounds_unit = "tours" if active == "fr" else ("rounds" if active == "en" else "جولات")
                         comma = ", " if active in ("en", "fr") else "، "
-                        translated_args.append(re.sub(r"(?<!\w)نقاط(?!\w)", score_unit, val).replace("، ", comma))
+                        res = re.sub(r"(?<!\w)نقاط(?!\w)", score_unit, val)
+                        res = re.sub(r"(?<!\w)جولات(?!\w)", rounds_unit, res)
+                        translated_args.append(res.replace("، ", comma))
                     elif role == "set_list":
                         comma = ", " if active in ("en", "fr") else "، "
                         translated_args.append(val.replace("، ", comma))
