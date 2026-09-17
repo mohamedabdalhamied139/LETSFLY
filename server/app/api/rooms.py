@@ -867,7 +867,7 @@ def _validate_game_configuration(game: str, target_score: int, rules: dict) -> t
         "AMERICAN_DOMINO": ({"hand_size": ("int", 1, 7), "scoring_mode": ("choice", {"standard", "unit"})}, (1, 10000)),
         "SNAKES_LADDERS": ({"knockout": "bool", "mystery_tiles": "bool"}, (100, 100)),
         "SCOPA": ({"scopa_mode": ("choice", {"classic", "escoba_15", "asso_piglia_tutto", "scopone"}), "classic": "bool", "escoba_15": "bool", "asso_piglia_tutto": "bool", "scopone": "bool", "inverted": "bool", "teams_enabled": "bool", "custom_teams": "dict"}, (1, 1000)),
-        "TENNIS": ({"bot_difficulty": ("choice", {"EASY", "NORMAL", "HARD", "EXPERT"})}, (1, 5)),
+        "TENNIS": ({"grand_slam": "bool", "bot_difficulty": ("choice", {"EASY", "NORMAL", "HARD", "EXPERT"})}, (1, 5)),
         "NINETY_NINE": ({"starting_tokens": ("int", 1, 99), "turn_timer": "any"}, (1, 99)),
     }
     allowed, target_bounds = specs.get(game, ({}, (1, 9999)))
