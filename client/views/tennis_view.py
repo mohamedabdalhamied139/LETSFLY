@@ -52,8 +52,7 @@ class TennisGameplayWidget(QListWidget):
         self.addItem(self._item)
         self.setCurrentRow(0)
 
-        self._left_held  = False
-        self._right_held = False
+        self._current_lane = LANE_CENTER
 
         # Unity-style Update() polling timer — ~33fps
         self._poll = QTimer(self)
@@ -65,16 +64,16 @@ class TennisGameplayWidget(QListWidget):
 
     def stop_tracking(self):
         self._poll.stop()
-        self._left_held  = False
-        self._right_held = False
 
     def current_lane(self) -> int:
-        """left=−1, right=+1, neither=0 (auto-center, exact original)."""
-        if self._left_held and not self._right_held:
-            return LANE_LEFT
-        if self._right_held and not self._left_held:
-            return LANE_RIGHT
-        return LANE_CENTER
+        """left=−1, center=0, right=+1."""
+        return self._current_lane
+
+    def _set_lane(self, lane: int):
+        lane = max(LANE_LEFT, min(LANE_RIGHT, int(lane)))
+        if self._current_lane != lane:
+            self._current_lane = lane
+            self._emit_position()
 
     def _emit_position(self):
         self.positionChanged.emit(self.current_lane())
@@ -106,19 +105,15 @@ class TennisGameplayWidget(QListWidget):
             event.accept()
             return
         elif key == Qt.Key_Left:
-            self._left_held = True
-            self._emit_position()
+            self._set_lane(self._current_lane - 1)
             event.accept()
             return
         elif key == Qt.Key_Right:
-            self._right_held = True
-            self._emit_position()
+            self._set_lane(self._current_lane + 1)
             event.accept()
             return
-        elif key == Qt.Key_Up:
-            self._left_held = False
-            self._right_held = False
-            self._emit_position()
+        elif key in (Qt.Key_Up, Qt.Key_Down):
+            self._set_lane(LANE_CENTER)
             event.accept()
             return
 
@@ -130,23 +125,13 @@ class TennisGameplayWidget(QListWidget):
             event.accept()
             return
         key = event.key()
-        if key == Qt.Key_Left:
-            self._left_held = False
-            self._emit_position()
-            event.accept()
-            return
-        elif key == Qt.Key_Right:
-            self._right_held = False
-            self._emit_position()
+        if key in (Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down, Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
             event.accept()
             return
             
         super().keyReleaseEvent(event)
 
     def focusOutEvent(self, event):
-        self._left_held  = False
-        self._right_held = False
-        self._emit_position()
         super().focusOutEvent(event)
 
     def contextMenuEvent(self, event):
@@ -209,8 +194,8 @@ class TennisGameWidget(TennisGameplayWidget):
         # Play spatial 'just moved' sound (jm_left, jm_center, jm_right)
         self.audio.play_move(lane)
 
-        if self.game_state == "IN_PLAY":
-            self.tennisActionSubmitted.emit("position", {"lane": lane})
+        # Send position update to server so player is tracked during both serving and in-play
+        self.tennisActionSubmitted.emit("position", {"lane": lane})
 
     # ------------------------------------------------------------------ #
     # Server event handler                                                 #
