@@ -87,8 +87,8 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
             if QApplication.activeModalWidget() is not None:
                 return False, 0
 
-            # Ignore auto-repeat only for character shortcut keys ('A'..'Z')
-            if 0x41 <= vk <= 0x5A:
+            # Ignore auto-repeat for character shortcuts ('A'..'Z') and game arrow keys
+            if (0x41 <= vk <= 0x5A) or (0x25 <= vk <= 0x28):
                 if vk in self._down:
                     return True, 0
                 self._down.add(vk)
@@ -344,16 +344,16 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                     table_view = getattr(self.window, "table_view", None)
                     tennis_game = getattr(table_view, "tennis_game", None) if table_view else None
                     if tennis_game and getattr(table_view, "is_playing", False):
-                        if vk == 0x25:  # VK_LEFT
-                            tennis_game._set_lane(tennis_game.current_lane() - 1)
-                            tennis_game.keyPressed.emit()
-                            return True, 0
-                        elif vk == 0x27:  # VK_RIGHT
-                            tennis_game._set_lane(tennis_game.current_lane() + 1)
-                            tennis_game.keyPressed.emit()
-                            return True, 0
-                        elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN
-                            tennis_game._set_lane(0)
+                        if vk in (0x25, 0x26, 0x27, 0x28):
+                            if vk in self._down:
+                                return True, 0
+                            self._down.add(vk)
+                            if vk == 0x25:  # VK_LEFT
+                                tennis_game._set_lane(tennis_game.current_lane() - 1)
+                            elif vk == 0x27:  # VK_RIGHT
+                                tennis_game._set_lane(tennis_game.current_lane() + 1)
+                            elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN
+                                tennis_game._set_lane(0)
                             tennis_game.keyPressed.emit()
                             return True, 0
                         elif vk == 0x20:  # VK_SPACE → ignored in tennis
