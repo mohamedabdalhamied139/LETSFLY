@@ -3195,10 +3195,10 @@ class TableVerseApp(QMainWindow):
 
         game_type = str(self.current_room.get("game", "")).upper()
         if game_type == "TENNIS":
-            # Tennis starts immediately under official ITF/ATP rules without settings dialog
+            # Tennis starts immediately under official ITF/ATP rules: Best of 3 Sets (first to win 2 sets)
             state_api = getattr(self.api, "tennis_state", None)
             state_handler = getattr(self, "_apply_tennis_state", None)
-            self._start_game_and_load_state(1, {"bot_difficulty": "NORMAL"}, state_api, state_handler)
+            self._start_game_and_load_state(2, {"bot_difficulty": "NORMAL"}, state_api, state_handler)
             return
 
         from client.table_framework.settings_registry import GAME_SETTINGS_REGISTRY

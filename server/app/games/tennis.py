@@ -388,7 +388,7 @@ class TennisGame:
             
             # Player 1 wins the point
             result = self.score.add_point(winner_idx=1)
-            target_sets = int(getattr(self.room, "target_score", 1) or 1)
+            target_sets = int(getattr(self.room, "target_score", 2) or 2)
             if self.score.sets[1] >= target_sets:
                 self.timestamp = Timestamp.GAME_OVER_A
                 self.winner_idx = 1
@@ -474,7 +474,7 @@ class TennisGame:
                 
                 # Player 0 wins the point
                 result = self.score.add_point(winner_idx=0)
-                target_sets = int(getattr(self.room, "target_score", 1) or 1)
+                target_sets = int(getattr(self.room, "target_score", 2) or 2)
                 if self.score.sets[0] >= target_sets:
                     self.timestamp = Timestamp.GAME_OVER_A
                     self.winner_idx = 0
@@ -517,7 +517,7 @@ class TennisGame:
                 
                 # Player 0 wins the point
                 result = self.score.add_point(winner_idx=0)
-                target_sets = int(getattr(self.room, "target_score", 1) or 1)
+                target_sets = int(getattr(self.room, "target_score", 2) or 2)
                 if self.score.sets[0] >= target_sets:
                     self.timestamp = Timestamp.GAME_OVER_A
                     self.winner_idx = 0
