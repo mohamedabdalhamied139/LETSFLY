@@ -1,9 +1,0 @@
-1. Raccourcis des tables de jeu :
-• P : Annoncer la liste et le nombre de joueurs présents à la table.
-• T : Annoncez le nom du joueur dont c'est actuellement le tour.
-• S : Annoncez les résultats des joueurs et les tours de chasse.
-2. Raccourcis de gestion du jeu (pour l'hôte de la salle) :
-• Entrée : démarrez le jeu lorsque vous vous concentrez sur l'élément de table.
-• Maj + X : Terminez la partie en cours.
-• B : Ajoutez un joueur robot (bot) à la salle.
-• Maj + B : supprime le dernier bot ajouté.

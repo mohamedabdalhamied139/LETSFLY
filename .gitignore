@@ -4,3 +4,8 @@ __pycache__/
 server.log
 server/letsfly_v2.db
 server/letsfly_secret.key
+logs/
+*.log
+scratch/
+scratch_*.txt
+
