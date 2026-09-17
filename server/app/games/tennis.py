@@ -408,21 +408,21 @@ class TennisGame:
 
     def _bot_should_hit(self) -> bool:
         """
-        Human-like autonomous bot engine:
-        Balanced accuracy (70% base hit rate) allowing natural rallies and playable errors.
+        Autonomous bot engine:
+        High consistency (94% base hit rate) allowing exciting long rallies with occasional miss.
         """
-        hit_rate = 0.70
+        hit_rate = 0.94
 
-        # In longer rallies (rally_hits > 4), fatigue and speed cause more errors
-        if self.rally_hits > 4:
-            decay = (self.rally_hits - 4) * 0.03
-            hit_rate = max(0.40, hit_rate - decay)
+        # In long fast rallies (rally_hits > 6), slight fatigue creates winning opportunities
+        if self.rally_hits > 6:
+            decay = (self.rally_hits - 6) * 0.02
+            hit_rate = max(0.75, hit_rate - decay)
 
         # Extreme cross-court wide ball
         ball_lane = self.ball.target
         prev_bot_lane = self.player_pos.get(1, LANE_CENTER)
         if abs(ball_lane - prev_bot_lane) == 2:
-            hit_rate -= 0.10
+            hit_rate -= 0.04
 
         return random.random() < hit_rate
 
