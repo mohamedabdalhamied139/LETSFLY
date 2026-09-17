@@ -346,12 +346,15 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                     if tennis_game and getattr(table_view, "is_playing", False):
                         if vk == 0x25:  # VK_LEFT
                             tennis_game._set_lane(tennis_game.current_lane() - 1)
+                            tennis_game.keyPressed.emit()
                             return True, 0
                         elif vk == 0x27:  # VK_RIGHT
                             tennis_game._set_lane(tennis_game.current_lane() + 1)
+                            tennis_game.keyPressed.emit()
                             return True, 0
                         elif vk in (0x26, 0x28):  # VK_UP, VK_DOWN
                             tennis_game._set_lane(0)
+                            tennis_game.keyPressed.emit()
                             return True, 0
                         elif vk == 0x20:  # VK_SPACE → ignored in tennis
                             return True, 0
