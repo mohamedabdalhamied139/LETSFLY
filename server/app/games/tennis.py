@@ -249,6 +249,13 @@ class TennisGame:
         if action == "position":
             lane = max(LANE_LEFT, min(LANE_RIGHT, int(data.get("lane", 0))))
             self.player_pos[idx] = lane
+
+            # If waiting for player serve and they move → trigger immediate serve on next tick
+            if (self.timestamp == Timestamp.WAITING_KEY
+                    and idx == self.score.server_idx
+                    and time.monotonic() >= getattr(self, "serve_ready_time", 0)):
+                self._bot_serve_time = 0  # next tick fires the serve (within 20ms)
+
             return {"type": "position_ack", "lane": lane}
 
         if action == "serve" and self.timestamp == Timestamp.WAITING_KEY:
