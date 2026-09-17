@@ -609,23 +609,26 @@ class TableView(QWidget):
             self._focus_target = "gameplay"
         else:
             self._focus_target = "table"
-        self.main_table_widget.setVisible(not playing)
-        
         if prev_playing != playing:
             from client.table_framework.adapter import get_adapter
             adapter = get_adapter(self.game_type)
             if adapter and adapter.setup_ui:
                 adapter.setup_ui(self, playing)
-            
-            # Prevent Qt from auto-shifting focus to Chat when main_table_widget is hidden
-            if not playing and (self._focus_target == "gameplay" and not is_user_in_chat_or_log(self)):
-                self.main_table_widget.show()
-                safe_set_focus(self.main_table_widget)
-            elif playing and self._focus_target == "gameplay":
-                # Delay slightly to allow newly mounted widgets to become visible
+
+            if playing:
+                # Focus gameplay widget immediately before hiding main_table_widget to prevent Qt fallback to chat_input
+                if not is_user_in_chat_or_log(self):
+                    self.focus_initial()
+                self.main_table_widget.setVisible(False)
                 for delay in (0, 30, 80, 150):
                     QTimer.singleShot(delay, lambda s=self: s.focus_initial() if safe_is_valid(s) else None)
+            else:
+                self.main_table_widget.setVisible(True)
+                if self._focus_target == "gameplay" and not is_user_in_chat_or_log(self):
+                    self.main_table_widget.show()
+                    safe_set_focus(self.main_table_widget)
         else:
+            self.main_table_widget.setVisible(not playing)
             # Fallback to clear if no adapter (should not happen for migrated games)
             if not playing:
                 for i in reversed(range(self.gameplay_layout.count())):

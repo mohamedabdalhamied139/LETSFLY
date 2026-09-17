@@ -1452,7 +1452,8 @@ class TableVerseApp(QMainWindow):
                 or (hasattr(self.table_view, "activity_log") and hasattr(self.table_view.activity_log, "viewport") and cur_focus == self.table_view.activity_log.viewport())
                 or (hasattr(self.table_view, "activity_panel") and (cur_focus == self.table_view.activity_panel or (cur_focus and cur_focus.parent() == self.table_view.activity_panel)))
             )
-            if not in_chat_or_log:
+            if not in_chat_or_log and hasattr(self.table_view, "tennis_game") and self.table_view.tennis_game:
+                self.table_view.tennis_game.setFocus()
                 QTimer.singleShot(0, self.table_view.tennis_game.setFocus)
                 QTimer.singleShot(40, self.table_view.tennis_game.setFocus)
         else:
