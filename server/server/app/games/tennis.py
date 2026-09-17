@@ -288,7 +288,7 @@ class TennisGame:
             if is_bot:
                 # Auto-serve after timeout for both player and bot turns
                 if not hasattr(self, "_bot_serve_time") or self._bot_serve_time is None:
-                    self._bot_serve_time = max(now + 4.5, getattr(self, "serve_ready_time", now + 4.5))
+                    self._bot_serve_time = max(now + 1.5, getattr(self, "serve_ready_time", now + 1.5))
                 elif now >= self._bot_serve_time:
                     self._bot_serve_time = None
                     self.timestamp = Timestamp.IN_PLAY
