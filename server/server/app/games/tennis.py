@@ -365,11 +365,7 @@ class TennisGame:
         ball_lane   = self.ball.target
         last_action = self.player_last_action_time.get(0, 0.0)
 
-        # The player must be in the correct lane AND must have actively moved/pressed an arrow key
-        # while the ball was in flight towards them (between launch_time - 0.25 and reach_time + 0.15)
-        ball_in_flight_active = (last_action >= (self.ball.launch_time - 0.25))
-
-        if player_lane == ball_lane and ball_in_flight_active:
+        if player_lane == ball_lane:
             # ===== Player 0 successfully hits ball → shoots to random lane on opponent side =====
             self.rally_hits += 1
             

@@ -334,17 +334,9 @@ class HardwareKeyFilter(QAbstractNativeEventFilter):
                         return True, 0
                 # --- 8. Tennis Game-Specific Shortcuts & Gameplay Keys ---
                 elif game == "TENNIS":
-                    tennis_actions = {
-                        0x41: "on_tennis_crosscourt_left",   # 'A' = Crosscourt Left
-                        0x44: "on_tennis_crosscourt_right",  # 'D' = Crosscourt Right
-                    }
-                    if not shift and vk in tennis_actions:
-                        self._call(tennis_actions[vk])
-                        return True, 0
-
                     table_view = getattr(self.window, "table_view", None)
                     tennis_game = getattr(table_view, "tennis_game", None) if table_view else None
-                    if tennis_game:
+                    if tennis_game and table_view and getattr(table_view, "is_playing", False):
                         if vk in (0x25, 0x26, 0x27, 0x28):
                             now = time.monotonic()
                             if now - getattr(self, "_last_tennis_arrow_time", 0.0) < 0.05:

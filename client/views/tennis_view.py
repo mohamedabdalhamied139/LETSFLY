@@ -93,6 +93,10 @@ class TennisGameplayWidget(QListWidget):
             super().keyPressEvent(event)
             return
 
+        if getattr(self, "game_state", "WAITING") not in ("IN_PLAY", "SERVING"):
+            super().keyPressEvent(event)
+            return
+
         if key == Qt.Key_Left:
             self._set_lane(self._current_lane - 1)
             self.keyPressed.emit()
@@ -183,6 +187,10 @@ class TennisGameWidget(TennisGameplayWidget):
 
     def _on_position_changed(self, lane: int):
         """Called whenever lane changes or arrow key is pressed."""
+        # Only play move sound and emit position if actively playing
+        if self.game_state not in ("IN_PLAY", "SERVING"):
+            return
+
         # Play spatial 'just moved' sound if lane changed
         if lane != self._prev_lane:
             self._prev_lane = lane

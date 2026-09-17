@@ -1443,8 +1443,15 @@ class TableVerseApp(QMainWindow):
             server_idx = sc.get("server_idx", 0)
             players = self.tennis_state.get("players", [])
             server_name = players[server_idx].get("name", "اللاعب") if server_idx < len(players) else "اللاعب"
-            self.table_view.set_status(f"الإرسال مع {server_name}")
-            if not self.table_view.chat_input.hasFocus() and not self.table_view.activity_log.hasFocus():
+            from PySide6.QtWidgets import QApplication
+            cur_focus = QApplication.focusWidget()
+            in_chat_or_log = (
+                self.table_view.chat_input.hasFocus()
+                or self.table_view.activity_log.hasFocus()
+                or (hasattr(self.table_view, "activity_log") and hasattr(self.table_view.activity_log, "viewport") and cur_focus == self.table_view.activity_log.viewport())
+                or (hasattr(self.table_view, "activity_panel") and (cur_focus == self.table_view.activity_panel or (cur_focus and cur_focus.parent() == self.table_view.activity_panel)))
+            )
+            if not in_chat_or_log:
                 QTimer.singleShot(0, self.table_view.tennis_game.setFocus)
                 QTimer.singleShot(40, self.table_view.tennis_game.setFocus)
         else:
