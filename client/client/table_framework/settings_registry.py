@@ -165,9 +165,13 @@ def farkle_mapper(values):
 
 # TENNIS
 def tennis_mapper(values):
-    target = int(values.get("target_score", 1))
+    is_grand_slam = bool(values.get("grand_slam", False))
+    target = 3 if is_grand_slam else 2
     cur_diff = str(values.get("bot_difficulty", "NORMAL")).upper()
-    return target, {"bot_difficulty": cur_diff if cur_diff in ("EASY", "NORMAL", "HARD", "EXPERT") else "NORMAL"}
+    return target, {
+        "grand_slam": is_grand_slam,
+        "bot_difficulty": cur_diff if cur_diff in ("EASY", "NORMAL", "HARD", "EXPERT") else "NORMAL"
+    }
 
 GAME_SETTINGS_REGISTRY = {
     "NINETY_NINE": GameSettingsDefinition(
@@ -301,12 +305,12 @@ GAME_SETTINGS_REGISTRY = {
     "TENNIS": GameSettingsDefinition(
         game_type="TENNIS",
         title="تنس",
-        default_target_score=1,
-        default_rules={"bot_difficulty": "NORMAL"},
+        default_target_score=2,
+        default_rules={"grand_slam": False, "bot_difficulty": "NORMAL"},
         state_getter="tennis_state",
         state_applier="_apply_tennis_state",
         custom_fields=[
-            SettingField("target_score", "عدد المجموعات للفوز", kind="number", default_value=1, minimum=1, maximum=5, step=1),
+            SettingField("grand_slam", "نظام الجراند سلام (أفضل 5 مجموعات - الفوز بـ 3 مجموعات)", kind="bool", default_value=False),
             SettingField("bot_difficulty", "صعوبة البوت", kind="choice", default_value="NORMAL", 
                 options=["EASY", "NORMAL", "HARD", "EXPERT"],
                 labels={"EASY": "سهل", "NORMAL": "متوسط", "HARD": "صعب", "EXPERT": "محترف"}
