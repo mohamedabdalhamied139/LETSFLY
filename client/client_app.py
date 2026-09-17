@@ -2073,8 +2073,14 @@ class TableVerseApp(QMainWindow):
 
         focus = self._reconnect_focus
         self._reconnect_focus = None
-        if focus is not None and focus.isVisible():
-            QTimer.singleShot(50, focus.setFocus)
+        focus_valid = False
+        if focus is not None:
+            try:
+                focus_valid = bool(focus.isVisible() and focus.isEnabled())
+            except Exception:
+                focus_valid = False
+        if focus_valid:
+            QTimer.singleShot(50, lambda: focus.setFocus() if focus else None)
         else:
             QTimer.singleShot(50, self.table_view.focus_initial)
 

@@ -105,10 +105,10 @@ class WebSocketEventRouter:
             return
 
         if et == "ws_connected":
+            sound_engine.stop_looping("CONNECTING")
             was_reconnecting = getattr(self.app, "_is_reconnecting", False)
             self.app._is_reconnecting = False
             self.app._reconnect_timeout_timer.stop()
-            sound_engine.stop_looping("CONNECTING")
             if was_reconnecting:
                 sound_engine.play_event("CONNECTED")
                 reader.speak(tr("connection restored successfully"), interrupt=True)
