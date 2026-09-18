@@ -170,9 +170,6 @@ class ApiService {
     return post('/api/rooms/$roomId/spectator', data: payload);
   }
 
-  Future<dynamic> leaveRoom(String roomId) {
-    return post('/api/rooms/$roomId/leave');
-  }
 
   Future<dynamic> transferHost(String roomId, int targetUserId) {
     return post('/api/rooms/$roomId/transfer_host', data: {'target_user_id': targetUserId});
