@@ -3,6 +3,14 @@ import '../core/localization.dart';
 import '../services/api_service.dart';
 import '../services/ws_service.dart';
 import '../widgets/gesture_detector.dart';
+import '../games/adapters/uno_adapter.dart';
+import '../games/adapters/domino_adapter.dart';
+import '../games/adapters/farkle_adapter.dart';
+import '../games/adapters/tennis_adapter.dart';
+import '../games/adapters/thief_adapter.dart';
+import '../games/adapters/snakes_adapter.dart';
+import '../games/adapters/scopa_adapter.dart';
+import '../games/adapters/ninety_nine_adapter.dart';
 
 class TableView extends StatefulWidget {
   final String roomId;
@@ -15,6 +23,7 @@ class TableView extends StatefulWidget {
 
 class _TableViewState extends State<TableView> {
   Map<String, dynamic>? _roomState;
+  Map<String, dynamic>? _gameState;
   final List<String> _chatMessages = [];
   final List<String> _activityLogs = [];
   final TextEditingController _chatController = TextEditingController();
@@ -34,6 +43,30 @@ class _TableViewState extends State<TableView> {
       if (type == 'room_snapshot') {
         setState(() {
           _roomState = data['room'];
+          final gType = (_roomState?['game_type'] ?? '').toString().toUpperCase();
+          if (gType == 'UNO') {
+            _gameState = data['uno_state'];
+          } else if (gType == 'DOMINO') {
+            _gameState = data['domino_state'];
+          } else if (gType == 'AMERICAN_DOMINO') {
+            _gameState = data['american_domino_state'];
+          } else if (gType == 'FARKLE') {
+            _gameState = data['farkle_state'];
+          } else if (gType == 'TENNIS') {
+            _gameState = data['tennis_state'];
+          } else if (gType == 'THIEF_HUNT') {
+            _gameState = data['thief_state'];
+          } else if (gType == 'SNAKES_LADDERS') {
+            _gameState = data['snakes_state'];
+          } else if (gType == 'SCOPA') {
+            _gameState = data['scopa_state'];
+          } else if (gType == 'NINETY_NINE') {
+            _gameState = data['ninety_nine_state'];
+          }
+        });
+      } else if (type == 'game_state_changed' || type == 'tennis_state_changed') {
+        setState(() {
+          _gameState = data['state'] ?? data;
         });
       } else if (type == 'chat_message') {
         setState(() {
@@ -159,21 +192,9 @@ class _TableViewState extends State<TableView> {
                 ],
               ),
             ),
-            // Shared Game Play Area Placeholder (for Stage 3 & 4 Adapters)
+            // Shared Dynamic Game Play Area
             Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.casino, size: 64, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 16),
-                    Text(
-                      tr('منطقة اللعب المشتركة جاهزة للاستقبال'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
+              child: _buildGameWidget(gameType),
             ),
             // Chat Input & Live Area
             Container(
@@ -206,5 +227,42 @@ class _TableViewState extends State<TableView> {
         ),
       ),
     );
+  }
+
+  Widget _buildGameWidget(String gameType) {
+    switch (gameType.toUpperCase()) {
+      case 'UNO':
+        return UnoGameView(initialState: _gameState);
+      case 'DOMINO':
+        return DominoGameView(initialState: _gameState, isAmerican: false);
+      case 'AMERICAN_DOMINO':
+        return DominoGameView(initialState: _gameState, isAmerican: true);
+      case 'FARKLE':
+        return FarkleGameView(initialState: _gameState);
+      case 'TENNIS':
+        return TennisGameView(initialState: _gameState);
+      case 'THIEF_HUNT':
+        return ThiefGameView(initialState: _gameState);
+      case 'SNAKES_LADDERS':
+        return SnakesGameView(initialState: _gameState);
+      case 'SCOPA':
+        return ScopaGameView(initialState: _gameState);
+      case 'NINETY_NINE':
+        return NinetyNineGameView(initialState: _gameState);
+      default:
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.casino, size: 64),
+              const SizedBox(height: 16),
+              Text(
+                tr('في انتظار بدء اللعبة...'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        );
+    }
   }
 }
