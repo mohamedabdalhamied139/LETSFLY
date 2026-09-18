@@ -4,9 +4,18 @@ import 'core/app_theme.dart';
 import 'core/localization.dart';
 import 'views/auth_view.dart';
 
+import 'services/api_service.dart';
+import 'services/auth_storage_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LocalizationService.instance.loadLanguage('ar');
+  try {
+    final activeToken = await AuthStorageService.instance.getActiveSessionToken();
+    if (activeToken != null && activeToken.isNotEmpty) {
+      ApiService.instance.setToken(activeToken);
+    }
+  } catch (_) {}
   runApp(const TableVerseApp());
 }
 

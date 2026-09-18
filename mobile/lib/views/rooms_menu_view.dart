@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import '../core/app_theme.dart';
 import '../core/localization.dart';
 import '../services/api_service.dart';
 import 'join_rooms_view.dart';
+import 'saved_tables_view.dart';
 import 'table_view.dart';
+import 'responsive_shell.dart';
 
 class RoomsMenuView extends StatefulWidget {
   const RoomsMenuView({super.key});
@@ -19,26 +22,26 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
     if (_mode == 'cards_games') {
       return [
         {'label': tr('أونو'), 'tag': 'UNO'},
-        {'label': tr('سكوبا'), 'tag': 'SCOPA'},
+        {'label': tr('إسكوبا'), 'tag': 'SCOPA'},
         {'label': tr('تسعة وتسعون'), 'tag': 'NINETY_NINE'},
       ];
     } else if (_mode == 'dice_games') {
       return [
         {'label': tr('فاركل'), 'tag': 'FARKLE'},
-        {'label': tr('سلم وثعبان'), 'tag': 'SNAKES_LADDERS'},
+        {'label': tr('السلم والثعبان'), 'tag': 'SNAKES_LADDERS'},
       ];
     } else if (_mode == 'domino_games') {
       return [
-        {'label': tr('دومينو عادي'), 'tag': 'DOMINO'},
+        {'label': tr('دومينو'), 'tag': 'DOMINO'},
         {'label': tr('دومينو أمريكي'), 'tag': 'AMERICAN_DOMINO'},
       ];
     } else if (_mode == 'memory_games') {
       return [
-        {'label': tr('صائد الحرامية'), 'tag': 'THIEF_HUNT'},
+        {'label': tr('صيد اللص'), 'tag': 'THIEF_HUNT'},
       ];
     } else if (_mode == 'sports_games') {
       return [
-        {'label': tr('تنس طاولة'), 'tag': 'TENNIS'},
+        {'label': tr('تنس'), 'tag': 'TENNIS'},
       ];
     } else if (_mode == 'games') {
       return [
@@ -82,7 +85,7 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
       setState(() => _mode = 'main');
       return false;
     }
-    return true; // pop screen
+    return true; // pop screen back to HomeView
   }
 
   void _onItemTapped(String tag) async {
@@ -93,8 +96,8 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
         MaterialPageRoute(builder: (_) => const JoinRoomsView()),
       );
     } else if (tag == 'saved_tables') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr('لا توجد طاولات محفوظة حاليًا.'))),
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const SavedTablesView()),
       );
     } else if (tag == 'category_cards') {
       setState(() => _mode = 'cards_games');
@@ -142,7 +145,7 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
       if (mounted) {
         Navigator.of(context).pop(); // dismiss loading
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في إنشاء الطاولة: $e')),
+          SnackBar(content: Text('${tr('خطأ في إنشاء الطاولة')}: $e')),
         );
       }
     }
@@ -153,31 +156,34 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
     final items = _getItems();
     return WillPopScope(
       onWillPop: () async => _handleBack(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_getTitle()),
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              if (_handleBack()) {
-                Navigator.of(context).pop();
-              }
-            },
-          ),
+      child: ResponsiveShell(
+        title: _getTitle(),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: tr('رجوع'),
+          onPressed: () {
+            if (_handleBack()) {
+              Navigator.of(context).pop();
+            }
+          },
         ),
-        body: ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(vertical: 8),
           itemCount: items.length,
-          separatorBuilder: (_, __) => const Divider(height: 1),
+          separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
           itemBuilder: (context, idx) {
             final item = items[idx];
             return ListTile(
+              tileColor: AppColors.card,
               title: Text(
                 item['label']!,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              trailing: const Icon(Icons.chevron_left),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54),
               onTap: () => _onItemTapped(item['tag']!),
             );
           },

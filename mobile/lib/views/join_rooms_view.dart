@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../core/app_theme.dart';
 import '../core/localization.dart';
 import '../services/api_service.dart';
+import 'responsive_shell.dart';
 import 'table_view.dart';
 
 class JoinRoomsView extends StatefulWidget {
@@ -45,34 +47,38 @@ class _JoinRoomsViewState extends State<JoinRoomsView> {
     }
   }
 
-  void _joinRoom(Map<String, dynamic> room) {
+  void _joinRoom(Map<String, dynamic> room, {bool asSpectator = false}) async {
     final roomId = room['id']?.toString() ?? '';
     final gameType = room['game_type'] ?? room['game'] ?? 'GAME';
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => TableView(
-          roomId: roomId,
-          gameType: gameType,
+
+    try {
+      await ApiService.instance.joinRoom(roomId, asSpectator: asSpectator);
+    } catch (_) {}
+
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TableView(
+            roomId: roomId,
+            gameType: gameType,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('الطاولات المتاحة حاليًا')),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: tr('تحديث'),
-            onPressed: _loadRooms,
-          ),
-        ],
-      ),
-      body: _isLoading
+    return ResponsiveShell(
+      title: tr('الطاولات المتاحة حاليًا'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          tooltip: tr('تحديث'),
+          onPressed: _loadRooms,
+        ),
+      ],
+      child: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
               ? Center(
@@ -98,7 +104,7 @@ class _JoinRoomsViewState extends State<JoinRoomsView> {
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: _rooms.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
                       itemBuilder: (context, idx) {
                         final r = _rooms[idx] as Map<String, dynamic>;
                         final host = r['host_name'] ?? tr('مجهول');
@@ -106,20 +112,55 @@ class _JoinRoomsViewState extends State<JoinRoomsView> {
                         final status = r['status'] == 'playing' ? tr('جارية') : tr('في الانتظار');
                         final gameLabel = r['game_label'] ?? r['game_type'] ?? r['game'] ?? tr('لعبة');
 
-                        // Matching Windows exact format: "{game_raw} — {host} — {count}/10 لاعبين — {raw_status}"
+                        // Exact desktop template: "{game} — {host} — {count}/10 لاعبين — {status}"
                         final titleText = '$gameLabel — $host — $players/10 لاعبين — $status';
 
-                        return ListTile(
-                          title: Text(
-                            titleText,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                        return Semantics(
+                          label: titleText,
+                          customSemanticsActions: {
+                            CustomSemanticsAction(label: tr('انضمام كلاعب')): () => _joinRoom(r, asSpectator: false),
+                            CustomSemanticsAction(label: tr('انضمام كمتفرج')): () => _joinRoom(r, asSpectator: true),
+                          },
+                          child: ListTile(
+                            tileColor: AppColors.card,
+                            title: Text(
+                              titleText,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${tr('رقم الطاولة')}: ${r['id']}',
+                              style: const TextStyle(color: Colors.white60, fontSize: 13),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.accent,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  ),
+                                  onPressed: () => _joinRoom(r, asSpectator: false),
+                                  child: Text(tr('انضمام')),
+                                ),
+                                const SizedBox(width: 6),
+                                OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.lightBlueAccent,
+                                    side: const BorderSide(color: Colors.lightBlueAccent),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  ),
+                                  onPressed: () => _joinRoom(r, asSpectator: true),
+                                  child: Text(tr('متفرج')),
+                                ),
+                              ],
+                            ),
+                            onTap: () => _joinRoom(r, asSpectator: false),
                           ),
-                          subtitle: Text('رقم الطاولة: ${r['id']}'),
-                          trailing: ElevatedButton(
-                            onPressed: () => _joinRoom(r),
-                            child: Text(tr('انضمام')),
-                          ),
-                          onTap: () => _joinRoom(r),
                         );
                       },
                     ),

@@ -50,13 +50,18 @@ class ApiService {
     return cleanPath.isEmpty ? wsBase : '$wsBase/$cleanPath';
   }
 
-  Future<dynamic> post(String path, {dynamic data}) async {
-    final response = await _dio.post(path, data: data);
+  Future<dynamic> post(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    final response = await _dio.post(path, data: data, queryParameters: queryParameters);
     return response.data;
   }
 
   Future<dynamic> get(String path, {Map<String, dynamic>? queryParameters}) async {
     final response = await _dio.get(path, queryParameters: queryParameters);
+    return response.data;
+  }
+
+  Future<dynamic> delete(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    final response = await _dio.delete(path, data: data, queryParameters: queryParameters);
     return response.data;
   }
 
@@ -101,12 +106,30 @@ class ApiService {
     });
   }
 
-  Future<dynamic> joinRoom(String roomId, {String? password}) {
-    return post('/api/rooms/$roomId/join', data: {'password': password});
+  Future<dynamic> joinRoom(String roomId, {String? password, bool asSpectator = false}) {
+    final queryParams = asSpectator ? {'as_spectator': 'true'} : null;
+    return post(
+      '/api/rooms/$roomId/join',
+      data: {'password': password},
+      queryParameters: queryParams,
+    );
   }
 
   Future<dynamic> leaveRoom(String roomId) {
     return post('/api/rooms/$roomId/leave');
+  }
+
+  // Saved Tables Endpoints
+  Future<dynamic> getSavedTables() {
+    return get('/api/rooms/saved');
+  }
+
+  Future<dynamic> restoreSavedTable(int savedId) {
+    return post('/api/rooms/saved/$savedId/restore');
+  }
+
+  Future<dynamic> deleteSavedTable(int savedId) {
+    return delete('/api/rooms/saved/$savedId');
   }
 
   // Social / Friends Endpoints

@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import '../core/app_theme.dart';
 import '../core/localization.dart';
+import '../services/activity_service.dart';
 import '../services/api_service.dart';
+import '../services/auth_storage_service.dart';
 import 'auth_view.dart';
 import 'friends_view.dart';
 import 'rooms_menu_view.dart';
-import 'activity_log_widget.dart';
 import 'settings_dialog.dart';
 import 'social_dialogs.dart';
 import 'online_users_dialog.dart';
+import 'responsive_shell.dart';
 
 class HomeView extends StatefulWidget {
   final String userDisplayName;
@@ -20,13 +23,12 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   int _onlineCount = 0;
-  final List<Map<String, dynamic>> _activityEvents = [];
 
   @override
   void initState() {
     super.initState();
-    // Rule: "مرحبًا بعودتك {name}" must be recorded as an event inside Activity Log, NOT a separate screen banner.
-    _activityEvents.add({
+    // Record greeting event inside centralized ActivityLogService
+    ActivityLogService.instance.addEvent({
       'text': tr('مرحبًا بعودتك {name}.', {'name': widget.userDisplayName}),
       'category': 'GAMEPLAY',
       'time': '',
@@ -49,13 +51,11 @@ class _HomeViewState extends State<HomeView> {
       final res = await ApiService.instance.get('/api/activity?limit=50');
       if (res is Map && res['events'] is List && mounted) {
         final List<dynamic> evts = res['events'];
-        setState(() {
-          for (final e in evts) {
-            if (e is Map<String, dynamic>) {
-              _activityEvents.add(e);
-            }
+        for (final e in evts) {
+          if (e is Map<String, dynamic>) {
+            ActivityLogService.instance.addEvent(e);
           }
-        });
+        }
       }
     } catch (_) {}
   }
@@ -114,7 +114,7 @@ class _HomeViewState extends State<HomeView> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF2D2D2D),
+        backgroundColor: AppColors.surface,
         title: Text(tr('تأكيد تسجيل الخروج'), style: const TextStyle(color: Colors.white)),
         content: Text(
           tr('هل أنت متأكد من تسجيل الخروج؟'),
@@ -126,12 +126,18 @@ class _HomeViewState extends State<HomeView> {
             child: Text(tr('لا'), style: const TextStyle(color: Colors.white70)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              ApiService.instance.logout();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const AuthView()),
-              );
+              try {
+                await ApiService.instance.logout();
+              } catch (_) {}
+              await AuthStorageService.instance.clearActiveSession();
+              ApiService.instance.setToken(null);
+              if (mounted) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const AuthView()),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: Text(tr('نعم'), style: const TextStyle(color: Colors.white)),
@@ -155,53 +161,35 @@ class _HomeViewState extends State<HomeView> {
       {'title': 'تسجيل الخروج', 'tag': 'logout'},
     ];
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF1E1E1E),
-      appBar: AppBar(
-        title: Text(tr('القائمة الرئيسية')),
-        backgroundColor: const Color(0xFF2D2D2D),
-        centerTitle: false,
-      ),
-      body: Column(
-        children: [
-          // 8 Canonical Menu Items matching Windows
-          Expanded(
-            flex: 6,
-            child: ListView.separated(
-              itemCount: menuItems.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFF333333)),
-              itemBuilder: (context, index) {
-                final item = menuItems[index];
-                final title = tr(item['title'] as String);
-                final tag = item['tag'] as String;
+    return ResponsiveShell(
+      title: tr('القائمة الرئيسية'),
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: menuItems.length,
+        separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
+        itemBuilder: (context, index) {
+          final item = menuItems[index];
+          final title = tr(item['title'] as String);
+          final tag = item['tag'] as String;
 
-                return ListTile(
-                  tileColor: const Color(0xFF252526),
-                  title: Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                      color: Colors.white,
-                    ),
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54),
-                  onTap: () => _onMenuSelected(tag),
-                );
-              },
+          return Semantics(
+            label: title,
+            button: true,
+            child: ListTile(
+              tileColor: AppColors.card,
+              title: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 17,
+                  color: Colors.white,
+                ),
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54),
+              onTap: () => _onMenuSelected(tag),
             ),
-          ),
-          // Canonical Activity Log panel at the bottom, matching Windows layout
-          Expanded(
-            flex: 4,
-            child: ActivityLogWidget(
-              events: _activityEvents,
-              onCategoryChanged: (cat) {
-                // optionally fetch per category
-              },
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
