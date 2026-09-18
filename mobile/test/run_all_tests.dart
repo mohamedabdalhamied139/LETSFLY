@@ -29,6 +29,9 @@ import 'tier4_e2e_conformance/socket_auth_conformance_test.dart' as socket_auth_
 import 'tier4_e2e_conformance/saved_table_lifecycle_test.dart' as saved_table_lifecycle_test;
 import 'tier4_e2e_conformance/accessibility_semantics_test.dart' as accessibility_semantics_test;
 
+// Tier 5: Adversarial Stress & Hardening
+import 'tier5_adversarial_stress_test.dart' as tier5_adversarial_stress_test;
+
 class SuiteInfo {
   final String tier;
   final String name;
@@ -64,10 +67,13 @@ void main() async {
     SuiteInfo('Tier 4', 'WebSocket Auth Protocol Conformance', socket_auth_conformance_test.defineTests),
     SuiteInfo('Tier 4', 'Saved Table Full Lifecycle', saved_table_lifecycle_test.defineTests),
     SuiteInfo('Tier 4', 'Screen-Reader Accessibility Semantics', accessibility_semantics_test.defineTests),
+
+    // Tier 5: Adversarial Stress & Hardening
+    SuiteInfo('Tier 5', 'Adversarial Verification & Stress Hardening', tier5_adversarial_stress_test.defineTests),
   ];
 
   print('========================================================================');
-  print(' TABLEVERSE MOBILE E2E TEST RUNNER — 4 TIERS (15 SUITES)');
+  print(' TABLEVERSE MOBILE E2E TEST RUNNER — 5 TIERS (17 SUITES)');
   print(' Target: 100% Behavioral & Architectural Parity with Windows Desktop');
   print('========================================================================\n');
 
