@@ -30,10 +30,15 @@ jobs:
         working-directory: ./mobile
         run: |
           flutter create . --platforms=android --org com.tableverse --project-name tableverse_mobile
-          # Ensure INTERNET and ACCESS_NETWORK_STATE permissions are present
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>' android/app/src/main/AndroidManifest.xml
-          # Ensure usesCleartextTraffic="true"
-          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml
+          python3 -c "
+          p = 'android/app/src/main/AndroidManifest.xml'
+          with open(p, 'r', encoding='utf-8') as f:
+              content = f.read()
+          perms = '    <uses-permission android:name=\"android.permission.INTERNET\"/>\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>\n    <application android:usesCleartextTraffic=\"true\"'
+          content = content.replace('<application', perms, 1)
+          with open(p, 'w', encoding='utf-8') as f:
+              f.write(content)
+          "
           # Set minSdkVersion 21 for flutter_tts compatibility
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle || sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
 
