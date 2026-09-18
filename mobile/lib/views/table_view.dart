@@ -13,6 +13,7 @@ import '../games/adapters/scopa_adapter.dart';
 import '../games/adapters/ninety_nine_adapter.dart';
 import 'table_players_dialog.dart';
 import 'activity_log_widget.dart';
+import '../core/sound_service.dart';
 
 class TableView extends StatefulWidget {
   final String roomId;

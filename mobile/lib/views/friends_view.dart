@@ -118,8 +118,7 @@ class _FriendsViewState extends State<FriendsView> with SingleTickerProviderStat
                                     tooltip: tr('إضافة صديق'),
                                     icon: const Icon(Icons.person_add),
                                     onPressed: () => _sendOrCancelFriendRequest(user, false),
-                                    ),
-                            ),
+                                  ),
                           );
                         },
                       ),
