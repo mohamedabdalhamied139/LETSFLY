@@ -29,7 +29,11 @@ jobs:
       - name: Generate Android platform scaffold
         working-directory: ./mobile
         run: |
+          cp android/app/src/main/AndroidManifest.xml /tmp/AndroidManifest.xml || true
           flutter create . --platforms=android --org com.tableverse
+          if [ -f /tmp/AndroidManifest.xml ]; then
+            cp /tmp/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          fi
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle || sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
 
       - name: Install dependencies

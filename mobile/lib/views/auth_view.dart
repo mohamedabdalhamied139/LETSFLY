@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/localization.dart';
 import '../services/api_service.dart';
-import 'lobby_view.dart';
+import 'home_view.dart';
 
 class AuthView extends StatefulWidget {
   const AuthView({super.key});
@@ -11,23 +11,20 @@ class AuthView extends StatefulWidget {
 }
 
 class _AuthViewState extends State<AuthView> {
-  bool _isLoginMode = true;
+  bool _registerMode = false;
   bool _isLoading = false;
   String _errorMessage = '';
 
-  final _usernameController = TextEditingController();
-  final _displayNameController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _displayNameInput = TextEditingController();
+  final _usernameInput = TextEditingController();
+  final _passwordInput = TextEditingController();
 
-  Future<void> _submit() async {
-    final username = _usernameController.text.trim();
-    final password = _passwordController.text.trim();
-    final displayName = _displayNameController.text.trim();
+  Future<void> _submitLogin() async {
+    final username = _usernameInput.text.trim();
+    final password = _passwordInput.text.trim();
 
-    if (username.isEmpty || password.isEmpty || (!_isLoginMode && displayName.isEmpty)) {
-      setState(() {
-        _errorMessage = tr('يرجى ملء جميع الحقول المطلوبة');
-      });
+    if (username.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = tr('يرجى كتابة اسم المستخدم وكلمة المرور'));
       return;
     }
 
@@ -37,21 +34,15 @@ class _AuthViewState extends State<AuthView> {
     });
 
     try {
-      if (_isLoginMode) {
-        final res = await ApiService.instance.login(username, password);
-        final token = res['access_token'] ?? res['token'];
-        ApiService.instance.setToken(token);
-      } else {
-        await ApiService.instance.register(username, displayName, password);
-        // Automatically login after successful registration
-        final res = await ApiService.instance.login(username, password);
-        final token = res['access_token'] ?? res['token'];
-        ApiService.instance.setToken(token);
-      }
+      final res = await ApiService.instance.login(username, password);
+      final token = res['access_token'] ?? res['token'];
+      final userMap = res['user'] ?? {};
+      final displayName = userMap['display_name'] ?? username;
+      ApiService.instance.setToken(token);
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LobbyView()),
+          MaterialPageRoute(builder: (_) => HomeView(userDisplayName: displayName)),
         );
       }
     } catch (e) {
@@ -59,120 +50,194 @@ class _AuthViewState extends State<AuthView> {
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _submitRegister() async {
+    final displayName = _displayNameInput.text.trim();
+    final username = _usernameInput.text.trim();
+    final password = _passwordInput.text.trim();
+
+    if (displayName.isEmpty || username.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = tr('يرجى ملء جميع الحقول'));
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      await ApiService.instance.register(username, displayName, password);
+      // Auto login after register
+      final res = await ApiService.instance.login(username, password);
+      final token = res['access_token'] ?? res['token'];
+      ApiService.instance.setToken(token);
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => HomeView(userDisplayName: displayName)),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _toggleMode() {
+    setState(() {
+      _registerMode = !_registerMode;
+      _errorMessage = '';
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = _isLoginMode ? tr('تسجيل الدخول') : tr('إنشاء حساب جديد');
+    final titleText = _registerMode ? tr('إنشاء حساب') : tr('تسجيل الدخول');
+    final modeText = _registerMode ? tr('وضع إنشاء الحساب') : tr('وضع تسجيل الدخول');
+    final toggleButtonText = _registerMode ? tr('الانتقال إلى تسجيل الدخول') : tr('الانتقال إلى إنشاء حساب');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        centerTitle: true,
-      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_errorMessage.isNotEmpty) ...[
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
                 Semantics(
-                  liveRegion: true,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade900,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _errorMessage,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center,
-                    ),
+                  header: true,
+                  label: tr('عنوان الشاشة'),
+                  child: Text(
+                    titleText,
+                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 16),
-              ],
-              Semantics(
-                label: tr('اسم المستخدم'),
-                hint: tr('أدخل اسم المستخدم بالإنجليزية'),
-                child: TextField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: tr('اسم المستخدم'),
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.person),
-                  ),
+                const SizedBox(height: 4),
+                Text(
+                  modeText,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              if (!_isLoginMode) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
+                if (_errorMessage.isNotEmpty) ...[
+                  Semantics(
+                    liveRegion: true,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade900,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (_registerMode) ...[
+                  Semantics(
+                    label: tr('الاسم'),
+                    child: TextField(
+                      controller: _displayNameInput,
+                      decoration: InputDecoration(
+                        labelText: tr('الاسم'),
+                        hintText: tr('اكتب الاسم'),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.badge),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Semantics(
-                  label: tr('الاسم الظاهر'),
-                  hint: tr('الاسم الذي يراه الآخرون في الطاولة'),
+                  label: tr('اسم المستخدم'),
                   child: TextField(
-                    controller: _displayNameController,
+                    controller: _usernameInput,
                     decoration: InputDecoration(
-                      labelText: tr('الاسم الظاهر'),
+                      labelText: tr('اسم المستخدم'),
+                      hintText: tr('اكتب اسم المستخدم'),
                       border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.badge),
+                      prefixIcon: const Icon(Icons.person),
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                Semantics(
+                  label: tr('كلمة المرور'),
+                  child: TextField(
+                    controller: _passwordInput,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: tr('كلمة المرور'),
+                      hintText: tr('اكتب كلمة المرور'),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.lock),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                if (!_registerMode) ...[
+                  Semantics(
+                    button: true,
+                    label: tr('تسجيل الدخول'),
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _submitLogin,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(tr('تسجيل الدخول'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (_registerMode) ...[
+                  Semantics(
+                    button: true,
+                    label: tr('إنشاء حساب'),
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _submitRegister,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(tr('إنشاء حساب'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                Semantics(
+                  button: true,
+                  label: toggleButtonText,
+                  child: OutlinedButton(
+                    onPressed: _toggleMode,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text(toggleButtonText, style: const TextStyle(fontSize: 16)),
+                  ),
+                ),
               ],
-              const SizedBox(height: 16),
-              Semantics(
-                label: tr('كلمة المرور'),
-                hint: tr('أدخل كلمة المرور الخاصة بك'),
-                child: TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: tr('كلمة المرور'),
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.lock),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Semantics(
-                button: true,
-                label: title,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isLoginMode = !_isLoginMode;
-                    _errorMessage = '';
-                  });
-                },
-                child: Text(
-                  _isLoginMode
-                      ? tr('ليس لديك حساب؟ إنشاء حساب جديد')
-                      : tr('لديك حساب بالفعل؟ تسجيل الدخول'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
