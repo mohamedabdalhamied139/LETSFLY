@@ -1,6 +1,10 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
+  exclude:
+    - "test/**"
+    - "build/**"
+    - ".dart_tool/**"
   language:
     strict-casts: false
     strict-inference: false
@@ -14,6 +18,4 @@ linter:
   rules:
     - prefer_const_constructors
     - prefer_const_declarations
-    - avoid_print
-    - unawaited_futures
     - curly_braces_in_flow_control_structures

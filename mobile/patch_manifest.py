@@ -6,7 +6,7 @@ if os.path.exists(manifest_path):
         content = f.read()
 
     # Add permissions before <application
-    perms = '    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <application'
+    perms = '    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.VIBRATE"/>\n    <application'
     if "<uses-permission android:name=\"android.permission.INTERNET\"/>" not in content:
         content = content.replace("<application", perms, 1)
 
