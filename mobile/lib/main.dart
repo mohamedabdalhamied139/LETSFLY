@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/localization.dart';
+import 'views/auth_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,11 +34,7 @@ class TableVerseApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
       ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('TableVerse Mobile Core Initialized'),
-        ),
-      ),
+      home: const AuthView(),
     );
   }
 }
