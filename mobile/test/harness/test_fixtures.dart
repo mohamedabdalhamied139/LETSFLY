@@ -1,51 +1,6 @@
 // Test fixtures and authoritative data matching Windows desktop client specifications.
 
-/// Canonical model for SavedTable matching desktop client schema and server DB.
-class SavedTable {
-  final int id;
-  final int userId;
-  final String roomId;
-  final String game;
-  final String opponentsSummary;
-  final String savedAt;
-  final String expiresAt;
-  final Map<String, dynamic>? data;
-
-  SavedTable({
-    required this.id,
-    required this.userId,
-    required this.roomId,
-    required this.game,
-    required this.opponentsSummary,
-    required this.savedAt,
-    required this.expiresAt,
-    this.data,
-  });
-
-  factory SavedTable.fromJson(Map<String, dynamic> json) {
-    return SavedTable(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
-      userId: json['user_id'] is int ? json['user_id'] : int.tryParse(json['user_id'].toString()) ?? 0,
-      roomId: json['room_id']?.toString() ?? '',
-      game: json['game']?.toString() ?? '',
-      opponentsSummary: json['opponents_summary']?.toString() ?? json['opponents']?.toString() ?? 'لا يوجد',
-      savedAt: json['saved_at']?.toString() ?? '',
-      expiresAt: json['expires_at']?.toString() ?? '',
-      data: json['data'] is Map<String, dynamic> ? json['data'] : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'user_id': userId,
-    'room_id': roomId,
-    'game': game,
-    'opponents_summary': opponentsSummary,
-    'saved_at': savedAt,
-    'expires_at': expiresAt,
-    if (data != null) 'data': data,
-  };
-}
+export '../../lib/models/room_models.dart' show SavedTable;
 
 class TestFixtures {
   // Canonical 8 Menu Items in Windows Order

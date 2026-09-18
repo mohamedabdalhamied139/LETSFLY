@@ -104,7 +104,7 @@ class _JoinRoomsViewState extends State<JoinRoomsView> {
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: _rooms.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
                       itemBuilder: (context, idx) {
                         final r = _rooms[idx] as Map<String, dynamic>;
                         final host = r['host_name'] ?? tr('مجهول');
@@ -117,12 +117,13 @@ class _JoinRoomsViewState extends State<JoinRoomsView> {
 
                         return Semantics(
                           label: titleText,
+                          hint: tr('اضغط مرتين للانضمام، أو اضغط مطولاً للانضمام كمتفرج'),
                           customSemanticsActions: {
                             CustomSemanticsAction(label: tr('انضمام كلاعب')): () => _joinRoom(r, asSpectator: false),
                             CustomSemanticsAction(label: tr('انضمام كمتفرج')): () => _joinRoom(r, asSpectator: true),
                           },
                           child: ListTile(
-                            tileColor: AppColors.card,
+                            tileColor: AppColors.surface,
                             title: Text(
                               titleText,
                               style: const TextStyle(

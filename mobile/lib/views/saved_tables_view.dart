@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
@@ -32,15 +33,10 @@ class _SavedTablesViewState extends State<SavedTablesView> {
     });
 
     try {
-      final res = await ApiService.instance.getSavedTables();
+      final list = await ApiService.instance.getSavedTables();
       if (mounted) {
-        final List<dynamic> list = (res is List)
-            ? res
-            : ((res is Map && res['saved_tables'] is List)
-                ? res['saved_tables']
-                : []);
         setState(() {
-          _tables = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          _tables = List<Map<String, dynamic>>.from(list);
           _isLoading = false;
         });
       }
@@ -92,7 +88,7 @@ class _SavedTablesViewState extends State<SavedTablesView> {
     final savedTime = formatDatetime(t['saved_at']?.toString() ?? '');
     final expiresTime = formatDatetime(t['expires_at']?.toString() ?? '');
 
-    return '$gname — ${tr('ضد')}: $opponents — ${tr('تاريخ الحفظ')}: $savedTime — ${tr('تنتهي في')}: $expiresTime';
+    return '$gname — ضد: $opponents — تاريخ الحفظ: $savedTime — تنتهي في: $expiresTime';
   }
 
   Future<void> _restoreTable(int savedId, String game) async {
@@ -106,7 +102,7 @@ class _SavedTablesViewState extends State<SavedTablesView> {
       final res = await ApiService.instance.restoreSavedTable(savedId);
       if (mounted) {
         Navigator.of(context).pop(); // dismiss loading
-        SoundService.instance.playSound('TABLE_JOIN');
+        unawaited(SoundService.instance.playSound('TABLE_JOIN'));
         final roomId = res['room_id'] ?? res['id'] ?? res['room']?['id'];
         if (roomId != null) {
           Navigator.of(context).pushReplacement(
@@ -122,7 +118,7 @@ class _SavedTablesViewState extends State<SavedTablesView> {
     } catch (e) {
       if (mounted) {
         Navigator.of(context).pop(); // dismiss loading
-        SoundService.instance.playSound('INVALID_ACTION');
+        unawaited(SoundService.instance.playSound('INVALID_ACTION'));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${tr('خطأ في استعادة الطاولة')}: $e')),
         );
@@ -157,7 +153,7 @@ class _SavedTablesViewState extends State<SavedTablesView> {
     if (confirmed == true) {
       try {
         await ApiService.instance.deleteSavedTable(savedId);
-        SoundService.instance.playSound('ACTION_CLICK');
+        unawaited(SoundService.instance.playSound('ACTION_CLICK'));
         setState(() {
           _tables.removeWhere((t) => t['id'] == savedId);
         });
@@ -213,7 +209,7 @@ class _SavedTablesViewState extends State<SavedTablesView> {
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: _tables.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
                       itemBuilder: (context, idx) {
                         final t = _tables[idx];
                         final savedId = int.tryParse(t['id']?.toString() ?? '0') ?? 0;
@@ -222,12 +218,13 @@ class _SavedTablesViewState extends State<SavedTablesView> {
 
                         return Semantics(
                           label: rowText,
+                          hint: tr('اضغط للاستعادة، اضغط مطولاً لخيارات الحذف'),
                           customSemanticsActions: {
                             CustomSemanticsAction(label: tr('استعادة')): () => _restoreTable(savedId, game),
                             CustomSemanticsAction(label: tr('حذف')): () => _confirmDeleteTable(savedId),
                           },
                           child: ListTile(
-                            tileColor: AppColors.card,
+                            tileColor: AppColors.surface,
                             title: Text(
                               rowText,
                               style: const TextStyle(

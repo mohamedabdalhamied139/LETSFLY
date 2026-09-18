@@ -106,30 +106,95 @@ class ApiService {
     });
   }
 
-  Future<dynamic> joinRoom(String roomId, {String? password, bool asSpectator = false}) {
-    final queryParams = asSpectator ? {'as_spectator': 'true'} : null;
-    return post(
+  Future<Map<String, dynamic>> joinRoom(
+    String roomId, {
+    String? password,
+    bool asSpectator = false,
+  }) async {
+    final queryParams = asSpectator ? {'as_spectator': true} : null;
+    final res = await post(
       '/api/rooms/$roomId/join',
-      data: {'password': password},
+      data: {
+        if (password != null) 'password': password,
+        'as_spectator': asSpectator,
+      },
       queryParameters: queryParams,
     );
+    if (res is Map<String, dynamic>) {
+      return res;
+    } else if (res is Map) {
+      return Map<String, dynamic>.from(res);
+    }
+    return {'ok': true, 'room_id': roomId, 'as_spectator': asSpectator};
   }
 
   Future<dynamic> leaveRoom(String roomId) {
     return post('/api/rooms/$roomId/leave');
   }
 
+  // Room Lifecycle & Management Endpoints
+  Future<dynamic> startGame(String roomId, {int targetScore = 500, Map<String, dynamic>? rules}) {
+    return post('/api/rooms/$roomId/start', data: {
+      'target_score': targetScore,
+      'rules': rules ?? {},
+    });
+  }
+
+  Future<dynamic> stopGame(String roomId) {
+    return post('/api/rooms/$roomId/stop');
+  }
+
+  Future<dynamic> addBot(String roomId) {
+    return post('/api/rooms/$roomId/bot');
+  }
+
+  Future<dynamic> removeBot(String roomId) {
+    return post('/api/rooms/$roomId/bot/remove');
+  }
+
+  Future<dynamic> saveTable(String roomId) {
+    return post('/api/rooms/$roomId/save');
+  }
+
+  Future<dynamic> togglePrivacy(String roomId) {
+    return post('/api/rooms/$roomId/privacy');
+  }
+
+  Future<dynamic> toggleSpectator(String roomId) {
+    return post('/api/rooms/$roomId/spectator');
+  }
+
+  Future<dynamic> getGameState(String roomId) {
+    return get('/api/rooms/$roomId/game/state');
+  }
+
+  Future<dynamic> sendGameAction(String roomId, Map<String, dynamic> actionPayload) {
+    return post('/api/rooms/$roomId/game/action', data: actionPayload);
+  }
+
   // Saved Tables Endpoints
-  Future<dynamic> getSavedTables() {
-    return get('/api/rooms/saved');
+  Future<List<Map<String, dynamic>>> getSavedTables() async {
+    final res = await get('/api/rooms/saved');
+    if (res is List) {
+      return res.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } else if (res is Map && res['saved_tables'] is List) {
+      return (res['saved_tables'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    return [];
   }
 
-  Future<dynamic> restoreSavedTable(int savedId) {
-    return post('/api/rooms/saved/$savedId/restore');
+  Future<Map<String, dynamic>> restoreSavedTable(int savedId) async {
+    final res = await post('/api/rooms/saved/$savedId/restore');
+    if (res is Map<String, dynamic>) {
+      return res;
+    } else if (res is Map) {
+      return Map<String, dynamic>.from(res);
+    }
+    return {'ok': true, 'room_id': 'restored_room_$savedId'};
   }
 
-  Future<dynamic> deleteSavedTable(int savedId) {
-    return delete('/api/rooms/saved/$savedId');
+  Future<void> deleteSavedTable(int savedId) async {
+    await delete('/api/rooms/saved/$savedId');
   }
 
   // Social / Friends Endpoints

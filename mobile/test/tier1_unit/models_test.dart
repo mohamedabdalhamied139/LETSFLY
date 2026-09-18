@@ -188,6 +188,41 @@ void defineTests() {
         expect(reconstituted.expiresAt, equals(original.expiresAt));
         expect(reconstituted.data?['sets'], equals([6, 4]));
       });
+
+      test('Supports alternative backend keys saved_time, expires_time, game_label and opponents list', () {
+        final json = {
+          'id': 404,
+          'game': 'SCOPA',
+          'game_label': 'إسكوبا',
+          'opponents': ['خالد', 'منى'],
+          'saved_time': '2026-09-15T08:00:00Z',
+          'expires_time': '2026-09-22T08:00:00Z',
+          'rawData': {'round': 3},
+        };
+
+        final table = SavedTable.fromJson(json);
+
+        expect(table.id, equals(404));
+        expect(table.game, equals('SCOPA'));
+        expect(table.gameLabel, equals('إسكوبا'));
+        expect(table.opponents, equals(['خالد', 'منى']));
+        expect(table.opponentsSummary, equals('خالد، منى'));
+        expect(table.savedAt, equals('2026-09-15T08:00:00Z'));
+        expect(table.expiresAt, equals('2026-09-22T08:00:00Z'));
+        expect(table.savedAtDateTime.year, equals(2026));
+        expect(table.expiresAtDateTime?.month, equals(9));
+        expect(table.data?['round'], equals(3));
+      });
+
+      test('Derives canonical game labels automatically when game_label is omitted', () {
+        final uno = SavedTable.fromJson({'id': 1, 'game': 'UNO', 'saved_at': '2026-09-18T10:00:00Z'});
+        final domino = SavedTable.fromJson({'id': 2, 'game': 'DOMINO', 'saved_at': '2026-09-18T10:00:00Z'});
+        final tennis = SavedTable.fromJson({'id': 3, 'game': 'TENNIS', 'saved_at': '2026-09-18T10:00:00Z'});
+
+        expect(uno.gameLabel, equals('أونو'));
+        expect(domino.gameLabel, equals('دومينو كلاسيك'));
+        expect(tennis.gameLabel, equals('التنس'));
+      });
     });
   });
 }
