@@ -28,7 +28,9 @@ jobs:
 
       - name: Generate Android platform scaffold
         working-directory: ./mobile
-        run: flutter create . --platforms=android --org com.tableverse
+        run: |
+          flutter create . --platforms=android --org com.tableverse
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle || sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
 
       - name: Install dependencies
         working-directory: ./mobile
