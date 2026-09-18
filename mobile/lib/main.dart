@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'core/app_theme.dart';
 import 'core/localization.dart';
 import 'views/auth_view.dart';
 
@@ -27,13 +28,7 @@ class TableVerseApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E88E5),
-          brightness: Brightness.dark,
-        ),
-      ),
+      theme: AppTheme.darkTheme,
       home: const AuthView(),
     );
   }

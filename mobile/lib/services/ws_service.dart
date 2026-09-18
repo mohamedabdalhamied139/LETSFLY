@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketService {
@@ -7,7 +9,7 @@ class WebSocketService {
   WebSocketService._();
 
   WebSocketChannel? _channel;
-  StreamSubscription? _subscription;
+  StreamSubscription<dynamic>? _subscription;
   Timer? _heartbeatTimer;
   bool _isConnected = false;
   bool _isDisposed = false;
@@ -17,18 +19,40 @@ class WebSocketService {
 
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
   bool get isConnected => _isConnected;
+  bool get isDisposed => _isDisposed;
 
   void connect(String wsUrl, {String? token}) {
     disconnect();
     _isDisposed = false;
 
     try {
-      final uri = Uri.parse(wsUrl);
-      _channel = WebSocketChannel.connect(uri);
+      var uri = Uri.parse(wsUrl);
+      final Map<String, dynamic> headers = {};
+
+      if (token != null && token.isNotEmpty) {
+        // Standard bearer authorization header for IO platforms
+        headers['Authorization'] = 'Bearer $token';
+
+        // Query parameter fallback for dev/test environments & server compatibility
+        final queryParams = Map<String, String>.from(uri.queryParameters);
+        if (!queryParams.containsKey('token')) {
+          queryParams['token'] = token;
+          uri = uri.replace(queryParameters: queryParams);
+        }
+      }
+
+      if (kIsWeb) {
+        _channel = WebSocketChannel.connect(uri);
+      } else {
+        _channel = IOWebSocketChannel.connect(
+          uri,
+          headers: headers.isNotEmpty ? headers : null,
+        );
+      }
       _isConnected = true;
 
       _subscription = _channel?.stream.listen(
-        (message) {
+        (dynamic message) {
           if (message is String) {
             try {
               final data = json.decode(message);
@@ -42,7 +66,7 @@ class WebSocketService {
             } catch (_) {}
           }
         },
-        onError: (err) {
+        onError: (Object err) {
           _handleDisconnect();
         },
         onDone: () {
