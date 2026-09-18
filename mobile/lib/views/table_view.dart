@@ -14,8 +14,9 @@ import '../games/adapters/ninety_nine_adapter.dart';
 
 class TableView extends StatefulWidget {
   final String roomId;
+  final String? gameType;
 
-  const TableView({super.key, required this.roomId});
+  const TableView({super.key, required this.roomId, this.gameType});
 
   @override
   State<TableView> createState() => _TableViewState();
