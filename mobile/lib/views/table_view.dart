@@ -553,6 +553,11 @@ class _TableViewState extends State<TableView> {
           backgroundColor: const Color(0xFF2D2D2D),
           actions: [
             IconButton(
+              tooltip: tr('قائمة خيارات الطاولة'),
+              icon: const Icon(Icons.more_vert),
+              onPressed: _showRoomContextMenu,
+            ),
+            IconButton(
               tooltip: tr('سجل الأحداث'),
               icon: const Icon(Icons.history),
               onPressed: _showActivityLogDrawer,
@@ -561,7 +566,7 @@ class _TableViewState extends State<TableView> {
         ),
         body: Column(
           children: [
-            // STRICT TOP BAR: Scoreboard with player names on the EXACT same row right next to "خيارات إضافية" (More Options)
+            // STRICT TOP BAR: Scoreboard with player names on the EXACT same row right next to "خيارات الطاولة"
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               color: const Color(0xFF252526),
@@ -572,7 +577,7 @@ class _TableViewState extends State<TableView> {
                   ElevatedButton.icon(
                     onPressed: _showRoomContextMenu,
                     icon: const Icon(Icons.more_horiz, size: 18),
-                    label: Text(tr('خيارات إضافية')),
+                    label: Text(tr('خيارات الطاولة')),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3E3E42),
                       foregroundColor: Colors.white,
