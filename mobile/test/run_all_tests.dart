@@ -22,6 +22,7 @@ import 'tier2_widget/saved_tables_view_test.dart' as saved_tables_view_test;
 import 'tier3_integration/auth_flow_test.dart' as auth_flow_test;
 import 'tier3_integration/rooms_navigation_flow_test.dart' as rooms_navigation_flow_test;
 import 'tier3_integration/synchronized_log_test.dart' as synchronized_log_test;
+import 'tier3_integration/game_adapters_and_gestures_test.dart' as game_adapters_and_gestures_test;
 
 // Tier 4: E2E Conformance
 import 'tier4_e2e_conformance/socket_auth_conformance_test.dart' as socket_auth_conformance_test;
@@ -57,6 +58,7 @@ void main() async {
     SuiteInfo('Tier 3', 'Authentication Flow Integration', auth_flow_test.defineTests),
     SuiteInfo('Tier 3', 'Rooms Navigation Flow Integration', rooms_navigation_flow_test.defineTests),
     SuiteInfo('Tier 3', 'Cross-Screen Synchronized Log', synchronized_log_test.defineTests),
+    SuiteInfo('Tier 3', 'Game Adapters, Gestures & Engine Integration', game_adapters_and_gestures_test.defineTests),
 
     // Tier 4: E2E Conformance
     SuiteInfo('Tier 4', 'WebSocket Auth Protocol Conformance', socket_auth_conformance_test.defineTests),

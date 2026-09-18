@@ -257,6 +257,65 @@ class MockApiAdapter {
     return List<Map<String, dynamic>>.from(_onlineUsers);
   }
 
+  // Room Actions & Game Engine Endpoints
+  Future<Map<String, dynamic>> startGame(String roomId, {int? targetScore, Map<String, dynamic>? rules}) async {
+    _recordCall('POST', '/api/rooms/$roomId/start', {'target_score': targetScore, 'rules': rules});
+    _checkError();
+    return {'ok': true, 'status': 'playing'};
+  }
+
+  Future<Map<String, dynamic>> stopGame(String roomId) async {
+    _recordCall('POST', '/api/rooms/$roomId/stop');
+    _checkError();
+    return {'ok': true, 'status': 'waiting'};
+  }
+
+  Future<Map<String, dynamic>> addBot(String roomId, {String? name}) async {
+    _recordCall('POST', '/api/rooms/$roomId/bot', {'name': name});
+    _checkError();
+    return {'ok': true, 'bot_id': -1, 'name': name ?? 'بوت 1'};
+  }
+
+  Future<Map<String, dynamic>> removeBot(String roomId, {int? botId}) async {
+    _recordCall('POST', '/api/rooms/$roomId/bot/remove', {'bot_id': botId});
+    _checkError();
+    return {'ok': true, 'removed': true};
+  }
+
+  Future<Map<String, dynamic>> saveTable(String roomId, {String? name}) async {
+    _recordCall('POST', '/api/rooms/$roomId/save', {'name': name});
+    _checkError();
+    return {'ok': true, 'saved_id': 101, 'message': 'تم حفظ الطاولة'};
+  }
+
+  Future<Map<String, dynamic>> togglePrivacy(String roomId, {bool? isPrivate}) async {
+    _recordCall('POST', '/api/rooms/$roomId/privacy', {'is_private': isPrivate});
+    _checkError();
+    return {'ok': true, 'is_private': isPrivate ?? true};
+  }
+
+  Future<Map<String, dynamic>> toggleSpectator(String roomId) async {
+    _recordCall('POST', '/api/rooms/$roomId/spectator');
+    _checkError();
+    return {'ok': true, 'is_spectator': true};
+  }
+
+  Future<Map<String, dynamic>> getGameState(String roomId) async {
+    _recordCall('GET', '/api/rooms/$roomId/game/state');
+    _checkError();
+    return {
+      'ok': true,
+      'room': {'id': roomId, 'status': 'playing', 'name': 'طاولة الاختبار'},
+      'game_state': {'active': true, 'is_my_turn': true},
+    };
+  }
+
+  Future<Map<String, dynamic>> sendGameAction(String roomId, Map<String, dynamic> payload) async {
+    _recordCall('POST', '/api/rooms/$roomId/game/action', payload);
+    _checkError();
+    return {'ok': true, 'result': 'action_processed', 'payload': payload};
+  }
+
   // Inspection helpers
   bool hasCalled(String method, String path) {
     return recordedCalls.any((c) => c['method'] == method && c['path'] == path);

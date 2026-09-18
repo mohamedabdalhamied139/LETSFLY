@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../core/app_theme.dart';
 import '../core/localization.dart';
 import '../services/api_service.dart';
 import '../services/ws_service.dart';
@@ -31,14 +33,18 @@ class _TableViewState extends State<TableView> {
   final List<String> _chatMessages = [];
   final List<Map<String, dynamic>> _activityEvents = [];
   final TextEditingController _chatController = TextEditingController();
+  final GlobalKey<TennisGameViewState> _tennisKey = GlobalKey();
 
   int _myUserId = 0;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _connectWebSocket();
     _fetchMyUserId();
+    _pollGameState();
+    _pollTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) => _pollGameState());
   }
 
   Future<void> _fetchMyUserId() async {
@@ -47,6 +53,25 @@ class _TableViewState extends State<TableView> {
       if (me is Map && me['user'] is Map && mounted) {
         setState(() {
           _myUserId = int.tryParse(me['user']['id'].toString()) ?? 0;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _pollGameState() async {
+    if (!mounted) return;
+    try {
+      final res = await ApiService.instance.getGameState(widget.roomId);
+      if (res is Map && mounted) {
+        setState(() {
+          if (res['room'] is Map) {
+            _roomState = res['room'] as Map<String, dynamic>;
+          }
+          if (res['game_state'] is Map) {
+            _gameState = res['game_state'] as Map<String, dynamic>;
+          } else if (res['state'] is Map) {
+            _gameState = res['state'] as Map<String, dynamic>;
+          }
         });
       }
     } catch (_) {}
@@ -90,15 +115,20 @@ class _TableViewState extends State<TableView> {
         });
       } else if (type == 'player_joined' || type == 'bot_added') {
         SoundService.instance.playSound('TABLE_JOIN');
+        _pollGameState();
       } else if (type == 'player_left' || type == 'bot_removed') {
         SoundService.instance.playSound('TABLE_LEAVE');
+        _pollGameState();
       } else if (type == 'game_stopped') {
         SoundService.instance.playSound('GAME_STOPPED');
+        _pollGameState();
       } else if (type == 'round_finished' || type == 'round_end') {
         SoundService.instance.playSound('ROUND_END');
+        _pollGameState();
       } else if (type == 'match_finished') {
         final won = data['winner_id']?.toString() == _myUserId.toString();
         SoundService.instance.playSound(won ? 'MATCH_WIN' : 'MATCH_LOSS');
+        _pollGameState();
       } else if (type == 'chat_message') {
         setState(() {
           _chatMessages.add('${data['sender']}: ${data['text']}');
@@ -123,6 +153,85 @@ class _TableViewState extends State<TableView> {
     if (text.isEmpty) return;
     WebSocketService.instance.sendJson({'type': 'chat', 'text': text});
     _chatController.clear();
+  }
+
+  Future<void> _startGame() async {
+    try {
+      await ApiService.instance.startGame(widget.roomId);
+      await _pollGameState();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
+  Future<void> _stopGame() async {
+    try {
+      await ApiService.instance.stopGame(widget.roomId);
+      await _pollGameState();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
+  Future<void> _addBot() async {
+    try {
+      await ApiService.instance.addBot(widget.roomId);
+      await _pollGameState();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
+  Future<void> _removeBot() async {
+    try {
+      await ApiService.instance.removeBot(widget.roomId);
+      await _pollGameState();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
+  Future<void> _saveTable() async {
+    try {
+      await ApiService.instance.saveTable(widget.roomId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr('تم حفظ الطاولة بنجاح'))));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
+  Future<void> _togglePrivacy() async {
+    try {
+      await ApiService.instance.togglePrivacy(widget.roomId);
+      await _pollGameState();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+  }
+
+  Future<void> _toggleSpectator() async {
+    try {
+      await ApiService.instance.toggleSpectator(widget.roomId);
+      await _pollGameState();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
   }
 
   // Exact Windows Room Context Menu (_show_room_context_menu)
@@ -153,7 +262,7 @@ class _TableViewState extends State<TableView> {
                 enabled: isHost || isCoHost,
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  WebSocketService.instance.sendJson({'type': 'room_action', 'action': 'stop_game'});
+                  _stopGame();
                 },
               )
             else
@@ -163,7 +272,7 @@ class _TableViewState extends State<TableView> {
                 enabled: (isHost || isCoHost) && status == 'waiting',
                 onTap: () {
                   Navigator.of(ctx).pop();
-                  WebSocketService.instance.sendJson({'type': 'room_action', 'action': 'start_game'});
+                  _startGame();
                 },
               ),
 
@@ -192,7 +301,7 @@ class _TableViewState extends State<TableView> {
               title: Text(tr('وضع المتفرج'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.of(ctx).pop();
-                WebSocketService.instance.sendJson({'type': 'room_action', 'action': 'toggle_spectator'});
+                _toggleSpectator();
               },
             ),
 
@@ -203,7 +312,7 @@ class _TableViewState extends State<TableView> {
               enabled: canSave,
               onTap: () {
                 Navigator.of(ctx).pop();
-                WebSocketService.instance.sendJson({'type': 'room_action', 'action': 'save_table'});
+                _saveTable();
               },
             ),
 
@@ -215,7 +324,7 @@ class _TableViewState extends State<TableView> {
               enabled: isHost,
               onTap: () {
                 Navigator.of(ctx).pop();
-                WebSocketService.instance.sendJson({'type': 'room_action', 'action': 'toggle_privacy'});
+                _togglePrivacy();
               },
             ),
 
@@ -228,7 +337,7 @@ class _TableViewState extends State<TableView> {
               enabled: isHost && status == 'waiting',
               onTap: () {
                 Navigator.of(ctx).pop();
-                WebSocketService.instance.sendJson({'type': 'room_action', 'action': 'add_bot'});
+                _addBot();
               },
             ),
             ListTile(
@@ -237,7 +346,7 @@ class _TableViewState extends State<TableView> {
               enabled: isHost && status == 'waiting',
               onTap: () {
                 Navigator.of(ctx).pop();
-                WebSocketService.instance.sendJson({'type': 'room_action', 'action': 'remove_bot'});
+                _removeBot();
               },
             ),
 
@@ -271,6 +380,75 @@ class _TableViewState extends State<TableView> {
         ),
       ),
     );
+  }
+
+  void _handleSpaceKey(String gameType) {
+    final g = gameType.toUpperCase();
+    if (g == 'TENNIS') {
+      _tennisKey.currentState?.hitOrServe();
+    } else if (g == 'FARKLE' || g == 'SNAKES_LADDERS') {
+      final reqId = 'req_${DateTime.now().millisecondsSinceEpoch}';
+      WebSocketService.instance.sendJson({
+        'type': 'game_action',
+        'request_id': reqId,
+        'payload': {'action': 'roll'},
+      });
+      ApiService.instance.sendGameAction(widget.roomId, {'action': 'roll'});
+    } else {
+      // UNO, DOMINO, AMERICAN_DOMINO, NINETY_NINE
+      final reqId = 'req_${DateTime.now().millisecondsSinceEpoch}';
+      WebSocketService.instance.sendJson({
+        'type': 'game_action',
+        'request_id': reqId,
+        'payload': {'action': 'draw'},
+      });
+      ApiService.instance.sendGameAction(widget.roomId, {'action': 'draw'});
+    }
+  }
+
+  void _announceTableQuery(String gameType) {
+    final g = gameType.toUpperCase();
+    String queryText = '';
+
+    if (g == 'UNO') {
+      final top = _gameState?['top_card'];
+      final col = _gameState?['current_color'] ?? '';
+      queryText = '${tr('الكرت الحالي')}: ${top != null ? top.toString() : tr('لا يوجد')} ${col.isNotEmpty ? '($col)' : ''}';
+    } else if (g == 'DOMINO' || g == 'AMERICAN_DOMINO') {
+      final l = _gameState?['left_end'] ?? '-';
+      final r = _gameState?['right_end'] ?? '-';
+      queryText = '${tr('أطراف الدومينو')}: ${tr('يسار')} $l | ${tr('يمين')} $r';
+    } else if (g == 'FARKLE') {
+      final dice = (_gameState?['dice'] as List?)?.join('، ') ?? '';
+      final tScore = _gameState?['turn_score'] ?? 0;
+      queryText = '${tr('النرد الحالي')}: $dice | ${tr('نقاط الدور')}: $tScore';
+    } else if (g == 'SNAKES_LADDERS') {
+      final pos = _gameState?['my_position'] ?? _gameState?['position'] ?? 1;
+      queryText = '${tr('موقعك')}: $pos / 100';
+    } else if (g == 'NINETY_NINE') {
+      final total = _gameState?['pile_value'] ?? _gameState?['total'] ?? 0;
+      queryText = '${tr('مجموع الطاولة')}: $total / 99';
+    } else if (g == 'SCOPA') {
+      final count = (_gameState?['table_cards'] as List?)?.length ?? 0;
+      queryText = '${tr('عدد كروت الطاولة')}: $count';
+    } else if (g == 'THIEF_HUNT') {
+      final phase = _gameState?['phase'] ?? 'waiting';
+      queryText = '${tr('حالة اللعبة')}: $phase';
+    } else {
+      queryText = tr('استعلام عن حالة الطاولة');
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(queryText)));
+  }
+
+  void _announceTableInfo() {
+    final name = _roomState?['name'] ?? tr('طاولة اللعب');
+    final players = (_roomState?['players'] as List?)?.length ?? 0;
+    final spectators = (_roomState?['spectators'] as List?)?.length ?? 0;
+    final status = _roomState?['status'] ?? 'waiting';
+
+    final infoText = '$name — $players لاعبين — $spectators متفرجين — الحالة: $status';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(infoText)));
   }
 
   /// Exact scoreboard formatter matching Windows:
@@ -342,6 +520,7 @@ class _TableViewState extends State<TableView> {
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     WebSocketService.instance.disconnect();
     _chatController.dispose();
     super.dispose();
@@ -351,26 +530,18 @@ class _TableViewState extends State<TableView> {
   Widget build(BuildContext context) {
     final gameType = (_roomState?['game_type'] ?? widget.gameType ?? '').toString().toUpperCase();
     final isTennis = gameType == 'TENNIS';
-    final isUnoOrDomino = gameType == 'UNO' || gameType.contains('DOMINO');
+    final isUnoOrDomino = gameType == 'UNO' || gameType.contains('DOMINO') || gameType == 'FARKLE' || gameType == 'SNAKES_LADDERS';
 
     return TableGestureDetector(
       isTennis: isTennis,
       isUnoOrDomino: isUnoOrDomino,
       onOpenLog: _showActivityLogDrawer,
-      onQueryTable: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('استعلام عن كروت وأوراق الطاولة'))),
-        );
-      },
-      onTableInfo: () {
-        final playersCount = (_roomState?['players'] as List?)?.length ?? 0;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('عدد اللاعبين الحاليين: {count}', {'count': playersCount}))),
-        );
-      },
-      onSpaceKey: () {
-        WebSocketService.instance.sendJson({'type': 'game_action', 'action': 'draw'});
-      },
+      onQueryTable: () => _announceTableQuery(gameType),
+      onTableInfo: _announceTableInfo,
+      onSpaceKey: () => _handleSpaceKey(gameType),
+      onTennisLeft: () => _tennisKey.currentState?.moveLeft(),
+      onTennisRight: () => _tennisKey.currentState?.moveRight(),
+      onTennisUp: () => _tennisKey.currentState?.hitOrServe(),
       child: Scaffold(
         backgroundColor: const Color(0xFF1E1E1E),
         appBar: AppBar(
@@ -392,10 +563,8 @@ class _TableViewState extends State<TableView> {
               color: const Color(0xFF252526),
               child: Row(
                 children: [
-                  // Scores right here horizontally
                   _buildHorizontalScoreboard(),
                   const SizedBox(width: 8),
-                  // "خيارات إضافية" button opening the 100% full context menu
                   ElevatedButton.icon(
                     onPressed: _showRoomContextMenu,
                     icon: const Icon(Icons.more_horiz, size: 18),
@@ -410,7 +579,7 @@ class _TableViewState extends State<TableView> {
               ),
             ),
 
-            // Gameplay Central Area (No standalone start button, no fake controls)
+            // Gameplay Central Area
             Expanded(
               child: _buildGameWidget(gameType),
             ),
@@ -451,25 +620,143 @@ class _TableViewState extends State<TableView> {
   }
 
   Widget _buildGameWidget(String gameType) {
+    final status = (_roomState?['status'] ?? 'waiting').toString().toLowerCase();
+    final isHost = _roomState?['is_host'] == true ||
+        (_roomState?['host_id'] != null && _roomState?['host_id'].toString() == _myUserId.toString());
+
+    // If game is in pre-game waiting state, display functional lobby with quick start & add bot buttons
+    if (status == 'waiting') {
+      final players = (_roomState?['players'] as List?) ?? [];
+      final botsCount = players.where((p) => p is Map && (p['is_bot'] == true || (int.tryParse(p['id']?.toString() ?? '0') ?? 0) < 0)).length;
+
+      return Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.meeting_room, size: 56, color: Colors.tealAccent),
+              const SizedBox(height: 12),
+              Text(
+                _roomState?['name'] ?? tr('طاولة اللعب'),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${tr('اللعبة')}: ${tr(gameType)}',
+                style: const TextStyle(fontSize: 16, color: Colors.amberAccent),
+              ),
+              const SizedBox(height: 16),
+
+              // Players Count & List
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${tr('اللاعبون في الطاولة')} (${players.length}):',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white70),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: players.map((p) {
+                        final name = p is Map ? (p['display_name'] ?? p['name'] ?? 'لاعب') : p.toString();
+                        final isBot = p is Map && (p['is_bot'] == true || (int.tryParse(p['id']?.toString() ?? '0') ?? 0) < 0);
+
+                        return Chip(
+                          backgroundColor: isBot ? Colors.teal.shade900 : AppColors.card,
+                          avatar: Icon(isBot ? Icons.smart_toy : Icons.person, size: 18, color: Colors.white),
+                          label: Text(name, style: const TextStyle(color: Colors.white)),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Host controls or waiting indicator
+              if (isHost) ...[
+                ElevatedButton.icon(
+                  onPressed: _startGame,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.play_arrow, size: 24),
+                  label: Text(tr('بدء اللعبة الآن'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _addBot,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.tealAccent,
+                        side: const BorderSide(color: Colors.tealAccent),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                      icon: const Icon(Icons.add),
+                      label: Text(tr('إضافة بوت')),
+                    ),
+                    if (botsCount > 0) ...[
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: _removeBot,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.redAccent,
+                          side: const BorderSide(color: Colors.redAccent),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        ),
+                        icon: const Icon(Icons.remove),
+                        label: Text(tr('إزالة بوت')),
+                      ),
+                    ],
+                  ],
+                ),
+              ] else ...[
+                Text(
+                  tr('في انتظار بدء المضيف للعبة...'),
+                  style: const TextStyle(color: Colors.white60, fontSize: 16),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
     switch (gameType.toUpperCase()) {
       case 'UNO':
-        return UnoGameView(initialState: _gameState);
+        return UnoGameView(roomId: widget.roomId, initialState: _gameState);
       case 'DOMINO':
-        return DominoGameView(initialState: _gameState, isAmerican: false);
+        return DominoGameView(roomId: widget.roomId, initialState: _gameState, isAmerican: false);
       case 'AMERICAN_DOMINO':
-        return DominoGameView(initialState: _gameState, isAmerican: true);
+        return DominoGameView(roomId: widget.roomId, initialState: _gameState, isAmerican: true);
       case 'FARKLE':
-        return FarkleGameView(initialState: _gameState);
+        return FarkleGameView(roomId: widget.roomId, initialState: _gameState);
       case 'TENNIS':
-        return TennisGameView(initialState: _gameState);
+        return TennisGameView(key: _tennisKey, roomId: widget.roomId, initialState: _gameState);
       case 'THIEF_HUNT':
-        return ThiefGameView(initialState: _gameState);
+        return ThiefGameView(roomId: widget.roomId, initialState: _gameState);
       case 'SNAKES_LADDERS':
-        return SnakesGameView(initialState: _gameState);
+        return SnakesGameView(roomId: widget.roomId, initialState: _gameState);
       case 'SCOPA':
-        return ScopaGameView(initialState: _gameState);
+        return ScopaGameView(roomId: widget.roomId, initialState: _gameState);
       case 'NINETY_NINE':
-        return NinetyNineGameView(initialState: _gameState);
+        return NinetyNineGameView(roomId: widget.roomId, initialState: _gameState);
       default:
         return Center(
           child: Column(
@@ -487,3 +774,4 @@ class _TableViewState extends State<TableView> {
     }
   }
 }
+

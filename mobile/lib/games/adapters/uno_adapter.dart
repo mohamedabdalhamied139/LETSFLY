@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../core/app_theme.dart';
 import '../../core/localization.dart';
 import '../../core/sound_service.dart';
+import '../../services/api_service.dart';
 import '../../services/ws_service.dart';
 
 class UnoGameView extends StatefulWidget {
+  final String roomId;
   final Map<String, dynamic>? initialState;
 
-  const UnoGameView({super.key, this.initialState});
+  const UnoGameView({super.key, required this.roomId, this.initialState});
 
   @override
   State<UnoGameView> createState() => UnoGameViewState();
@@ -17,6 +20,7 @@ class UnoGameViewState extends State<UnoGameView> {
   Map<String, dynamic>? _topCard;
   String _currentColor = '';
   bool _isMyTurn = false;
+  bool _canCallUno = false;
 
   @override
   void initState() {
@@ -26,33 +30,51 @@ class UnoGameViewState extends State<UnoGameView> {
     }
   }
 
+  @override
+  void didUpdateWidget(UnoGameView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialState != null) {
+      updateState(widget.initialState!);
+    }
+  }
+
   void updateState(Map<String, dynamic> state) {
     setState(() {
       _hand = state['hand'] is List ? state['hand'] : [];
       _topCard = state['top_card'] is Map<String, dynamic> ? state['top_card'] : null;
-      _currentColor = state['current_color'] ?? '';
-      _isMyTurn = state['is_my_turn'] == true;
+      _currentColor = state['current_color']?.toString() ?? '';
+      _isMyTurn = state['is_my_turn'] == true || state['current_player'] == state['my_user_id'];
+      _canCallUno = _hand.length == 2 && _isMyTurn;
     });
+  }
+
+  void _sendAction(Map<String, dynamic> actionPayload) {
+    final reqId = 'req_${DateTime.now().millisecondsSinceEpoch}';
+    WebSocketService.instance.sendJson({
+      'type': 'game_action',
+      'request_id': reqId,
+      'payload': actionPayload,
+    });
+    ApiService.instance.sendGameAction(widget.roomId, actionPayload);
   }
 
   void _playCard(dynamic card) {
     final cardId = card['id'] ?? card['card_id'];
-    final cardType = card['type'] ?? '';
+    final cardType = (card['type'] ?? card['value'] ?? '').toString().toLowerCase();
 
-    if (cardType == 'wild' || cardType == 'wild_draw4') {
+    if (cardType.contains('wild')) {
       _showColorPicker(cardId);
     } else {
-      SoundService.instance.playSound('uno/place');
-      WebSocketService.instance.sendJson({
-        'type': 'game_action',
-        'action': 'play_card',
-        'card_id': cardId,
+      SoundService.instance.playSound('UNO_PLACE');
+      _sendAction({
+        'action': 'play',
+        'card_id': cardId.toString(),
       });
     }
   }
 
   void _showColorPicker(dynamic cardId) {
-    SoundService.instance.playSound('uno/wild_color_prompt');
+    SoundService.instance.playSound('WILD_COLOR_PROMPT');
     final colors = [
       {'id': 'red', 'title': 'أحمر', 'color': Colors.red},
       {'id': 'yellow', 'title': 'أصفر', 'color': Colors.amber},
@@ -62,6 +84,7 @@ class UnoGameViewState extends State<UnoGameView> {
 
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppColors.surface,
       isDismissible: false,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(16),
@@ -70,7 +93,7 @@ class UnoGameViewState extends State<UnoGameView> {
           children: [
             Text(
               tr('اختر لون الكرت الجديد'),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -88,11 +111,10 @@ class UnoGameViewState extends State<UnoGameView> {
                     ),
                     onPressed: () {
                       Navigator.of(ctx).pop();
-                      SoundService.instance.playSound('uno/wild_color');
-                      WebSocketService.instance.sendJson({
-                        'type': 'game_action',
-                        'action': 'play_card',
-                        'card_id': cardId,
+                      SoundService.instance.playSound('CARD_WILD_COLOR');
+                      _sendAction({
+                        'action': 'play',
+                        'card_id': cardId.toString(),
                         'chosen_color': c['id'],
                       });
                     },
@@ -108,11 +130,16 @@ class UnoGameViewState extends State<UnoGameView> {
   }
 
   void _drawCard() {
-    SoundService.instance.playSound('uno/draw');
-    WebSocketService.instance.sendJson({
-      'type': 'game_action',
-      'action': 'draw_card',
-    });
+    SoundService.instance.playSound('CARD_DRAW');
+    _sendAction({'action': 'draw'});
+  }
+
+  void _callUno() {
+    SoundService.instance.playSound('UNO_CALLED');
+    _sendAction({'action': 'call_uno'});
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(tr('أونو!'))),
+    );
   }
 
   String _formatCard(dynamic card) {
@@ -133,10 +160,10 @@ class UnoGameViewState extends State<UnoGameView> {
           padding: const EdgeInsets.all(16),
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _isMyTurn ? Colors.green : Colors.transparent,
+              color: _isMyTurn ? Colors.greenAccent : AppColors.divider,
               width: 2,
             ),
           ),
@@ -145,50 +172,83 @@ class UnoGameViewState extends State<UnoGameView> {
               Text(
                 '${tr('الكرت الحالي')}: $topCardText' +
                     (_currentColor.isNotEmpty ? ' (${tr(_currentColor)})' : ''),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
               ),
-              if (_isMyTurn) ...[
-                const SizedBox(height: 8),
-                Text(
-                  tr('دورك الآن للعب!'),
-                  style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+              const SizedBox(height: 6),
+              Text(
+                _isMyTurn ? tr('دورك الآن للعب!') : tr('في انتظار دور اللاعب التالي...'),
+                style: TextStyle(
+                  color: _isMyTurn ? Colors.greenAccent : Colors.white60,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Action Buttons Row: Draw Card & Call Uno
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.card,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.add_card, color: Colors.orangeAccent),
+                  label: Text(tr('سحب كرت')),
+                  onPressed: _drawCard,
+                ),
+              ),
+              if (_canCallUno || _hand.length <= 2) ...[
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  icon: const Icon(Icons.campaign),
+                  label: Text(tr('أونو!')),
+                  onPressed: _callUno,
                 ),
               ],
             ],
           ),
         ),
-        // Draw Button
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: OutlinedButton.icon(
-            icon: const Icon(Icons.add_card),
-            label: Text(tr('سحب كرت')),
-            onPressed: _drawCard,
-          ),
-        ),
+
         const SizedBox(height: 8),
+
         // Hand Cards List
         Expanded(
           child: _hand.isEmpty
-              ? Center(child: Text(tr('يدك فارغة.')))
-              : ListView.builder(
+              ? Center(
+                  child: Text(
+                    tr('يدك فارغة.'),
+                    style: const TextStyle(color: Colors.white60, fontSize: 16),
+                  ),
+                )
+              : ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   itemCount: _hand.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
                   itemBuilder: (context, index) {
                     final card = _hand[index];
                     final cardTitle = _formatCard(card);
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      child: ListTile(
-                        leading: const Icon(Icons.crop_portrait),
-                        title: Text(
-                          cardTitle,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        trailing: const Icon(Icons.play_arrow),
-                        onTap: () => _playCard(card),
+                    return ListTile(
+                      tileColor: AppColors.card,
+                      leading: const Icon(Icons.style, color: Colors.lightBlueAccent),
+                      title: Text(
+                        cardTitle,
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                       ),
+                      trailing: const Icon(Icons.play_arrow, color: Colors.greenAccent),
+                      onTap: () => _playCard(card),
                     );
                   },
                 ),
