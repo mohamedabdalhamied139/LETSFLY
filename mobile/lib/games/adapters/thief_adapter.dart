@@ -209,7 +209,7 @@ class ThiefGameViewState extends State<ThiefGameView> {
             Text(
               _myAnswer == null
                   ? tr('اختر الطابق الذي وصل إليه اللص:')
-                  : '${tr('إجابتك المسجلة')}: $tr('الطابق') $_myAnswer',
+                  : '${tr('إجابتك المسجلة')}: ${tr('الطابق')} $_myAnswer',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
