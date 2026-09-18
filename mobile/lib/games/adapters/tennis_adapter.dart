@@ -78,27 +78,20 @@ class TennisGameViewState extends State<TennisGameView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Semantics(
-              liveRegion: true,
-              label: 'النتيجة: $_scoreText',
-              child: Text(
-                '$_scoreText',
-                style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
-              ),
+            Text(
+              '$_scoreText',
+              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
-            Semantics(
-              label: 'موقعك الحالي: $currentLaneName',
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  '${tr('الموقع')}: $currentLaneName',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                '${tr('الموقع')}: $currentLaneName',
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 32),

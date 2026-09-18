@@ -49,18 +49,15 @@ class SnakesGameViewState extends State<SnakesGameView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Semantics(
-              label: 'موقعك الحالي في لوحة السلم والثعبان هو المربع رقم $_position',
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '$_position',
-                  style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
-                ),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '$_position',
+                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 16),
@@ -76,11 +73,8 @@ class SnakesGameViewState extends State<SnakesGameView> {
               ),
             ],
             const SizedBox(height: 32),
-            Semantics(
-              button: true,
-              label: tr('ارمي النرد للتقدم'),
-              child: ElevatedButton.icon(
-                onPressed: _canRoll ? _rollDice : null,
+            ElevatedButton.icon(
+              onPressed: _canRoll ? _rollDice : null,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                   backgroundColor: Colors.green,

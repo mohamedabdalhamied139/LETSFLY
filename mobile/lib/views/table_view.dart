@@ -83,7 +83,21 @@ class _TableViewState extends State<TableView> {
       } else if (type == 'game_state_changed' || type == 'tennis_state_changed') {
         setState(() {
           _gameState = data['state'] ?? data;
+          if (_gameState?['sound_cue'] != null) {
+            SoundService.instance.playSound(_gameState!['sound_cue'].toString());
+          }
         });
+      } else if (type == 'player_joined' || type == 'bot_added') {
+        SoundService.instance.playSound('TABLE_JOIN');
+      } else if (type == 'player_left' || type == 'bot_removed') {
+        SoundService.instance.playSound('TABLE_LEAVE');
+      } else if (type == 'game_stopped') {
+        SoundService.instance.playSound('GAME_STOPPED');
+      } else if (type == 'round_finished' || type == 'round_end') {
+        SoundService.instance.playSound('ROUND_END');
+      } else if (type == 'match_finished') {
+        final won = data['winner_id']?.toString() == _myUserId.toString();
+        SoundService.instance.playSound(won ? 'MATCH_WIN' : 'MATCH_LOSS');
       } else if (type == 'chat_message') {
         setState(() {
           _chatMessages.add('${data['sender']}: ${data['text']}');
@@ -184,7 +198,7 @@ class _TableViewState extends State<TableView> {
             // 4. Save table
             ListTile(
               leading: const Icon(Icons.save, color: Colors.white),
-              title: Text('${tr('حفظ الطاولة')} (Ctrl+S)', style: const TextStyle(color: Colors.white)),
+              title: Text(tr('حفظ الطاولة'), style: const TextStyle(color: Colors.white)),
               enabled: canSave,
               onTap: () {
                 Navigator.of(ctx).pop();

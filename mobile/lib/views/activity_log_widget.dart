@@ -141,21 +141,18 @@ class _ActivityLogWidgetState extends State<ActivityLogWidget> {
                       final text = item['text'] ?? item['message'] ?? item.toString();
                       final time = item['time'] ?? '';
 
-                      return Semantics(
-                        label: text.toString(),
-                        child: ListTile(
-                          dense: true,
-                          title: Text(
-                            text.toString(),
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
-                          ),
-                          subtitle: time.toString().isNotEmpty
-                              ? Text(
-                                  time.toString(),
-                                  style: const TextStyle(color: Colors.white38, fontSize: 11),
-                                )
-                              : null,
+                      return ListTile(
+                        dense: true,
+                        title: Text(
+                          text.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
                         ),
+                        subtitle: time.toString().isNotEmpty
+                            ? Text(
+                                time.toString(),
+                                style: const TextStyle(color: Colors.white38, fontSize: 11),
+                              )
+                            : null,
                       );
                     },
                   ),

@@ -40,3 +40,14 @@ flutter:
   assets:
     - assets/locales/
     - assets/sounds/
+    - assets/sounds/domino/
+    - assets/sounds/farkle/
+    - assets/sounds/ninety_nine/
+    - assets/sounds/scopa/
+    - assets/sounds/snakes_and_ladders/
+    - assets/sounds/tennis/
+    - assets/sounds/tennis/arabic_umpire/
+    - assets/sounds/tennis/english_umpire/
+    - assets/sounds/tennis/french_umpire/
+    - assets/sounds/thief_hunt/
+    - assets/sounds/uno/

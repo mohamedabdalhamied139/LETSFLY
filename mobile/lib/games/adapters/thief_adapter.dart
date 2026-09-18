@@ -69,35 +69,26 @@ class ThiefGameViewState extends State<ThiefGameView> {
             size: 64,
             color: _phase == 'ANSWER' ? Colors.red : Theme.of(context).colorScheme.primary,
           ),
-          const SizedBox(height: 16),
-          Semantics(
-            liveRegion: true,
-            label: _phase == 'ANSWER' ? 'حان وقت كتابة الكلمة الآن!' : 'استمع للقصة وابحث عن اللص',
-            child: Text(
-              _phase == 'ANSWER'
-                  ? tr('اكتب الكلمة بأقصى سرعة!')
-                  : tr('استمع لتفاصيل الجولة...'),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+          Text(
+            _phase == 'ANSWER'
+                ? tr('اكتب الكلمة بأقصى سرعة!')
+                : tr('استمع لتفاصيل الجولة...'),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
           if (_canAnswer || _phase == 'ANSWER') ...[
-            Semantics(
-              label: tr('حقل إدخال إجابة صيد اللص'),
-              hint: tr('اكتب الإجابة ثم اضغط إرسال'),
-              child: TextField(
-                controller: _inputController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: tr('الكلمة المستهدفة'),
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: _submitAnswer,
-                  ),
+            TextField(
+              controller: _inputController,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: tr('الكلمة المستهدفة'),
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _submitAnswer,
                 ),
-                onSubmitted: (_) => _submitAnswer(),
               ),
+              onSubmitted: (_) => _submitAnswer(),
             ),
             const SizedBox(height: 16),
             ElevatedButton(

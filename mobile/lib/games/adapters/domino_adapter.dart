@@ -127,17 +127,14 @@ class DominoGameViewState extends State<DominoGameView> {
           ),
           child: Column(
             children: [
-              Semantics(
-                label: 'أطراف الطاولة: $endsText',
-                child: Text(
-                  endsText,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+              Text(
+                endsText,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               if (_isMyTurn) ...[
                 const SizedBox(height: 8),
                 Text(
-                  tr('دورك الآن للعب قطعة دومينو!'),
+                  tr('دورك الآن للعب!'),
                   style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -148,7 +145,7 @@ class DominoGameViewState extends State<DominoGameView> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: OutlinedButton.icon(
             icon: const Icon(Icons.download),
-            label: Text(tr('سحب قطعة / تمرير (أو اسحب لأسفل)')),
+            label: Text(tr('سحب قطعة / تمرير')),
             onPressed: _drawOrPass,
           ),
         ),
@@ -163,20 +160,15 @@ class DominoGameViewState extends State<DominoGameView> {
                     final tile = _hand[index];
                     final tileTitle = _formatTile(tile);
 
-                    return Semantics(
-                      button: true,
-                      label: 'قطعة دومينو $tileTitle',
-                      hint: tr('انقر مرتين للعب هذه القطعة'),
-                      child: Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.filter_2),
-                          title: Text(
-                            tileTitle,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                          ),
-                          trailing: const Icon(Icons.play_arrow),
-                          onTap: () => _playDomino(tile),
+                    return Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.filter_2),
+                        title: Text(
+                          tileTitle,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                         ),
+                        trailing: const Icon(Icons.play_arrow),
+                        onTap: () => _playDomino(tile),
                       ),
                     );
                   },

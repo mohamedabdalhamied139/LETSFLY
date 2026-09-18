@@ -89,13 +89,10 @@ class _FriendsViewState extends State<FriendsView> with SingleTickerProviderStat
                         itemCount: _friends.length,
                         itemBuilder: (context, index) {
                           final friend = _friends[index];
-                          return Semantics(
-                            label: '${friend.displayName}، صديق',
-                            child: ListTile(
-                              leading: const CircleAvatar(child: Icon(Icons.person)),
-                              title: Text(friend.displayName),
-                              subtitle: Text(friend.username),
-                            ),
+                          return ListTile(
+                            leading: const CircleAvatar(child: Icon(Icons.person)),
+                            title: Text(friend.displayName),
+                            subtitle: Text(friend.username),
                           );
                         },
                       ),
@@ -108,21 +105,19 @@ class _FriendsViewState extends State<FriendsView> with SingleTickerProviderStat
                           final user = _onlineUsers[index];
                           final isFriend = _friends.any((f) => f.id == user.id);
 
-                          return Semantics(
-                            label: '${user.displayName}، متصل الآن',
-                            child: ListTile(
-                              leading: const CircleAvatar(
-                                backgroundColor: Colors.green,
-                                child: Icon(Icons.person, color: Colors.white),
-                              ),
-                              title: Text(user.displayName),
-                              subtitle: Text(user.username),
-                              trailing: isFriend
-                                  ? const Icon(Icons.check, color: Colors.green)
-                                  : IconButton(
-                                      tooltip: tr('إضافة صديق'),
-                                      icon: const Icon(Icons.person_add),
-                                      onPressed: () => _sendOrCancelFriendRequest(user, false),
+                          return ListTile(
+                            leading: const CircleAvatar(
+                              backgroundColor: Colors.green,
+                              child: Icon(Icons.person, color: Colors.white),
+                            ),
+                            title: Text(user.displayName),
+                            subtitle: Text(user.username),
+                            trailing: isFriend
+                                ? const Icon(Icons.check, color: Colors.green)
+                                : IconButton(
+                                    tooltip: tr('إضافة صديق'),
+                                    icon: const Icon(Icons.person_add),
+                                    onPressed: () => _sendOrCancelFriendRequest(user, false),
                                     ),
                             ),
                           );

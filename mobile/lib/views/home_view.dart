@@ -175,22 +175,18 @@ class _HomeViewState extends State<HomeView> {
                 final title = tr(item['title'] as String);
                 final tag = item['tag'] as String;
 
-                return Semantics(
-                  button: true,
-                  label: title,
-                  child: ListTile(
-                    tileColor: const Color(0xFF252526),
-                    title: Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                        color: Colors.white,
-                      ),
+                return ListTile(
+                  tileColor: const Color(0xFF252526),
+                  title: Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                      color: Colors.white,
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54),
-                    onTap: () => _onMenuSelected(tag),
                   ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54),
+                  onTap: () => _onMenuSelected(tag),
                 );
               },
             ),

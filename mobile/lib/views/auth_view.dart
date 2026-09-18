@@ -113,14 +113,10 @@ class _AuthViewState extends State<AuthView> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Semantics(
-                  header: true,
-                  label: tr('عنوان الشاشة'),
-                  child: Text(
-                    titleText,
-                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
+                Text(
+                  titleText,
+                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -130,111 +126,84 @@ class _AuthViewState extends State<AuthView> {
                 ),
                 const SizedBox(height: 24),
                 if (_errorMessage.isNotEmpty) ...[
-                  Semantics(
-                    liveRegion: true,
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade900,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _errorMessage,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.center,
-                      ),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade900,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _errorMessage,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
                 if (_registerMode) ...[
-                  Semantics(
-                    label: tr('الاسم'),
-                    child: TextField(
-                      controller: _displayNameInput,
-                      decoration: InputDecoration(
-                        labelText: tr('الاسم'),
-                        hintText: tr('اكتب الاسم'),
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.badge),
-                      ),
+                  TextField(
+                    controller: _displayNameInput,
+                    decoration: InputDecoration(
+                      labelText: tr('الاسم'),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.badge),
                     ),
                   ),
                   const SizedBox(height: 16),
                 ],
-                Semantics(
-                  label: tr('اسم المستخدم'),
-                  child: TextField(
-                    controller: _usernameInput,
-                    decoration: InputDecoration(
-                      labelText: tr('اسم المستخدم'),
-                      hintText: tr('اكتب اسم المستخدم'),
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.person),
-                    ),
+                TextField(
+                  controller: _usernameInput,
+                  decoration: InputDecoration(
+                    labelText: tr('اسم المستخدم'),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.person),
                   ),
                 ),
                 const SizedBox(height: 16),
-                Semantics(
-                  label: tr('كلمة المرور'),
-                  child: TextField(
-                    controller: _passwordInput,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: tr('كلمة المرور'),
-                      hintText: tr('اكتب كلمة المرور'),
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.lock),
-                    ),
+                TextField(
+                  controller: _passwordInput,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: tr('كلمة المرور'),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.lock),
                   ),
                 ),
                 const SizedBox(height: 24),
                 if (!_registerMode) ...[
-                  Semantics(
-                    button: true,
-                    label: tr('تسجيل الدخول'),
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _submitLogin,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(tr('تسجيل الدخول'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _submitLogin,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
                     ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(tr('تسجيل الدخول'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(height: 12),
                 ],
                 if (_registerMode) ...[
-                  Semantics(
-                    button: true,
-                    label: tr('إنشاء حساب'),
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _submitRegister,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(tr('إنشاء حساب'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _submitRegister,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
                     ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(tr('إنشاء حساب'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                   const SizedBox(height: 12),
                 ],
-                Semantics(
-                  button: true,
-                  label: toggleButtonText,
-                  child: OutlinedButton(
-                    onPressed: _toggleMode,
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: Text(toggleButtonText, style: const TextStyle(fontSize: 16)),
+                OutlinedButton(
+                  onPressed: _toggleMode,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
+                  child: Text(toggleButtonText, style: const TextStyle(fontSize: 16)),
                 ),
               ],
             ),

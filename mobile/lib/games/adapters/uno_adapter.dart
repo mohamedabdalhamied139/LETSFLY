@@ -142,20 +142,10 @@ class UnoGameViewState extends State<UnoGameView> {
           ),
           child: Column(
             children: [
-              Semantics(
-                label: 'الكرت الحالي على الطاولة هو $topCardText' +
-                    (_currentColor.isNotEmpty ? '، واللون المطلوب ${tr(_currentColor)}' : ''),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.style, size: 28),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${tr('الكرت الحالي')}: $topCardText',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
+              Text(
+                '${tr('الكرت الحالي')}: $topCardText' +
+                    (_currentColor.isNotEmpty ? ' (${tr(_currentColor)})' : ''),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               if (_isMyTurn) ...[
                 const SizedBox(height: 8),
@@ -170,14 +160,10 @@ class UnoGameViewState extends State<UnoGameView> {
         // Draw Button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Semantics(
-            button: true,
-            label: tr('سحب كرت من السحابة أو التمرير'),
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.add_card),
-              label: Text(tr('سحب كرت (أو اسحب لأسفل)')),
-              onPressed: _drawCard,
-            ),
+          child: OutlinedButton.icon(
+            icon: const Icon(Icons.add_card),
+            label: Text(tr('سحب كرت')),
+            onPressed: _drawCard,
           ),
         ),
         const SizedBox(height: 8),
@@ -192,21 +178,16 @@ class UnoGameViewState extends State<UnoGameView> {
                     final card = _hand[index];
                     final cardTitle = _formatCard(card);
 
-                    return Semantics(
-                      button: true,
-                      label: cardTitle,
-                      hint: tr('انقر مرتين لرمي هذا الكرت'),
-                      child: Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: ListTile(
-                          leading: const Icon(Icons.crop_portrait),
-                          title: Text(
-                            cardTitle,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          trailing: const Icon(Icons.play_arrow),
-                          onTap: () => _playCard(card),
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      child: ListTile(
+                        leading: const Icon(Icons.crop_portrait),
+                        title: Text(
+                          cardTitle,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
+                        trailing: const Icon(Icons.play_arrow),
+                        onTap: () => _playCard(card),
                       ),
                     );
                   },

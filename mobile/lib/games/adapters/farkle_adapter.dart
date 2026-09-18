@@ -142,27 +142,22 @@ class FarkleGameViewState extends State<FarkleGameView> {
                     final value = _currentDice[index];
                     final isSelected = _selectedIndices.contains(index);
 
-                    return Semantics(
-                      button: true,
-                      label: 'النرد ${index + 1}، القيمة $value' + (isSelected ? '، محدد' : ''),
-                      hint: tr('انقر مرتين لتحديد أو إلغاء تحديد هذا النرد'),
-                      child: InkWell(
-                        onTap: () => _toggleDie(index),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.amber.shade800 : Theme.of(context).colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected ? Colors.white : Colors.transparent,
-                              width: 2,
-                            ),
+                    return InkWell(
+                      onTap: () => _toggleDie(index),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.amber.shade800 : Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? Colors.white : Colors.transparent,
+                            width: 2,
                           ),
-                          child: Center(
-                            child: Text(
-                              '$value',
-                              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                            ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$value',
+                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
