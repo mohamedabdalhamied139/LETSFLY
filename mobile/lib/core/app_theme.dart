@@ -9,6 +9,8 @@ class AppColors {
   static const Color accent = Color(0xFF005FB8);
   static const Color textPrimary = Colors.white;
   static const Color textSecondary = Color(0xFFA0A0A0);
+  static const Color card = Color(0xFF252526);
+  static const Color divider = Color(0xFF3E3E42);
 }
 
 /// Global theme definition mirroring Windows desktop client design
