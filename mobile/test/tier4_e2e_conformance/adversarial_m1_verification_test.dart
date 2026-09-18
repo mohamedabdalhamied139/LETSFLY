@@ -310,6 +310,15 @@ void defineTests() {
       expect(params.uri.toString(), equals(baseUrl));
     });
 
+    test('Whitespace-only string token behavior: preserved by isNotEmpty', () {
+      const wsToken = '   ';
+      final params = WsTokenHandlingHarness.prepareConnection(baseUrl, token: wsToken);
+
+      expect(params.hasTokenHeader, isTrue);
+      expect(params.tokenHeaderValue, equals('Bearer    '));
+      expect(params.tokenQueryParam, equals('   '));
+    });
+
     test('Special characters: Base64 tokens (+, /, =) are preserved without corruption', () {
       const b64Token = 'abc+123/xyz==';
       final params = WsTokenHandlingHarness.prepareConnection(baseUrl, token: b64Token);
@@ -364,6 +373,18 @@ void defineTests() {
       expect(params.uri.queryParameters['token'], equals('initial_token'));
       // But header gets the new replacement_token
       expect(params.tokenHeaderValue, equals('Bearer replacement_token'));
+    });
+
+    test('URL with port, path, and hash fragment parses and attaches token correctly', () {
+      const complexUrl = 'ws://127.0.0.1:8000/api/v1/ws/live#section';
+      const token = 'dev_token_456';
+      final params = WsTokenHandlingHarness.prepareConnection(complexUrl, token: token);
+
+      expect(params.uri.port, equals(8000));
+      expect(params.uri.path, equals('/api/v1/ws/live'));
+      expect(params.uri.queryParameters['token'], equals('dev_token_456'));
+      expect(params.hasTokenHeader, isTrue);
+      expect(params.tokenHeaderValue, equals('Bearer dev_token_456'));
     });
   });
 }
