@@ -95,6 +95,44 @@ class _TableViewState extends State<TableView> {
     });
   }
 
+  void _showPlayersDialog() {
+    final players = (_roomState?['players'] as List?) ?? [];
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${tr('اللاعبون في الطاولة')} (${players.length})',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ...players.map((p) {
+              final name = p is Map ? (p['name'] ?? p['username'] ?? 'لاعب') : p.toString();
+              final isReady = p is Map ? p['ready'] == true : false;
+              final isHost = p is Map ? p['is_host'] == true : false;
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: isReady ? Colors.green : Colors.grey,
+                  child: Icon(isHost ? Icons.star : Icons.person, color: Colors.white),
+                ),
+                title: Text(name),
+                trailing: Text(
+                  isReady ? tr('جاهز') : tr('غير جاهز'),
+                  style: TextStyle(color: isReady ? Colors.green : Colors.orange, fontWeight: FontWeight.bold),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showActivityLogDialog() {
     showModalBottomSheet(
       context: context,
@@ -162,6 +200,11 @@ class _TableViewState extends State<TableView> {
           title: Text(_roomState?['name'] ?? tr('طاولة اللعب')),
           actions: [
             IconButton(
+              tooltip: tr('اللاعبون'),
+              icon: const Icon(Icons.group),
+              onPressed: _showPlayersDialog,
+            ),
+            IconButton(
               tooltip: tr('سجل النشاط'),
               icon: const Icon(Icons.history),
               onPressed: _showActivityLogDialog,
@@ -181,13 +224,28 @@ class _TableViewState extends State<TableView> {
                     '${tr('اللعبة')}: $gameType',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  ElevatedButton(
-                    onPressed: _toggleReady,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isReady ? Colors.green : Colors.orange,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: Text(_isReady ? tr('جاهز') : tr('غير جاهز')),
+                  Row(
+                    children: [
+                      if (_roomState?['is_host'] == true && _roomState?['status'] != 'playing')
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              WebSocketService.instance.sendJson({'type': 'room_action', 'action': 'start_game'});
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                            child: Text(tr('بدء اللعبة')),
+                          ),
+                        ),
+                      ElevatedButton(
+                        onPressed: _toggleReady,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isReady ? Colors.green : Colors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: Text(_isReady ? tr('جاهز') : tr('غير جاهز')),
+                      ),
+                    ],
                   ),
                 ],
               ),
