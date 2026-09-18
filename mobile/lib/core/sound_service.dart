@@ -118,7 +118,28 @@ class SoundService {
     'NINETY_NINE_PROMPT': 'ninety_nine/prompt.wav',
   };
 
+  double _volume = 1.0;
+  bool _isMuted = false;
+
+  double get volume => _volume;
+  bool get isMuted => _isMuted;
+
+  void setVolume(double vol) {
+    _volume = vol.clamp(0.0, 1.0);
+    final effective = _isMuted ? 0.0 : _volume;
+    _player.setVolume(effective);
+    _pannedPlayer.setVolume(effective);
+  }
+
+  void setMuted(bool muted) {
+    _isMuted = muted;
+    final effective = _isMuted ? 0.0 : _volume;
+    _player.setVolume(effective);
+    _pannedPlayer.setVolume(effective);
+  }
+
   Future<void> playSound(String cueOrPath) async {
+    if (_isMuted) return;
     try {
       String resolved = _cueMap[cueOrPath.toUpperCase()] ?? cueOrPath;
       if (!resolved.endsWith('.wav') && !resolved.endsWith('.mp3')) {
@@ -132,6 +153,7 @@ class SoundService {
 
   /// Play sound with 3D/stereo balance (-1.0 left, 0.0 center, 1.0 right) for Tennis
   Future<void> playPanned(String soundName, double pan) async {
+    if (_isMuted) return;
     try {
       String resolved = soundName;
       if (!resolved.endsWith('.wav') && !resolved.endsWith('.mp3')) {

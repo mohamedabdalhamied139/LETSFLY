@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/localization.dart';
+import '../core/sound_service.dart';
 import '../services/api_service.dart';
 
 class SettingsDialog extends StatefulWidget {
@@ -42,13 +43,34 @@ class _SettingsDialogState extends State<SettingsDialog> with SingleTickerProvid
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _language = LocalizationService.instance.currentLanguage;
+    _effectsVolume = SoundService.instance.volume;
+    _gameVolume = SoundService.instance.volume;
+    _muteAllSounds = SoundService.instance.isMuted;
   }
 
-  void _saveSettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(tr('تم حفظ الإعدادات بنجاح'))),
-    );
-    Navigator.of(context).pop();
+  Future<void> _saveSettings() async {
+    SoundService.instance.setVolume(_effectsVolume);
+    SoundService.instance.setMuted(_muteAllSounds);
+
+    if (_language != LocalizationService.instance.currentLanguage) {
+      await LocalizationService.instance.loadLanguage(_language);
+    }
+
+    try {
+      await ApiService.instance.updatePrivacy({
+        'pm_policy': _pmPolicy,
+        'invite_policy': _invitePolicy,
+        'join_policy': _joinPolicy,
+      });
+    } catch (_) {}
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr('تم حفظ الإعدادات بنجاح'))),
+      );
+      Navigator.of(context).pop();
+    }
   }
 
   @override

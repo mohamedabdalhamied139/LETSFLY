@@ -316,6 +316,150 @@ class MockApiAdapter {
     return {'ok': true, 'result': 'action_processed', 'payload': payload};
   }
 
+  Future<Map<String, dynamic>> leaveRoom(String roomId) async {
+    _recordCall('POST', '/api/rooms/$roomId/leave');
+    _checkError();
+    return {'ok': true};
+  }
+
+  Future<Map<String, dynamic>> transferHost(String roomId, int targetUserId) async {
+    _recordCall('POST', '/api/rooms/$roomId/transfer_host', {'target_user_id': targetUserId});
+    _checkError();
+    return {'ok': true, 'host_id': targetUserId};
+  }
+
+  Future<Map<String, dynamic>> setCoHost(String roomId, int targetUserId) async {
+    _recordCall('POST', '/api/rooms/$roomId/set_co_host', {'target_user_id': targetUserId});
+    _checkError();
+    return {'ok': true, 'co_host_id': targetUserId};
+  }
+
+  Future<Map<String, dynamic>> substitutePlayer(String roomId, int targetUserId, {int? replacementUserId, bool isBot = false}) async {
+    _recordCall('POST', '/api/rooms/$roomId/substitute', {
+      'target_user_id': targetUserId,
+      'replacement_user_id': replacementUserId,
+      'is_bot': isBot,
+    });
+    _checkError();
+    return {'ok': true};
+  }
+
+  Future<Map<String, dynamic>> kickPlayer(String roomId, int targetUserId) async {
+    _recordCall('POST', '/api/rooms/$roomId/kick', {'target_user_id': targetUserId});
+    _checkError();
+    return {'ok': true};
+  }
+
+  Future<Map<String, dynamic>> banPlayer(String roomId, int targetUserId) async {
+    _recordCall('POST', '/api/rooms/$roomId/ban', {'target_user_id': targetUserId});
+    _checkError();
+    return {'ok': true};
+  }
+
+  Future<Map<String, dynamic>> voiceMutePlayer(String roomId, int targetUserId) async {
+    _recordCall('POST', '/api/rooms/$roomId/voice/mute', {'target_user_id': targetUserId});
+    _checkError();
+    return {'ok': true};
+  }
+
+  Future<Map<String, dynamic>> voiceKickPlayer(String roomId, int targetUserId) async {
+    _recordCall('POST', '/api/rooms/$roomId/voice/kick', {'target_user_id': targetUserId});
+    _checkError();
+    return {'ok': true};
+  }
+
+  Future<Map<String, dynamic>> inviteUserToRoom(String roomId, int targetUserId) async {
+    _recordCall('POST', '/api/rooms/$roomId/invite/$targetUserId');
+    _checkError();
+    return {'ok': true};
+  }
+
+  Future<Map<String, dynamic>> getUserProfile(int userId) async {
+    _recordCall('GET', '/api/users/$userId/profile');
+    _checkError();
+    return {
+      'id': userId,
+      'display_name': 'لاعب تجريبي',
+      'gender': 'ذكر',
+      'bio': 'مرحبًا بك في ملفي الشخصي',
+      'online': true,
+      'stats': [
+        {'game_name': 'UNO', 'played': 10, 'wins': 7, 'losses': 3},
+      ],
+    };
+  }
+
+  Future<Map<String, dynamic>> getHeadToHead(int userId) async {
+    _recordCall('GET', '/api/users/$userId/head-to-head');
+    _checkError();
+    return {
+      'total_played': 5,
+      'you_wins': 3,
+      'other_wins': 2,
+      'summary': [
+        {'game_name': 'UNO', 'played': 5, 'you_wins': 3, 'other_wins': 2},
+      ],
+    };
+  }
+
+  Future<Map<String, dynamic>> sendPrivateMessage(int userId, String message) async {
+    _recordCall('POST', '/api/users/$userId/messages', {'message': message});
+    _checkError();
+    return {'ok': true, 'id': 1};
+  }
+
+  Future<Map<String, dynamic>> getMutes(int userId) async {
+    _recordCall('GET', '/api/users/$userId/mutes');
+    _checkError();
+    return {'all': 0, 'private_messages': 0, 'invitations': 0, 'presence': 0};
+  }
+
+  Future<Map<String, dynamic>> setMutes(int userId, Map<String, dynamic> flags) async {
+    _recordCall('PUT', '/api/users/$userId/mutes', flags);
+    _checkError();
+    return {'ok': true, ...flags};
+  }
+
+  Future<Map<String, dynamic>> updatePrivacy(Map<String, dynamic> payload) async {
+    _recordCall('PUT', '/api/users/me/privacy', payload);
+    _checkError();
+    return {'ok': true};
+  }
+
+  Future<Map<String, dynamic>> challengeUser(int userId, {String game = 'UNO'}) async {
+    _recordCall('POST', '/api/users/$userId/challenge', {'game': game});
+    _checkError();
+    return {'ok': true, 'id': 50, 'room_id': 'challenge_room_123', 'game': game};
+  }
+
+  Future<Map<String, dynamic>> giftUser(int userId, int amount) async {
+    _recordCall('POST', '/api/users/$userId/gift', {'amount': amount});
+    _checkError();
+    return {'ok': true, 'amount': amount};
+  }
+
+  Future<Map<String, dynamic>> searchUsers(String query) async {
+    _recordCall('GET', '/api/users/search?q=${Uri.encodeComponent(query)}');
+    _checkError();
+    return {
+      'users': [
+        {'id': 101, 'username': 'test_user', 'display_name': 'لاعب بحث', 'online': true}
+      ]
+    };
+  }
+
+  Future<Map<String, dynamic>> unfriend(int userId) async {
+    _recordCall('DELETE', '/api/friends/$userId');
+    _checkError();
+    return {'ok': true};
+  }
+
+  Future<Map<String, dynamic>> blockUser(int userId) async {
+    _recordCall('POST', '/api/users/$userId/block');
+    _checkError();
+    return {'ok': true};
+  }
+
   // Inspection helpers
   bool hasCalled(String method, String path) {
     return recordedCalls.any((c) => c['method'] == method && c['path'] == path);

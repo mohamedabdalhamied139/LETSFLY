@@ -285,10 +285,12 @@ class _TableViewState extends State<TableView> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => TablePlayersDialog(
+                      roomId: widget.roomId,
                       roomState: _roomState,
                       myUserId: _myUserId,
                       isHost: isHost,
                       isCoHost: isCoHost,
+                      onRefresh: _pollGameState,
                     ),
                   ),
                 );
@@ -356,10 +358,12 @@ class _TableViewState extends State<TableView> {
             ListTile(
               leading: const Icon(Icons.exit_to_app, color: Colors.redAccent),
               title: Text(tr('مغادرة الطاولة'), style: const TextStyle(color: Colors.redAccent)),
-              onTap: () {
+              onTap: () async {
                 Navigator.of(ctx).pop();
-                WebSocketService.instance.sendJson({'type': 'room_action', 'action': 'leave_room'});
-                Navigator.of(context).pop();
+                try {
+                  await ApiService.instance.leaveRoom(widget.roomId);
+                } catch (_) {}
+                if (mounted) Navigator.of(context).pop();
               },
             ),
           ],
