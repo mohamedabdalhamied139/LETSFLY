@@ -8,6 +8,18 @@
       "languageVersion": "3.0"
     },
     {
+      "name": "flutter_secure_storage",
+      "rootUri": "../test/harness/flutter_secure_storage_mock",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "shared_preferences",
+      "rootUri": "../test/harness/shared_preferences_mock",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "tableverse_mobile",
       "rootUri": "../",
       "packageUri": "lib/",
