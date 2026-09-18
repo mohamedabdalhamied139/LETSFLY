@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/app_theme.dart';
 import '../core/localization.dart';
 import '../services/api_service.dart';
@@ -15,8 +16,9 @@ class RoomsMenuView extends StatefulWidget {
 }
 
 class _RoomsMenuViewState extends State<RoomsMenuView> {
-  // modes: 'main', 'games', 'cards_games', 'dice_games', 'domino_games', 'memory_games', 'sports_games'
+  // Modes: 'main' (Level 1), 'games' (Level 2), or specific category mode (Level 3)
   String _mode = 'main';
+  String? _focusedTag;
 
   List<Map<String, String>> _getItems() {
     if (_mode == 'cards_games') {
@@ -52,6 +54,7 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
         {'label': tr('ألعاب الرياضة'), 'tag': 'category_sports'},
       ];
     } else {
+      // Level 1: Main
       return [
         {'label': tr('إنشاء'), 'tag': 'create'},
         {'label': tr('انضمام'), 'tag': 'join'},
@@ -71,26 +74,42 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
   }
 
   bool _handleBack() {
-    final categoryMap = {
-      'cards_games': 'games',
-      'dice_games': 'games',
-      'domino_games': 'games',
-      'memory_games': 'games',
-      'sports_games': 'games',
+    final categoryParentMap = {
+      'cards_games': 'category_cards',
+      'dice_games': 'category_dice',
+      'domino_games': 'category_domino',
+      'memory_games': 'category_memory',
+      'sports_games': 'category_sports',
     };
-    if (categoryMap.containsKey(_mode)) {
-      setState(() => _mode = 'games');
-      return false; // handled internally
+
+    if (categoryParentMap.containsKey(_mode)) {
+      setState(() {
+        _focusedTag = categoryParentMap[_mode];
+        _mode = 'games';
+      });
+      return false; // Handled internally, back to Level 2
     } else if (_mode == 'games') {
-      setState(() => _mode = 'main');
-      return false;
+      setState(() {
+        _focusedTag = 'create';
+        _mode = 'main';
+      });
+      return false; // Handled internally, back to Level 1
     }
-    return true; // pop screen back to HomeView
+    return true; // Pop screen back to HomeView
+  }
+
+  void _onBackPressed() {
+    if (_handleBack()) {
+      Navigator.of(context).pop();
+    }
   }
 
   void _onItemTapped(String tag) async {
     if (tag == 'create') {
-      setState(() => _mode = 'games');
+      setState(() {
+        _mode = 'games';
+        _focusedTag = 'category_cards';
+      });
     } else if (tag == 'join') {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const JoinRoomsView()),
@@ -100,15 +119,30 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
         MaterialPageRoute(builder: (_) => const SavedTablesView()),
       );
     } else if (tag == 'category_cards') {
-      setState(() => _mode = 'cards_games');
+      setState(() {
+        _mode = 'cards_games';
+        _focusedTag = 'UNO';
+      });
     } else if (tag == 'category_dice') {
-      setState(() => _mode = 'dice_games');
+      setState(() {
+        _mode = 'dice_games';
+        _focusedTag = 'FARKLE';
+      });
     } else if (tag == 'category_domino') {
-      setState(() => _mode = 'domino_games');
+      setState(() {
+        _mode = 'domino_games';
+        _focusedTag = 'DOMINO';
+      });
     } else if (tag == 'category_memory') {
-      setState(() => _mode = 'memory_games');
+      setState(() {
+        _mode = 'memory_games';
+        _focusedTag = 'THIEF_HUNT';
+      });
     } else if (tag == 'category_sports') {
-      setState(() => _mode = 'sports_games');
+      setState(() {
+        _mode = 'sports_games';
+        _focusedTag = 'TENNIS';
+      });
     } else {
       // Game creation: tag is Game ID
       await _createRoomForGame(tag);
@@ -119,7 +153,9 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppColors.accent),
+      ),
     );
     try {
       final res = await ApiService.instance.createRoom(
@@ -128,7 +164,7 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
         maxPlayers: 4,
       );
       if (mounted) {
-        Navigator.of(context).pop(); // dismiss loading
+        Navigator.of(context).pop(); // dismiss loading dialog
         final roomId = res['id'] ?? res['room_id'] ?? res['room']?['id'];
         if (roomId != null) {
           Navigator.of(context).pushReplacement(
@@ -143,9 +179,15 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
       }
     } catch (e) {
       if (mounted) {
-        Navigator.of(context).pop(); // dismiss loading
+        Navigator.of(context).pop(); // dismiss loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${tr('خطأ في إنشاء الطاولة')}: $e')),
+          SnackBar(
+            backgroundColor: AppColors.surface,
+            content: Text(
+              '${tr('خطأ في إنشاء الطاولة')}: $e',
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
+          ),
         );
       }
     }
@@ -154,39 +196,60 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
   @override
   Widget build(BuildContext context) {
     final items = _getItems();
-    return WillPopScope(
-      onWillPop: () async => _handleBack(),
-      child: ResponsiveShell(
-        title: _getTitle(),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: tr('رجوع'),
-          onPressed: () {
-            if (_handleBack()) {
-              Navigator.of(context).pop();
-            }
-          },
-        ),
-        child: ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          itemCount: items.length,
-          separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
-          itemBuilder: (context, idx) {
-            final item = items[idx];
-            return ListTile(
-              tileColor: AppColors.card,
-              title: Text(
-                item['label']!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
+          _onBackPressed();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: WillPopScope(
+        onWillPop: () async => _handleBack(),
+        child: ResponsiveShell(
+          title: _getTitle(),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+            tooltip: tr('رجوع'),
+            onPressed: _onBackPressed,
+          ),
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: items.length,
+            separatorBuilder: (_, __) =>
+                const Divider(height: 1, color: AppColors.border),
+            itemBuilder: (context, idx) {
+              final item = items[idx];
+              final isFocused = item['tag'] == _focusedTag;
+
+              return Semantics(
+                label: item['label']!,
+                button: true,
+                child: ListTile(
+                  tileColor: AppColors.surface,
+                  selectedTileColor: AppColors.accent.withOpacity(0.2),
+                  selected: isFocused,
+                  title: Text(
+                    item['label']!,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                  onTap: () => _onItemTapped(item['tag']!),
                 ),
-              ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54),
-              onTap: () => _onItemTapped(item['tag']!),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

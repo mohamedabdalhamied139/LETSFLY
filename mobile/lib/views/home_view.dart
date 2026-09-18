@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/localization.dart';
 import '../services/activity_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage_service.dart';
+import '../services/ws_service.dart';
 import 'auth_view.dart';
 import 'friends_view.dart';
 import 'rooms_menu_view.dart';
@@ -23,25 +25,64 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   int _onlineCount = 0;
+  Timer? _pollingTimer;
+  StreamSubscription<Map<String, dynamic>>? _wsSubscription;
 
   @override
   void initState() {
     super.initState();
-    // Record greeting event inside centralized ActivityLogService
+    // Return greeting event on initState added to ActivityLogService
     ActivityLogService.instance.addEvent({
-      'text': tr('مرحبًا بعودتك {name}.', {'name': widget.userDisplayName}),
       'category': 'GAMEPLAY',
+      'text': tr('مرحبًا بعودتك {name}.', {'name': widget.userDisplayName}),
       'time': '',
     });
+
     _fetchOnlineCount();
     _fetchRecentActivity();
+
+    // Periodic polling every 30 seconds to keep online users count dynamic
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) _fetchOnlineCount();
+    });
+
+    // WebSocket real-time presence/online count listener
+    _wsSubscription = WebSocketService.instance.messages.listen((msg) {
+      final type = msg['type'] ?? msg['event'];
+      if (type == 'online_count_updated' ||
+          type == 'presence_updated' ||
+          type == 'online_count') {
+        final dynamic rawCount = msg['count'] ?? msg['data']?['count'];
+        if (rawCount != null && mounted) {
+          final int count = rawCount is int
+              ? rawCount
+              : (int.tryParse(rawCount.toString()) ?? 0);
+          setState(() {
+            _onlineCount = count < 0 ? 0 : count;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    _wsSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchOnlineCount() async {
     try {
       final res = await ApiService.instance.getOnlineUsers();
-      if (res is List && mounted) {
+      if (!mounted) return;
+      if (res is List) {
         setState(() => _onlineCount = res.length);
+      } else if (res is Map && res['count'] != null) {
+        final int count = res['count'] is int
+            ? res['count']
+            : (int.tryParse(res['count'].toString()) ?? 0);
+        setState(() => _onlineCount = count < 0 ? 0 : count);
       }
     } catch (_) {}
   }
@@ -115,15 +156,21 @@ class _HomeViewState extends State<HomeView> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text(tr('تأكيد تسجيل الخروج'), style: const TextStyle(color: Colors.white)),
+        title: Text(
+          tr('تأكيد تسجيل الخروج'),
+          style: const TextStyle(color: AppColors.textPrimary),
+        ),
         content: Text(
           tr('هل أنت متأكد من تسجيل الخروج؟'),
-          style: const TextStyle(color: Colors.white70),
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(tr('لا'), style: const TextStyle(color: Colors.white70)),
+            child: Text(
+              tr('لا'),
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -134,13 +181,19 @@ class _HomeViewState extends State<HomeView> {
               await AuthStorageService.instance.clearActiveSession();
               ApiService.instance.setToken(null);
               if (mounted) {
-                Navigator.of(context).pushReplacement(
+                Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const AuthView()),
+                  (route) => false,
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text(tr('نعم'), style: const TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: Text(
+              tr('نعم'),
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -149,7 +202,7 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    // Exact 8 canonical items from Windows client (client/views/home_view.py)
+    // Exact 8 canonical items in Windows order with exact tags
     final menuItems = [
       {'title': 'الطاولات', 'tag': 'rooms'},
       {'title': 'الأصدقاء', 'tag': 'friends'},
@@ -166,26 +219,32 @@ class _HomeViewState extends State<HomeView> {
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: menuItems.length,
-        separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.divider),
+        separatorBuilder: (_, __) =>
+            const Divider(height: 1, color: AppColors.border),
         itemBuilder: (context, index) {
           final item = menuItems[index];
-          final title = tr(item['title'] as String);
+          final rawTitle = item['title'] as String;
+          final title = tr(rawTitle);
           final tag = item['tag'] as String;
 
           return Semantics(
             label: title,
             button: true,
             child: ListTile(
-              tileColor: AppColors.card,
+              tileColor: AppColors.surface,
               title: Text(
                 title,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 17,
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                 ),
               ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54),
+              trailing: const Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: AppColors.textSecondary,
+              ),
               onTap: () => _onMenuSelected(tag),
             ),
           );
