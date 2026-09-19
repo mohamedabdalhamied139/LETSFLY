@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/app_theme.dart';
 import '../core/localization.dart';
@@ -34,7 +34,7 @@ class _GameRulesDialogState extends State<GameRulesDialog> {
   void initState() {
     super.initState();
     // Default to app language if supported, else Arabic
-    final currentAppLang = LocalizationService.instance.currentLanguageCode;
+    final currentAppLang = LocalizationService.instance.currentLanguage;
     if (['ar', 'en', 'fr'].contains(currentAppLang)) {
       _selectedLang = currentAppLang;
     } else {
