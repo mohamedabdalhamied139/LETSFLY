@@ -204,13 +204,33 @@ class _AuthViewState extends State<AuthView> {
       _passwordController.text = password;
 
       if (token != null && token.isNotEmpty) {
-        ApiService.instance.setToken(token);
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => HomeView(userDisplayName: displayName),
-            ),
-          );
+        setState(() => _isLoading = true);
+        await SoundService.instance.playLooping('CONNECTING');
+        try {
+          ApiService.instance.setToken(token);
+          final res = await ApiService.instance.getMe();
+          await SoundService.instance.stopLooping('CONNECTING');
+          await SoundService.instance.playSound('CONNECTED');
+          final freshName = (res is Map)
+              ? (res['display_name'] ?? res['user']?['display_name'] ?? displayName)
+              : displayName;
+
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => HomeView(userDisplayName: freshName.toString()),
+              ),
+            );
+          }
+        } catch (_) {
+          await SoundService.instance.stopLooping('CONNECTING');
+          // If token expired or unreachable, attempt auto-login with saved credentials if present
+          if (username.isNotEmpty && password.isNotEmpty) {
+            _handleLogin();
+          } else {
+            ApiService.instance.setToken(null);
+            if (mounted) setState(() => _isLoading = false);
+          }
         }
       }
     }

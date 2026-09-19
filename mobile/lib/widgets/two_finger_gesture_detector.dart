@@ -83,7 +83,7 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
       _allTracksThisGesture[event.pointer]!.current = event.position;
     }
 
-    if (_pointers.length >= 2 && !_hasTriggered) {
+    if (_pointers.isNotEmpty && !_hasTriggered) {
       _evaluateSwipe();
     }
   }
@@ -97,7 +97,7 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
     }
 
     // Check on pointer up in case of a quick flick before lifting
-    if (!_hasTriggered && _maxPointers >= 2) {
+    if (!_hasTriggered) {
       _evaluateSwipe();
     }
 
@@ -123,10 +123,10 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
     if (_lastTriggerTime != null && DateTime.now().difference(_lastTriggerTime!) < _cooldown) {
       return;
     }
-    if (_pointers.length < 2 && _maxPointers < 2) return;
+    if (_pointers.isEmpty && _allTracksThisGesture.isEmpty) return;
 
-    final sourceTracks = _pointers.length >= 2 ? _pointers.values : _allTracksThisGesture.values;
-    if (sourceTracks.length < 2) return;
+    final sourceTracks = _pointers.isNotEmpty ? _pointers.values : _allTracksThisGesture.values;
+    if (sourceTracks.isEmpty) return;
 
     double totalDx = 0.0;
     double totalDy = 0.0;
@@ -138,12 +138,14 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
       count++;
     }
 
-    if (count < 2) return;
+    if (count == 0) return;
 
     final avgDx = totalDx / count;
     final avgDy = totalDy / count;
 
-    if (avgDx.abs() < _swipeThreshold && avgDy.abs() < _swipeThreshold) {
+    // Minimum swipe threshold for 1-finger or multi-finger
+    final threshold = count == 1 ? 40.0 : _swipeThreshold;
+    if (avgDx.abs() < threshold && avgDy.abs() < threshold) {
       return;
     }
 

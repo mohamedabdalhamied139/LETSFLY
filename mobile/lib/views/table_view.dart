@@ -938,7 +938,14 @@ class _TableViewState extends State<TableView> {
       final sc = scores[suid] ?? scores[int.tryParse(suid)] ?? 0;
       parts.add('$name $sc');
     }
-    return parts.isNotEmpty ? parts.join('   ') : '';
+
+    final targetScore = _gameState['target_score'] ?? _room['target_score'];
+    String result = parts.join('، ');
+    if (targetScore != null && targetScore.toString().isNotEmpty && targetScore != 0) {
+      final targetStr = tr('عدد النقاط النهائي {score}', {'score': targetScore.toString()});
+      result = result.isNotEmpty ? '$result، $targetStr' : targetStr;
+    }
+    return result;
   }
 
   Widget _buildScoreBar() {
@@ -1004,6 +1011,7 @@ class _TableViewState extends State<TableView> {
 
     return ResponsiveShell(
       title: tr('طاولة {game}', {'game': _getGameTitle()}),
+      showDrawer: false,
       actions: [
         Semantics(
           label: tr('قائمة سياق الطاولة'),

@@ -206,6 +206,7 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
       },
       child: ResponsiveShell(
         title: _getTitle(),
+        showDrawer: false,
         leading: Semantics(
           label: tr('رجوع'),
           button: true,

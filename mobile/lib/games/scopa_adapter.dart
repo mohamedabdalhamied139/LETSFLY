@@ -21,93 +21,15 @@ class ScopaGameAdapter extends GameAdapter {
     final tableCards = List<dynamic>.from(state['table_cards'] ?? []);
     final hand = List<dynamic>.from(state['my_hand'] ?? []);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Table Cards Header & Container
-        Semantics(
-          excludeSemantics: true,
-          label: tableCards.isEmpty
-              ? tr('الطاولة فارغة.')
-              : tr('أوراق الطاولة: {cards}', {'cards': tableCards.map((c) => cardDisplayAr(c as Map<String, dynamic>?)).join('، ')}),
-          child: Container(
-            padding: const EdgeInsets.all(12.0),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+    return hand.isEmpty
+        ? Center(
+            child: Text(
+              tr('لا توجد أوراق في اليد'),
+              style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.table_restaurant, color: AppColors.primary, size: 22),
-                    const SizedBox(width: 8),
-                    Text(
-                      tr('أوراق الطاولة ({count})', {'count': '${tableCards.length}'}),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (tableCards.isEmpty)
-                  Text(
-                    tr('الطاولة فارغة.'),
-                    style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
-                  )
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: tableCards.map((c) {
-                      final cardMap = (c is Map) ? Map<String, dynamic>.from(c) : <String, dynamic>{};
-                      final name = cardDisplayAr(cardMap);
-                      return Chip(
-                        backgroundColor: AppColors.surface,
-                        label: Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Hand Cards Header
-        Text(
-          tr('أوراقك في اليد ({count})', {'count': '${hand.length}'}),
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 6),
-
-        // Hand Cards List
-        Expanded(
-          child: hand.isEmpty
-              ? Center(
-                  child: Text(
-                    tr('لا توجد أوراق في اليد'),
-                    style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: hand.length,
+          )
+        : ListView.builder(
+            itemCount: hand.length,
                   itemBuilder: (ctx, index) {
                     final cardItem = hand[index];
                     final cardMap = (cardItem is Map) ? Map<String, dynamic>.from(cardItem) : <String, dynamic>{};

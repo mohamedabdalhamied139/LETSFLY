@@ -16,28 +16,11 @@ void main() async {
   // Pre-load default Arabic locale dictionary
   await LocalizationService.instance.loadLanguage('ar');
 
-  // Check for stored active session token
-  final activeAccount = await AuthStorageService.instance.loadActiveAccount();
-  String? initialToken;
-  String? initialDisplayName;
-
-  if (activeAccount != null) {
-    initialToken = activeAccount['token']?.toString();
-    initialDisplayName = activeAccount['display_name']?.toString() ?? activeAccount['username']?.toString();
-    if (initialToken != null && initialToken.isNotEmpty) {
-      ApiService.instance.setToken(initialToken);
-    }
-  }
-
-  runApp(TableVerseMobileApp(
-    initialDisplayName: (initialToken != null && initialToken.isNotEmpty) ? initialDisplayName : null,
-  ));
+  runApp(const TableVerseMobileApp());
 }
 
 class TableVerseMobileApp extends StatelessWidget {
-  final String? initialDisplayName;
-
-  const TableVerseMobileApp({super.key, this.initialDisplayName});
+  const TableVerseMobileApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +39,7 @@ class TableVerseMobileApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: initialDisplayName != null
-          ? HomeView(userDisplayName: initialDisplayName!)
-          : const AuthView(),
+      home: const AuthView(),
     );
   }
 }
