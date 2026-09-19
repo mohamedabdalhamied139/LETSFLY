@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../core/accessibility_manager.dart';
 import '../core/localization.dart';
+import 'ninety_nine_adapter.dart';
+import 'scopa_adapter.dart';
+import 'uno_adapter.dart';
 
 /// Abstract adapter that each game implements to provide its board UI
 /// and directional gesture actions (Space, Turn, Top/State).
@@ -37,14 +40,27 @@ class GameAdapterRegistry {
   GameAdapterRegistry._();
 
   final Map<String, GameAdapter> _adapters = {};
+  bool _defaultsRegistered = false;
+
+  void ensureDefaultsRegistered() {
+    if (_defaultsRegistered) return;
+    _defaultsRegistered = true;
+    register(UnoGameAdapter());
+    register(ScopaGameAdapter());
+    register(NinetyNineGameAdapter());
+  }
 
   void register(GameAdapter adapter) {
     _adapters[adapter.gameId.toUpperCase()] = adapter;
   }
 
   GameAdapter? get(String gameId) {
+    ensureDefaultsRegistered();
     return _adapters[gameId.toUpperCase()];
   }
 
-  List<GameAdapter> get allAdapters => _adapters.values.toList();
+  List<GameAdapter> get allAdapters {
+    ensureDefaultsRegistered();
+    return _adapters.values.toList();
+  }
 }

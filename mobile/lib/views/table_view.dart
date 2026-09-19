@@ -171,6 +171,7 @@ class _TableViewState extends State<TableView> {
   void _processGameState(Map<String, dynamic> state) {
     final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
     final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
+    state['room_id'] = roomId;
 
     GameStateEngine.instance.processCommonState(
       gameType: gameType,
