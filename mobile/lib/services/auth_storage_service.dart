@@ -135,6 +135,9 @@ class AuthStorageService {
     return null;
   }
 
+  /// Alias for loadActiveAccount returning active profile or null
+  Future<Map<String, dynamic>?> getActiveUser() => loadActiveAccount();
+
   /// Retrieves the active session token, checking token key first then active account.
   Future<String?> getActiveSessionToken() async {
     final token = await _readString(sessionTokenKey);

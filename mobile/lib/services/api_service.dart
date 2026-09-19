@@ -373,4 +373,13 @@ class ApiService {
   Future<dynamic> sendFeedback(String message) {
     return post('/api/feedback', data: {'message': message});
   }
+
+  Future<dynamic> getRecentEvents() async {
+    try {
+      final res = await get('/api/activity/recent');
+      return res;
+    } catch (_) {
+      return [];
+    }
+  }
 }
