@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/localization.dart';
 import '../core/sound_service.dart';
@@ -190,14 +190,16 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
       },
       child: ResponsiveShell(
         title: _getTitle(),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (_handleBack()) {
-              Navigator.of(context).pop();
-            }
-          },
-        ),
+        leading: _mode == 'main'
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  if (_handleBack()) {
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
         child: _creating
             ? const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
