@@ -17,7 +17,13 @@ class HapticService {
   Future<void> playTurnHaptic() async {
     if (!_enabled) return;
     try {
-      await HapticFeedback.mediumImpact();
-    } catch (_) {}
+      await HapticFeedback.vibrate();
+      await Future.delayed(const Duration(milliseconds: 120));
+      await HapticFeedback.vibrate();
+    } catch (_) {
+      try {
+        await HapticFeedback.heavyImpact();
+      } catch (_) {}
+    }
   }
 }

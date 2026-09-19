@@ -111,18 +111,8 @@ class _ActivityLogWidgetState extends State<ActivityLogWidget> {
             : 'ALL';
         final filteredEvents = service.filteredEvents;
 
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onHorizontalDragEnd: (details) {
-            final vx = details.primaryVelocity ?? 0.0;
-            if (vx > 250) {
-              _selectNextCategory(-1);
-            } else if (vx < -250) {
-              _selectNextCategory(1);
-            }
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header Bar
             Container(
@@ -289,9 +279,8 @@ class _ActivityLogWidgetState extends State<ActivityLogWidget> {
               ),
             ),
           ],
-        ),
-      );
-    },
+        );
+      },
     );
   }
 }

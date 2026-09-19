@@ -53,11 +53,9 @@ class ResponsiveShell extends StatelessWidget {
         bottom: bottom,
       ),
       drawer: showDrawer ? const AppNavigationDrawer() : null,
-      // Two-finger or accessible horizontal swipe anywhere opens the Activity Log
+      // Two-finger swipe right anywhere opens the Activity Log
       body: TwoFingerSwipeDetector(
-        allowSingleFingerHorizontal: true,
         onTwoFingerSwipeRight: () => ActivityLogWidget.showAsBottomSheet(context),
-        onTwoFingerSwipeLeft: () => ActivityLogWidget.showAsBottomSheet(context),
         child: child,
       ),
       floatingActionButton: floatingActionButton,

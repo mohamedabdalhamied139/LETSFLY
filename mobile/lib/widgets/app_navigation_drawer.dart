@@ -6,6 +6,7 @@ import '../core/sound_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage_service.dart';
 import '../views/auth_view.dart';
+import '../views/online_users_dialog.dart';
 
 /// Universal Navigation Drawer available everywhere in the game.
 /// Hosts all canonical Home screen items (excluding Tables which is the primary screen).
@@ -61,9 +62,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
         break;
       case 'online':
         AccessibilityManager.instance.announce(tr('فتح قائمة المتصلين'));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('المتصلون ({count})', {'count': '$_onlineCount'}))),
-        );
+        OnlineUsersDialog.show(context);
         break;
       case 'my_profile':
         AccessibilityManager.instance.announce(tr('فتح الملف الشخصي'));

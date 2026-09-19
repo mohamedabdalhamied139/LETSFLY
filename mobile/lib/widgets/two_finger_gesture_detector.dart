@@ -10,8 +10,6 @@ class TwoFingerSwipeDetector extends StatefulWidget {
   final VoidCallback? onTwoFingerSwipeLeft;
   final VoidCallback? onTwoFingerSwipeUp;
   final VoidCallback? onTwoFingerSwipeDown;
-  final bool allowSingleFingerHorizontal;
-
   const TwoFingerSwipeDetector({
     super.key,
     required this.child,
@@ -19,7 +17,6 @@ class TwoFingerSwipeDetector extends StatefulWidget {
     this.onTwoFingerSwipeLeft,
     this.onTwoFingerSwipeUp,
     this.onTwoFingerSwipeDown,
-    this.allowSingleFingerHorizontal = false,
   });
 
   @override
@@ -112,22 +109,6 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
       onPointerCancel: _handlePointerCancel,
       child: widget.child,
     );
-
-    if (widget.allowSingleFingerHorizontal) {
-      return GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onHorizontalDragEnd: (details) {
-          if (_hasTriggered) return;
-          final vx = details.primaryVelocity ?? 0.0;
-          if (vx > 250) {
-            widget.onTwoFingerSwipeRight?.call();
-          } else if (vx < -250) {
-            widget.onTwoFingerSwipeLeft?.call();
-          }
-        },
-        child: listener,
-      );
-    }
 
     return listener;
   }

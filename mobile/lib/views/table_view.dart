@@ -189,14 +189,21 @@ class _TableViewState extends State<TableView> {
         _fetchRoomDetails();
       } else if (type == 'room_updated') {
         _fetchRoomDetails();
-      } else if (type == 'player_kicked') {
+      } else if (type == 'player_kicked' || type == 'player_banned') {
         final name = event['name']?.toString() ?? tr('لاعب');
         final uid = event['user_id'];
         if (uid != null && uid.toString() == _myUserId.toString()) {
-          AccessibilityManager.instance.announce(tr('تم طردك من الطاولة بواسطة القائد.'));
+          final msg = (type == 'player_banned')
+              ? tr('تم حظرك من الطاولة بواسطة القائد.')
+              : tr('تم طردك من الطاولة بواسطة القائد.');
+          AccessibilityManager.instance.announce(msg);
           Navigator.of(context).pop();
         } else {
-          AccessibilityManager.instance.announce(tr('تم طرد {name} من الطاولة بواسطة القائد.', {'name': name}));
+          final msg = (type == 'player_banned')
+              ? tr('تم حظر {name} من الطاولة.', {'name': name})
+              : tr('تم طرد {name} من الطاولة بواسطة القائد.', {'name': name});
+          AccessibilityManager.instance.announce(msg);
+          _fetchRoomDetails();
         }
       } else if (type == 'game_started') {
         setState(() => _room['status'] = 'playing');
@@ -690,13 +697,10 @@ class _TableViewState extends State<TableView> {
       room: _room,
       myUserId: _myUserId,
       onRoomUpdated: () async {
-        final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
-        try {
-          final res = await ApiService.instance.getGameState(roomId);
-          if (res is Map<String, dynamic> && mounted) {
-            _processGameState(res);
-          }
-        } catch (_) {}
+        await _fetchRoomDetails();
+        if (_isPlaying) {
+          await _fetchGameState();
+        }
       },
     );
   }
@@ -925,23 +929,13 @@ class _TableViewState extends State<TableView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              isPlaying ? tr('مجريات اللعبة') : tr('قائمة الانتظار'),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            TextButton.icon(
-                              icon: const Icon(Icons.people_outline, size: 18),
-                              label: Text(tr('اللاعبون ({count})', {'count': '${players.length}'})),
-                              onPressed: _openPlayersDialog,
-                            ),
-                          ],
+                        Text(
+                          isPlaying ? tr('مجريات اللعبة') : tr('قائمة الانتظار'),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         const Divider(color: AppColors.divider),
                         Expanded(
@@ -949,46 +943,6 @@ class _TableViewState extends State<TableView> {
                               ? adapter.buildBoard(context, _gameState)
                               : _buildWaitingLobby(context, players),
                         ),
-                        if (!isPlaying && (_isHost || _isCoHost))
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: ElevatedButton.icon(
-                                  onPressed: _startGame,
-                                  icon: const Icon(Icons.play_arrow, color: Colors.white),
-                                  label: Text(
-                                    tr('بدء اللعبة'),
-                                    style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.success,
-                                    minimumSize: const Size.fromHeight(50),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                ),
-                              ),
-                              if (_isHost) ...[
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  flex: 1,
-                                  child: ElevatedButton.icon(
-                                    onPressed: _addBot,
-                                    icon: const Icon(Icons.smart_toy, color: Colors.white, size: 20),
-                                    label: Text(
-                                      tr('بوت'),
-                                      style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      minimumSize: const Size.fromHeight(50),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
                       ],
                     ),
                   ),

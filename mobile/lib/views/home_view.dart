@@ -10,6 +10,7 @@ import '../services/ws_service.dart';
 import 'auth_view.dart';
 import 'responsive_shell.dart';
 import 'rooms_menu_view.dart';
+import 'online_users_dialog.dart';
 
 /// Accessible Home screen matching 100% of Windows client home_view.py.
 /// Displays the 8 canonical items starting with 'الطاولات' (Rooms),
@@ -131,9 +132,7 @@ class _HomeViewState extends State<HomeView> {
         break;
       case 'online':
         AccessibilityManager.instance.announce(tr('فتح قائمة المتصلين'));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(tr('المتصلون ({count})', {'count': '$_onlineCount'}))),
-        );
+        OnlineUsersDialog.show(context);
         break;
       case 'my_profile':
         AccessibilityManager.instance.announce(tr('فتح الملف الشخصي'));
@@ -216,24 +215,35 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    // Exact 8 canonical items matching Windows order with exact tags
+    // Only 'الطاولات' kept in the main menu list per user request
     final menuItems = [
       {'title': tr('الطاولات'), 'tag': 'rooms', 'icon': Icons.table_restaurant},
-      {'title': tr('الأصدقاء'), 'tag': 'friends', 'icon': Icons.people},
-      {
-        'title': _onlineCount > 0 ? '${tr('المتصلون')} ($_onlineCount)' : tr('المتصلون'),
-        'tag': 'online',
-        'icon': Icons.online_prediction
-      },
-      {'title': tr('ملفي الشخصي'), 'tag': 'my_profile', 'icon': Icons.person},
-      {'title': tr('الإعدادات'), 'tag': 'settings', 'icon': Icons.settings},
-      {'title': tr('الإشعارات'), 'tag': 'notifications', 'icon': Icons.notifications},
-      {'title': tr('تحدث معنا'), 'tag': 'contact', 'icon': Icons.headset_mic},
-      {'title': tr('تسجيل الخروج'), 'tag': 'logout', 'icon': Icons.logout, 'isDestructive': true},
     ];
 
     return ResponsiveShell(
       title: tr('القائمة الرئيسية'),
+      actions: [
+        Semantics(
+          label: _onlineCount > 0 ? '${tr('المتصلون')} ($_onlineCount)' : tr('المتصلون'),
+          button: true,
+          excludeSemantics: true,
+          child: IconButton(
+            icon: const Icon(Icons.people_outline),
+            tooltip: _onlineCount > 0 ? '${tr('المتصلون')} ($_onlineCount)' : tr('المتصلون'),
+            onPressed: () => OnlineUsersDialog.show(context),
+          ),
+        ),
+        Semantics(
+          label: tr('تسجيل الخروج'),
+          button: true,
+          excludeSemantics: true,
+          child: IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: tr('تسجيل الخروج'),
+            onPressed: _confirmLogout,
+          ),
+        ),
+      ],
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         itemCount: menuItems.length,

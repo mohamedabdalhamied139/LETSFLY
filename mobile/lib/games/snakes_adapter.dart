@@ -112,7 +112,6 @@ class SnakesGameAdapter extends GameAdapter {
         if (isMyTurn) {
           SoundService.instance.playSound('TURN_START');
           HapticService.instance.playTurnHaptic();
-          AccessibilityManager.instance.announce(tr('دورك'), interrupt: false);
         } else {
           AccessibilityManager.instance.announce(
             tr('دور {name}', {'name': currentName}),
@@ -240,12 +239,6 @@ class SnakesGameAdapter extends GameAdapter {
                     ? AppColors.textPrimary
                     : AppColors.textSecondary,
               ),
-            ),
-            subtitle: Text(
-              isMyTurn
-                  ? tr('دورك الآن! اضغط للرمي أو اسحب بإصبعين للأسفل')
-                  : tr('في انتظار دور اللاعب...'),
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
             onTap: () {
               if (_isStepping || !isMyTurn) {

@@ -3,6 +3,7 @@ import '../core/app_theme.dart';
 import '../core/localization.dart';
 import '../core/sound_service.dart';
 import '../core/accessibility_manager.dart';
+import 'package:dio/dio.dart';
 import '../services/api_service.dart';
 
 /// Table Players Dialog & Action Dialogs matching 100% of Windows table_players_dialog.py.
@@ -161,8 +162,8 @@ class _TablePlayersDialogState extends State<TablePlayersDialog> {
   void _onPlayerSelected(Map<String, dynamic> user) {
     final hostId = int.tryParse(_room['host_id']?.toString() ?? '0') ?? 0;
     final coHostId = int.tryParse(_room['co_host_id']?.toString() ?? '0') ?? 0;
-    final isHost = (widget.myUserId == hostId);
-    final isCoHost = (widget.myUserId == coHostId && coHostId != 0);
+    final isHost = _room['is_host'] == true || (widget.myUserId > 0 && widget.myUserId == hostId);
+    final isCoHost = _room['is_co_host'] == true || (widget.myUserId > 0 && coHostId != 0 && widget.myUserId == coHostId);
 
     TablePlayerActionsDialog.show(
       context,
@@ -344,7 +345,16 @@ class TablePlayerActionsDialog extends StatelessWidget {
       }
     } catch (e) {
       await SoundService.instance.playSound('INVALID_ACTION');
-      AccessibilityManager.instance.announce(tr('تعذر تنفيذ الإجراء: {error}', {'error': e.toString()}));
+      String errorMsg = e.toString();
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data['detail'] != null) {
+          errorMsg = data['detail'].toString();
+        } else if (data is String && data.isNotEmpty) {
+          errorMsg = data;
+        }
+      }
+      AccessibilityManager.instance.announce(tr('تعذر تنفيذ الإجراء: {error}', {'error': errorMsg}));
     }
   }
 
