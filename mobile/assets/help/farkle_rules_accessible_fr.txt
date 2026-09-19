@@ -1,0 +1,144 @@
+Guide complet et règles pour Farkle (Le jeu des dés et du risque)
+
+Première section : Introduction et gameplay de base
+
+Concept du jeu et objectif principal
+Farkle est l'un des jeux de dés stratégiques les plus célèbres et les plus agréables qui repose sur la gestion des risques, le calcul des probabilités et un équilibre intelligent entre cupidité et prudence.
+Le jeu se joue avec six dés classiques à six faces numérotés de 1 à 6.
+L'objectif principal de chaque tour est de lancer les dés pour obtenir des combinaisons gagnantes qui vous rapportent autant de points que possible, et d'accumuler ces points dans votre score cumulé pour être le premier à atteindre l'objectif final du match, qui est de 1 500 points.
+
+Progression des virages étape par étape
+Les tours se déroulent entre les joueurs de manière séquentielle dans le sens des aiguilles d'une montre.
+Quand c'est votre tour, vous suivez ces étapes :
+Tout d’abord : lancez les dés disponibles en appuyant sur l’option de lancer (lancer 6 dés) ou sur la touche Entrée.
+Deuxièmement : Vérifiez le résultat et recherchez les combinaisons gagnantes qui sont apparues.
+Troisièmement : Vous devez choisir et isoler au moins une combinaison gagnante en cliquant dessus dans la liste, et ses points sont immédiatement ajoutés à votre score de tour actuel, et ses dés sont mis de côté de la table.
+Quatrièmement : après avoir isolé une combinaison, deux options cruciales s'offrent à vous :
+La première option : continuez et risquez de lancer les dés restants pour tenter de gagner des points supplémentaires et d'augmenter le score du tour.
+La deuxième option : arrêtez et mettez en banque les points (Banque) en appuyant sur l'option de banque pour ajouter le total des points du tour à votre score cumulé de match et passer le tour au joueur suivant.
+
+Exemple pratique du début d'un tour et de l'option bancaire entre deux joueurs :
+Supposons que le match commence entre deux joueurs et que le tour du premier joueur arrive, qu'il lance 6 dés et que les nombres suivants apparaissent : 1, 5, 2, 3, 4, 6.
+Que fait le premier joueur et qu’arrive-t-il à ses points ?
+Ces dés contiennent un chiffre 1 (10 points), un chiffre 5 (5 points) et une grande quinte de 1 à 6 (200 points).
+Le premier joueur choisit d'isoler la grande quinte de 1 à 6, gagnant 200 points dans son score de tour actuel.
+Puisque les six dés ont été isolés, la règle des dés chauds est déclenchée et le joueur peut soit encaisser 200 points immédiatement, soit lancer 6 dés complètement nouveaux !
+
+Exemple pratique d'un tour normal et d'un arrêt sûr entre trois joueurs :
+Supposons que le tour soit joué par le deuxième joueur parmi trois joueurs et que son score précédent était de 100 points.
+Ils lancent 6 dés et obtiennent : 1, 1, 1, 2, 3, 4.
+Ils ont isolé le triplet de un (75 points), laissant 3 dés non marqués.
+Le deuxième joueur a choisi de s'arrêter et d'accumuler des points au lieu de risquer de lancer les trois dés.
+Que devient leur score ?
+75 points s'ajoutent à leur score précédent (100 points), ce qui porte leur nouveau score à 175 points, et le tour passe directement au troisième joueur.
+
+Section Deux : Combinaisons gagnantes et valeurs de points détaillées
+
+Farkle dans ce projet s'appuie sur un système de points précis et équilibré pour les combinaisons simples et combinées :
+
+Premièrement : les nombres uniques
+Un seul chiffre 1 : vous rapporte 10 points.
+Un seul chiffre 5 : vous rapporte 5 points.
+Autres nombres (2, 3, 4, 6) seuls : n'accordent aucun point seuls et doivent venir par groupes de trois ou plus.
+
+Deuxièmement : Triplets (Trois dés du même numéro)
+Trois uns (1, 1, 1) : vous accorde 75 points.
+Trois deux (2, 2, 2) : vous accorde 20 points.
+Trois trois (3, 3, 3) : vous accorde 30 points.
+Trois quatre (4, 4, 4) : vous accorde 40 points.
+Trois cinq (5, 5, 5) : vous accorde 50 points.
+Trois six (6, 6, 6) : vous accorde 60 points.
+
+Troisième : Quads (Quatre dés du même numéro)
+Quatre un : 110 points.
+Quatre deux : 120 points.
+Quatre trois : 130 points.
+Quatre quatre : 140 points.
+Quatre cinq : 150 points.
+Quatre six : 160 points.
+
+Quatrième : Quintuplés (Cinq dés du même numéro)
+Cinq un : 320 points.
+Cinq deux : 340 points.
+Cinq trois : 360 points.
+Cinq quatre : 380 points.
+Cinq cinq : 400 points.
+Cinq six : 420 points.
+
+Cinquième : Sextuplés (Six dés du même numéro)
+Six un : 625 points.
+Six deux : 650 points.
+Six trois : 675 points.
+Six quatre : 700 points.
+Six cinq : 725 points.
+Six six : 750 points.
+
+Sixième : Quintes droites et groupes spéciaux à partir d'un seul lancer
+Petite Quinte : L'apparition d'une séquence de cinq nombres comme 1, 2, 3, 4, 5 ou 2, 3, 4, 5, 6 vous accorde 100 points.
+Grande Quinte : L'apparition de la séquence complète de six nombres de 1 à 6 vous accorde 200 points.
+Trois paires : L'apparition de trois paires différentes, comme une paire de deux, une paire de quatre et une paire de six, vous accorde 150 points.
+Full House : L'apparition de quatre dés du même numéro avec une paire d'un autre numéro vous rapporte 250 points.
+Deux triplés : L'apparition de deux triplés dans le même jet, comme trois deux et trois cinq, vous rapporte 250 points.
+
+Exemple pratique d’isolation de plusieurs combinaisons :
+Supposons qu'un joueur lance 6 dés et obtienne : 1, 5, 5, 5, 2, 3.
+Quelles sont les options qui s’offrent à eux ?
+Le joueur peut isoler le chiffre 1 seul (10 points), isoler le triplet de cinq seul (50 points), ou isoler le chiffre 1 avec le triplet de cinq ensemble pour obtenir 60 points d'un coup, laissant deux dés (2 et 3) qu'il peut relancer.
+
+Troisième section : Règles bancaires et seuils minimaux
+
+Règle de banque minimale (banque minimale)
+Afin de pouvoir accumuler les points de votre tour, votre total de points collectés lors de ce tour doit atteindre au moins 30 points.
+Si le total de votre tour est inférieur à 30 points, le jeu vous empêche de miser et vous oblige à continuer à lancer jusqu'à atteindre 30 points ou plus.
+
+Règle minimale de la première banque à partir du score zéro (minimum de la première banque)
+Si votre score global dans le match est nul et que vous n'avez pas encore marqué de points, le jeu exige que pour votre entrée officielle sur le tableau d'affichage, vous deviez collecter au moins 50 points à votre tour pour la première banque.
+Une fois que vous avez réussi à encaisser 50 points ou plus pour la première fois, vous pouvez encaisser à partir de seulement 30 points dans tous les tours suivants.
+
+Exemple pratique de la première banque de Zero Score :
+Supposons que le match commence, que le score du joueur est nul, qu'il lance les dés et obtient un seul numéro 1 (10 points) et un seul numéro 5 (5 points), totalisant 15 points.
+Le joueur peut-il effectuer une mise en banque ?
+Ils ne peuvent pas effectuer de banque car leur score actuel est de zéro et le minimum pour la première banque est de 50 points. Ils doivent lancer les dés restants et essayer de collecter au moins 35 points supplémentaires pour atteindre 50 points et les mettre en banque avec succès.
+
+Section quatre : Hot Dice et Farkle
+
+Règle des dés chauds
+Ce grand bonus se produit lorsqu'un joueur réussit à isoler et à utiliser les six dés pour marquer des points au cours du même tour.
+Quand cela se produit :
+Le joueur conserve tous les points qu'il a accumulés jusqu'à ce moment.
+Le jeu débloque six dés entièrement nouveaux que le joueur peut lancer gratuitement et continuer à collecter de plus en plus de points dans le même tour !
+Il n'y a pas de limite au nombre de fois où les dés chauds peuvent être répétés tant que le joueur continue d'isoler avec succès les six dés.
+
+Règle de Farkle et perte de points de virage
+Si vous lancez les dés restants à n'importe quelle étape de votre tour et qu'aucune tuile de score n'apparaît (no 1, no 5, pas de triplets ou de combinaisons gagnantes), cela s'appelle un Farkle !
+Quand un Farkle se produit :
+Tous les points que vous avez collectés lors de ce tour sont immédiatement perdus et deviennent nuls.
+Votre score global enregistré lors des tours précédents n'est pas affecté.
+Votre tour se termine immédiatement et le tour passe automatiquement au joueur suivant.
+
+Exemple pratique de Hot Dice :
+Supposons que le joueur ait deux dés restants, qu'il les lance et obtienne : 1 et 5.
+Le joueur isole le 1 et le 5 (15 points), et utilise ainsi les six dés.
+Le jeu annonce des dés chauds, afin qu'ils puissent lancer 6 nouveaux dés et ajouter leurs points en plus de leurs points précédents !
+
+Exemple pratique d'un Farkle :
+Supposons que le joueur ait collecté 120 points à son tour, isolé 4 dés, décidé d'être gourmand et lancé les deux dés restants, obtenant : 2 et 4.
+Comme les chiffres 2 et 4 ne marquent aucun point, le jeu annonce un Farkle, ils perdent complètement les 120 points, et le tour passe à leur adversaire.
+
+Section cinq : Fin du match et annonce du gagnant
+
+Conditions d’objectif et de couronnement
+L'objectif officiel par défaut pour le match est de 1 500 points (ou l'objectif fixé par l'hôte de la salle).
+Le premier joueur qui réussit à accumuler des points qui portent son score total cumulé à 1 500 points ou plus est immédiatement déclaré vainqueur du match, et le match se termine en le couronnant champion.
+
+Exemple pratique complet du tour décisif et du couronnement du vainqueur :
+Supposons que le score entre quatre joueurs avant le tour final soit le suivant :
+Premier joueur : 1450 points.
+Deuxième joueur : 1 200 points.
+Troisième joueur : 900 points.
+Quatrième joueur : 600 points.
+C'était le tour du premier joueur, il lança 6 dés et obtint un triplet de deux (20 points), un numéro 1 (10 points) et un numéro 5 (5 points), totalisant 35 points dans ce tour.
+Le premier joueur a encaissé les 35 points.
+Qu'arrive-t-il au score et qui gagne ?
+Le score total du premier joueur devient : 1450 plus 35 égale 1485 points (il n'a pas encore atteint l'objectif), donc le tour passe au deuxième joueur.
+Si le deuxième joueur lance, collecte 350 points et les met en banque, son score devient 1550 points, dépassant l'objectif (1500) pour gagner le match immédiatement !

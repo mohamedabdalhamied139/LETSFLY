@@ -1,0 +1,114 @@
+Comprehensive Thief Hunt Game Rules and Guide (Catching the Thief and Mental Floor Calculation)
+
+Section 1: Introduction and Basic Game Concept
+
+Game Concept and the Challenge of Memory and Quick Calculation
+Thief Hunt or Catch the Thief is a strategic game and a fun mental challenge that relies on auditory memory, high concentration, and quick calculation and guessing.
+The events of the game take place inside a massive commercial tower consisting of 10 floors numbered ascendingly from the first floor (1) to the tenth floor (10).
+Players compete in the role of detectives to catch the hiding thief and accurately determine their final location after a series of quick escapes through elevators and stairs.
+
+Game Roles and the Virtual Thief
+In the default supported mode of the game:
+The game engine takes on the role of the Virtual Thief, while all players in the room (humans and bots) play the role of the competing detectives.
+In custom mode: one of the players can be chosen to take on the role of the human thief to choose the starting floor themselves.
+
+The Three Phases of the Round
+Every round in the Thief Hunt game consists of three consecutive phases:
+First Phase: Choosing the starting floor (the thief secretly chooses from 1 to 10).
+Second Phase: Escape phase and narration of directions (the thief moves up and down and the screen reader audibly narrates the movements).
+Third Phase: Quick answer phase (an exclusive 8-second answer window opens to type the final floor number).
+
+Practical Example of Starting the Round and Narrating Directions:
+Suppose the round started, and the thief started from the fourth floor (4).
+Then the thief moved in the following order: up, then up, then down.
+What does the smart detective do?
+The detective calculates in their mind:
+Started at 4.
+Went up one step reaching floor 5.
+Went up another step reaching floor 6.
+Then went down one step reaching floor 5.
+Therefore, the final floor where the thief settled is floor 5!
+
+
+Section 2: Escape Route and Thief Movement Rules
+
+Generating Movements and Increasing Difficulty with Advancing Rounds
+In the first round: The thief starts with three escape movements ("up" or "down").
+With every new round: The number of movements increases by one additional movement (4 movements in the second round, 5 movements in the third round, and so on), which raises the challenge and increases the thrill of mental calculation!
+
+Building Boundary Rules (First and Tenth Floors)
+The building is governed by two strict boundaries:
+Lower Boundary: First floor (1), and if the thief is on floor 1, their next move must inevitably be up.
+Upper Boundary: Tenth floor (10), and if the thief is on floor 10, their next move must inevitably be down.
+On floors between 2 and 9: The thief moves freely and randomly either up or down.
+
+Practical Example of the Thief Bouncing from the Tenth Floor:
+Suppose the thief was on floor 9, and the movements were: up, then down, then down.
+Mental Calculation:
+From 9, went up reaching floor 10 (the roof).
+From 10, went down reaching floor 9.
+From 9, went down reaching floor 8.
+Therefore, the final location of the thief is the eighth floor (8).
+
+
+Section 3: Answer Phase and Determining the Round Winner
+
+Answer Window and Time Limit
+As soon as the audio narration of directions ends:
+The answer input box opens immediately with an alert sound.
+The game grants all detectives a unified time limit of 8 full seconds.
+Each detective types the expected floor number (from 1 to 10) and presses the Enter key to confirm the answer.
+The answers remain secret and private to each player throughout the countdown period to prevent cheating and copying answers.
+
+Rules for Deciding the Winner and Round Points
+At the end of the answer window, the game examines the answers of all competitors and applies the following strict rules:
+First Case: Win of the Lone Detective
+If only one detective succeeds in typing the correct floor number while the rest make a mistake:
+This detective is immediately declared the winner of the round and earns a full win point (1 Win) in their balance.
+
+Second Case: Tie Between Detectives
+If more than one detective succeeds in typing the correct floor number (e.g., two detectives both typed the correct floor 7):
+The round ends in a tie, and no player earns a win point, as an encouragement to the lone detective with the correct solution.
+
+Third Case: Thief Wins and Escapes
+If all detectives make a mistake in guessing the floor, or the eight seconds end without providing a correct answer:
+The thief is declared the winner of the round, and a full win point is added to the thief's balance.
+
+Practical Example of a Lone Detective Winning Among Three Players:
+Suppose the final floor of the thief is floor 6, and the answers of the three detectives were as follows:
+First player wrote: 6.
+Second player wrote: 5.
+Third player wrote: 7.
+So who wins the round?
+The first player wins the round because they are the only detective who guessed the correct floor, and a point is added to their balance.
+
+Practical Example of a Tie Between Two Players:
+Suppose the final floor of the thief is floor 3, and the first player wrote 3 and the second player wrote 3.
+What happens?
+The round ends in a tie without granting any point to either of them.
+
+
+Section 4: System of Rounds, Match, and Tie-breaker Rounds
+
+Number of Rounds and Target
+The default number for a match is 5 rounds (or any number determined by the room host from 3 to 10 rounds).
+The round points accumulate round after round in the balance of each competitor.
+
+Sudden Death Tie-breaker Rounds
+No match in Catch the Thief ever ends in a tie:
+If the specified rounds for the match end and there is a tie for the first place between two or more players (e.g., two players with two win points each), the game does not close, but immediately transitions into Sudden Death rounds.
+The extra rounds continue round by round until one player succeeds in solely obtaining the highest point balance to be officially crowned the champion of the match.
+
+Elimination Mode for Professionals
+When Elimination Mode is activated in the room settings:
+At the end of the scheduled rounds, the lowest point balance in the room is checked, and the owner of the single lowest score is kicked and eliminated from the competition!
+The match continues with the remaining players, and with each cycle a player is eliminated until only one player remains who is crowned with the championship.
+
+Comprehensive Practical Example of a Full Match and Tie-breaker Rounds:
+Suppose the match is held over 3 rounds among four players:
+In the first round: First player won (one point for the first player).
+In the second round: Second player won (one point for the second player).
+In the third round: Thief won (one point for the thief).
+The score at the end of the third round: Tie between the first player and the second player with one point each.
+The match enters a decisive tie-breaker (Fourth round Sudden Death).
+In the fourth round, the first player alone guessed the thief's floor, so their balance became two points and they officially won the match and were crowned champion!

@@ -112,11 +112,6 @@ class SnakesGameAdapter extends GameAdapter {
         if (isMyTurn) {
           SoundService.instance.playSound('TURN_START');
           HapticService.instance.playTurnHaptic();
-        } else {
-          AccessibilityManager.instance.announce(
-            tr('دور {name}', {'name': currentName}),
-            interrupt: false,
-          );
         }
       });
       return;
@@ -148,7 +143,9 @@ class SnakesGameAdapter extends GameAdapter {
         // 1. Radar & Position Card
         Semantics(
           excludeSemantics: true,
-          label: _buildRadarSpeech(radar),
+          label: lastRoll > 0
+              ? tr('المربع {position}، آخر رمية {roll}', {'position': '$pos', 'roll': '$lastRoll'})
+              : tr('المربع {position}', {'position': '$pos'}),
           child: Container(
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
@@ -161,33 +158,13 @@ class SnakesGameAdapter extends GameAdapter {
                 const Icon(Icons.explore, color: AppColors.primary, size: 28),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tr('المربع {position}', {'position': '$pos'}),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (ladder != null && ladder.length >= 2)
-                        Text(
-                          tr('سلم في {base} إلى {top}', {'base': '${ladder[0]}', 'top': '${ladder[1]}'}),
-                          style: const TextStyle(fontSize: 13, color: AppColors.success),
-                        ),
-                      if (snake != null && snake.length >= 2)
-                        Text(
-                          tr('ثعبان في {head} إلى {tail}', {'head': '${snake[0]}', 'tail': '${snake[1]}'}),
-                          style: const TextStyle(fontSize: 13, color: AppColors.error),
-                        ),
-                      Text(
-                        tr('المتبقي للنهاية: {dist} مربع', {'dist': '$dist'}),
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                      ),
-                    ],
+                  child: Text(
+                    tr('المربع {position}', {'position': '$pos'}),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
                 if (lastRoll > 0)

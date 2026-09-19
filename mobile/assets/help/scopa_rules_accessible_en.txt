@@ -1,0 +1,305 @@
+Comprehensive Scopa Game Rules and Guide
+
+Section 1: Introduction and Basic Gameplay
+
+Game Objective and Match System
+Scopa is a strategic Italian card game played with a dedicated deck of forty cards equally divided into four suits:
+Diamonds
+Hearts
+Spades
+Clubs
+The cards in each suit bear numbers from 1 to 10, where 1 is the Ace, 8 is the Jack, 9 is the Knight, and 10 is the King.
+The objective of the game is to capture cards from the table and earn points through specific evaluation criteria at the end of each round until one of the players or teams reaches the target score of the match (11, 15, or 21 points) with an advantage of at least two points.
+
+Starting the Round and Dealing Cards
+At the beginning of each new round:
+Four face-up cards are placed on the table in the standard mode (or five cards in the case of five players).
+Three cards are dealt into each player's hand, and the rest of the cards are placed in the draw bank.
+Each player plays one card during their turn.
+When the cards in the hand of all players run out, the system deals a new batch of three cards to each player from the bank without placing any new cards on the table.
+The playing turns continue until the bank cards run out and the entire deck of forty cards is played.
+
+Example of Starting the Round:
+Suppose a round starts between two players, and the table contains: 4 Diamonds, 6 Hearts, 2 Spades, and 8 Clubs, and the first player's hand contains: 4 Hearts, 7 Diamonds, and 10 Spades.
+What should the first player do on their turn?
+The first player finds that they have the 4 Hearts card which exactly matches the 4 Diamonds card on the table in a direct single match, so they play the 4 Hearts card to capture both cards and place them in their captured cards.
+
+
+Section 2: Capture and Pickup Rules
+
+Capturing by Direct Match
+If a player plays a card that exactly matches the number of a single card on the table, they capture that card immediately.
+
+Example of Direct Match:
+Suppose the table contains a 7 Clubs card and a 3 Hearts card, and the first player plays a 7 Diamonds card.
+What does the first player do and what does the first player's card capture?
+The 7 Diamonds card immediately captures the matching 7 Clubs card, and both cards go to the first player's captured cards.
+
+Capturing by Sum
+If there is no single card on the table that matches your card's number, but there are two or more cards whose sum equals your card's number, your card captures that entire group.
+
+Example of Capturing by Sum:
+Suppose the table contains a 2 Spades, a 4 Hearts, and a 10 Clubs card, and the first player plays a 6 Diamonds card.
+What does the first player do and what does their card capture?
+Since there is no single 6 on the table, the player adds the two cards: 2 + 4 = 6, so the 6 Diamonds card captures both 2 Spades and 4 Hearts together.
+
+Mandatory Priority Rule for Single Matching Card
+If the table contains a single card that matches your card, and at the same time there is another group of cards that give the same sum, the rule mandates capturing only the single matching card, and strictly prohibits capturing the sum group.
+
+Example of Single Card Priority:
+Suppose the table contains a 7 Spades card and also contains a 3 Diamonds and a 4 Hearts, and the first player plays a 7 Clubs.
+What does the first player do and what are they allowed to capture?
+The rule requires the player to capture only the single 7 Spades card, and they cannot capture the two cards (3 + 4) due to the presence of a single matching card on the table.
+
+Discarding on the Table
+If a player plays a card that cannot capture any single card or any sum group on the table, this card settles face-up on the table to join the available table cards.
+
+Example of Discarding:
+Suppose the table contains 2 Diamonds and 3 Hearts, and the first player plays a 9 Spades card.
+What does the second player do after the card is discarded?
+Since the number 9 does not match any of the cards and does not equal their sum (2+3=5), the 9 Spades card settles on the table becoming available for the second player to capture on their next turn.
+
+
+Section 3: The Scopa Strike
+
+What is a Scopa Strike
+A Scopa strike is achieved when a player plays a card that captures all the cards present on the table without exception, leaving the table completely empty of any cards.
+A Scopa strike grants its owner an immediate full point credited to their account, and a distinct Scopa sound is played for it.
+
+Exception for the Last Trick of the Round
+According to the game's rule, a Scopa strike is not counted for a capture made in the last trick of the round (the last card played by the last player in the round) even if the table is completely cleared.
+
+Example of a Scopa Strike:
+Suppose the table contains only two cards: 3 Hearts and 5 Spades, and the first player plays an 8 Diamonds in the middle of the round.
+What does the first player do and what do they get?
+Since 3 + 5 = 8, the first player's card captures both table cards completely and the table becomes totally empty, so a Scopa strike is counted for them and they earn an immediate point in their account.
+
+Example of the Last Trick Exception:
+Suppose the table contained only one card, which is 7 Diamonds, and in the last trick of the round the second player played the last card in their hand, which is 7 Hearts, capturing the card and clearing the table.
+What does the second player do and is a Scopa counted for them?
+The second player takes the cards to their captured balance as normal, but a Scopa strike is not counted for them and they do not get an extra Scopa point because it happened in the last trick of the round.
+
+
+Section 4: Ace Sweeps All Mode
+
+The Ace Card Feature in Asso Piglia Tutto Mode
+When this mode is activated and the Ace card (number 1) is played, it immediately captures all the cards present on the table regardless of their numbers and quantity.
+
+Rule for Counting Scopa with an Ace
+This total capture is not counted as a Scopa strike if the table contains multiple cards. It is counted as a Scopa only in one case: if the only card present on the table is a single matching Ace.
+
+Example of Sweeping the Table with an Ace:
+Suppose the table contains four cards: 2 Diamonds, 5 Hearts, 8 Spades, and 10 Clubs, and the first player plays a 1 Spades card.
+What happens to the table and what does the first player get?
+The Ace card captures all four cards and the table is immediately cleared, and the cards are added to the first player's balance without counting a Scopa point.
+
+Example of Capturing a Matching Ace:
+Suppose the table contains only one card, which is 1 Diamonds, and the first player plays a 1 Hearts card.
+What happens and is a Scopa counted?
+Since the captured card is a single matching Ace, the first player captures it and a valid Scopa strike is counted for them and they get an immediate point.
+
+
+Section 5: The Seven of Diamonds Card (Sette Bello)
+
+Importance of the Sette Bello Card
+The 7 Diamonds card is the most valuable single card in the game of Scopa.
+The party that successfully captures this card during the round gets a guaranteed full point (+1 point) when calculating the round's points at the end.
+
+Example of Sette Bello:
+Suppose the 7 Diamonds card was on the table, and the second player played a 7 Hearts card, captured it, and added it to their captured cards.
+What does the second player get at the end of the round?
+The second player gets the full Sette Bello point, which is added to their account in the round's result.
+
+
+Section 6: Primiera in Full Detail
+
+What is Primiera
+Primiera is a competitive criterion that grants one point to the owner of the strongest card combination captured across the four suits (Diamonds, Hearts, Spades, and Clubs).
+
+Mandatory Qualification Condition
+To enter the Primiera comparison, it is required that the player (or team) has captured at least one card in each of the four complete suits without missing any suit.
+A player who collected cards in only three suits is considered unqualified, and loses the Primiera point to any player who collected the four suits regardless of their total points in the other suits.
+
+Method of Selecting the Card from Each Suit
+The values of all cards in a single suit are not added up; instead, only one card is chosen, which is the highest-value card in that suit, and the remaining cards in the same suit are ignored.
+
+Table of Fixed Primiera Values for Each Card
+Card 7: equals 21 Primiera points (the strongest card in Primiera).
+Card 6: equals 18 Primiera points.
+Card 1 (Ace): equals 16 Primiera points.
+Card 5: equals 15 Primiera points.
+Card 4: equals 14 Primiera points.
+Card 3: equals 13 Primiera points.
+Card 2: equals 12 Primiera points.
+Face cards (8 Jack, 9 Knight, 10 King): equal 10 Primiera points for each card.
+
+Detailed Examples of Calculating Primiera
+
+First Example: Calculating Primiera and Comparing Two Players
+Suppose the first player collected the following cards as their best cards in each suit:
+In Diamonds: card 7 (value 21 points).
+In Hearts: card 6 (value 18 points).
+In Spades: card 1 Ace (value 16 points).
+In Clubs: card 5 (value 15 points).
+The first player's Primiera total: 21 + 18 + 16 + 15 = 70 points and they have all four suits.
+
+Suppose the second player collected the following cards as their best cards in each suit:
+In Diamonds: card 6 (value 18 points).
+In Hearts: card 7 (value 21 points).
+In Spades: card 5 (value 15 points).
+In Clubs: card 7 (value 21 points).
+The second player's Primiera total: 18 + 21 + 15 + 21 = 75 points and they have all four suits.
+
+So who gets the Primiera point and why?
+The second player gets the Primiera point because both players are qualified by having the four suits, but the second player's total points (75 points) is higher than the first player's total points (70 points).
+
+Second Example: Primiera When Missing a Suit
+Suppose the first player captured very strong cards in only three suits:
+In Diamonds: card 7 (21 points).
+In Hearts: card 7 (21 points).
+In Spades: card 7 (21 points).
+But they did not capture any card in Clubs (their balance is zero cards in Clubs). Their total points in the three suits is 63 points.
+
+Suppose the second player captured weak cards but in all four suits:
+In Diamonds: card 2 (12 points).
+In Hearts: card 2 (12 points).
+In Spades: card 2 (12 points).
+In Clubs: card 2 (12 points).
+The second player's total points is only 48 points.
+
+So who gets the Primiera point and why?
+The second player gets the full Primiera point, because the second player completed the four suits and qualified for Primiera, while the first player is completely excluded from the comparison for not having the fourth suit regardless of their total points in the other suits.
+
+Third Example: Presence of Multiple Cards of the Same Suit
+Suppose the first player captured four cards in the Diamonds suit: 7 Diamonds, 5 Diamonds, 3 Diamonds, and 2 Diamonds.
+How is the Diamonds value calculated in Primiera for the first player?
+Only one card is chosen, which is the card with the highest value, the 7 Diamonds card, which grants 21 Primiera points, and the remaining cards (5, 3, and 2) are ignored and their values are not added to the sum.
+
+Fourth Example: Dealing with Face Cards in Primiera
+Suppose the best card the first player captured in the Clubs suit is the 10 Clubs (King), and the best card the second player captured in the Clubs suit is the 8 Clubs (Jack).
+How are these cards evaluated in Primiera?
+According to the Primiera table, all face cards (8, 9, and 10) equal ten Primiera points, therefore the first player gets 10 points and the second player gets 10 points in this suit, as no face card outranks another in Primiera calculation and they are all considered weaker than number cards from 1 to 7.
+
+Fifth Example: Calculating Primiera in the Team System
+Suppose the first player and their teammate, the third player, play as one team, and their captured cards were as follows:
+The first player captured: 7 Diamonds, and 6 Hearts, and did not capture Spades or Clubs.
+Their teammate, the third player, captured: 7 Spades, and 7 Clubs, and did not capture Diamonds or Hearts.
+How is the Primiera calculated for team 1?
+The cards of the team members are combined together; thus team 1 has:
+In Diamonds: 7 (21 points).
+In Hearts: 6 (18 points).
+In Spades: 7 (21 points).
+In Clubs: 7 (21 points).
+Thereby, team 1 completes all four suits with a Primiera total of 81 points, and strongly enters the competition against the second team.
+
+
+Section 7: Sweeping the Rest of the Table at the End of the Round
+
+The Fate of the Remaining Cards on the Table
+After all players play the last card in their hands and the deck completely runs out, some cards may remain on the table uncaptured by anyone.
+All the cards remaining on the table mandatorily go to the player (or team) who made the last valid capture during the round, and this is clearly announced in the round summary.
+
+Example of Sweeping the Rest of the Table:
+Suppose the first player captured a card in their penultimate turn, then in the subsequent turns the first player and second player discarded cards that didn't capture anything, and at the end of the round a 10 Hearts and a 3 Clubs remained on the table.
+So to whom do the remaining cards go?
+The two remaining cards automatically go to the captured cards of the first player because they are the maker of the last valid capture in the round.
+
+
+Section 8: The Five Point Sources and End of the Round
+
+Distribution of Round Points
+At the end of each round, round points are distributed based on five independent sources:
+
+1. Card Majority Point
+The party that collected more than 20 cards (more than half the deck) earns one point. In case of a tie (20 vs 20), the point is not awarded to anyone.
+
+2. Diamonds Majority Point
+The party that collected more than 5 Diamond cards (more than half of the ten Diamond cards) earns one point. In case of a tie (5 vs 5), the point is not awarded to anyone.
+
+3. Sette Bello Point
+The party that obtained specifically the 7 Diamonds card earns one guaranteed point.
+
+4. Primiera Point
+The qualified party that achieved the highest Primiera total across the four suits earns one point.
+
+5. Scopa Strike Points
+Each party earns one extra point for every valid Scopa strike they scored while playing the round.
+
+Comprehensive and Complete Example of Calculating a Round Result and Comparing Points:
+Suppose a complete round ended with the following detailed results between the first player and the second player:
+Total Captured Cards: The first player collected 23 cards, and the second player collected 17 cards.
+Diamond Cards: The first player collected 6 Diamond cards, and the second player collected 4 Diamond cards.
+Sette Bello: The 7 Diamonds card was in the possession of the second player.
+Primiera:
+The first player has: 7 Diamonds (21), 7 Hearts (21), 6 Spades (18), 1 Clubs (16) with a total of 76 points and the four complete suits.
+The second player has: 6 Diamonds (18), 6 Hearts (18), 7 Spades (21), 7 Clubs (21) with a total of 78 points and the four complete suits.
+Scopa Strikes: The first player achieved one Scopa strike during the round, and the second player did not achieve any Scopa.
+
+How are the round points distributed in detail?
+Card Point: To the first player (23 vs 17).
+Diamonds Point: To the first player (6 vs 4).
+Sette Bello Point: To the second player (for possessing 7 Diamonds).
+Primiera Point: To the second player (78 vs 76).
+Scopa Points: One point to the first player.
+
+Final Total of Round Points:
+First Player: 1 Cards + 1 Diamonds + 1 Scopa = 3 points.
+Second Player: 1 Sette Bello + 1 Primiera = 2 points.
+
+
+Section 9: Team System
+
+Team Play Rules
+When four or six players participate in a team system:
+The players are divided into two teams (Team 1 and Team 2) alternating in the seating arrangement.
+The captured cards of all members of the same team are combined together into a joint balance to calculate Cards, Diamonds, Primiera, Sette Bello, and Scopa points.
+The team that reaches the target score of the match first with an advantage of at least two points wins the match.
+
+What Happens When a Player Leaves
+If a player leaves during a team match, the game pauses and the round is canceled to ensure team equity.
+
+Example of the Team System:
+Suppose the first player and the third player are in Team 1, and the second player and the fourth player are in Team 2. The first player captured 12 cards, and their teammate the third player captured 11 cards.
+How much does the card balance of Team 1 become?
+The balance of the team members is added together: 12 + 11 = 23 cards (out of 40), and thus Team 1 wins the card majority point.
+
+
+Section 10: Special Modes Scopa 15, Scopone, and Reversed
+
+Scopa 15 Mode
+Instead of matching the card number, a capture is made if the sum of your hand card with a card or a group of cards from the table equals exactly 15 (the required value from the table equals 15 minus your hand card's value).
+
+Example of Scopa 15:
+Suppose the first player's hand contains a 7 Diamonds card, and the table contains an 8 Spades card and a 3 Hearts card.
+What does the first player do?
+Since 7 + 8 = 15, the first player plays the 7 Diamonds card to capture the 8 Spades card immediately.
+
+Scopone Mode
+In Scopone mode (which is played among four players divided into two teams), the entire deck of forty cards is dealt equally from the very first moment (10 cards per player all at once), and the table starts empty without cards and without a draw bank.
+
+Example of Scopone:
+Suppose the match started in Scopone mode among four players.
+How many cards does each player get and what does the first player do?
+Each player gets ten cards in their hand, and the first player plays the first card to place it face-up on the table.
+
+Reversed Scopa Mode
+The point criteria are reversed: the winner of the round points is the one who gets the least number of cards and the least number of Diamonds, and the Scopa strike and the 7 Diamonds card become point deductions, where each player strives to avoid capturing and avoid collecting cards.
+
+Example of the Reversed Mode:
+Suppose the first player collected only 8 cards, while the second player collected 32 cards in a Reversed mode match.
+Who gets the Cards point?
+The first player gets the point because they have the least number of captured cards.
+
+
+Section 11: End of Round and Match
+
+End of Round
+The round ends as soon as all forty cards run out from the players' hands and the bank.
+The remaining cards are gathered for the owner of the last capture, and the captured cards are examined to calculate the points for the five criteria.
+The round points are added to the cumulative score in the match.
+
+Beginning of the Next Round
+If the win is not decided, a new round begins by dealing four face-up cards on the table and three cards to each player, rotating the dealer's turn to the next player.
+
+End of Match and Determining the Winner
+The match completely ends in favor of the first player or team that reaches the target score of the match (11, 15, or 21 points) provided they lead by an advantage of at least two points over the closest competitor (the two-point difference rule).

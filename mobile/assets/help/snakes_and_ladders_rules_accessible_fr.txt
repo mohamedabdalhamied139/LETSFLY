@@ -1,0 +1,117 @@
+Guide et règles complets des serpents et des échelles (Le voyage des cent carrés)
+
+Première partie : introduction et gameplay de base
+
+Concept du jeu et objectif principal
+Snakes and Ladders est le jeu de course classique le plus célèbre et le plus divertissant au monde, rempli de surprises et de rebondissements inattendus.
+Le jeu se compose d'un plateau avec des cases numérotées par ordre croissant de la case numéro 1 à la case numéro 100.
+Tous les joueurs commencent en dehors du plateau au point zéro.
+L'objectif principal est de lancer les dés et d'avancer sur le chemin du plateau pour être le premier joueur à atteindre exactement la case numéro 100.
+
+Séquence de virage et mouvement
+Le tour se déroule parmi les joueurs séquentiellement dans le sens des aiguilles d'une montre.
+À votre tour, vous appuyez sur l’option lancer les dés ou sur la touche Entrée.
+Le dé génère un nombre aléatoire de 1 à 6.
+Votre jeton avance sur le plateau d'un nombre de pas égal au chiffre obtenu, accompagné du bruit des pas de déplacement et de l'annonce du nouveau numéro de case sur lequel vous avez atterri.
+
+Exemple pratique de démarrage d’une partie entre deux joueurs :
+Supposons que le match commence entre deux joueurs et que les deux soient au point zéro.
+Le premier joueur lance le dé et obtient le chiffre 5.
+Que se passe-t-il ?
+Le premier joueur avance de cinq pas et atterrit sur la case numéro 5, et le tour passe au deuxième joueur.
+
+Exemple pratique de gameplay entre trois joueurs :
+Supposons que le premier joueur soit sur la case 10, le deuxième joueur sur la case 15 et le troisième joueur sur la case 20.
+Le deuxième joueur lance le dé et obtient le numéro 3.
+Que se passe-t-il ?
+Le deuxième joueur avance de 3 pas pour atterrir sur la case 18 (15 plus 3 égale 18), puis le tour passe au troisième joueur.
+
+Deuxième partie : échelles classiques et serpents
+
+Échelles et chemin d'ascension des fusées
+Le plateau contient huit échelles placées dans des cases spécifiques et fixes.
+Si le mouvement de votre dé se termine exactement à la base d'une échelle, vous grimpez instantanément sur l'échelle pour atteindre son sommet en une seule étape, vous épargnant ainsi d'énormes distances !
+Emplacements des huit échelles et leurs valeurs :
+Première échelle : De la case 4, vous grimpez jusqu'à la case 14.
+Deuxième échelle : De la case 9, vous grimpez jusqu'à la case 31.
+Troisième échelle : De la case 20, vous grimpez jusqu'à la case 38.
+Quatrième échelle : De la case 28, vous grimpez jusqu'à la case 84.
+Cinquième échelle : De la case 40, vous grimpez jusqu'à la case 59.
+Sixième échelle : De la case 51, vous grimpez jusqu'à la case 67.
+Septième échelle : De la case 63, vous grimpez jusqu'à la case 81.
+Huitième échelle : De la case 71, vous grimpez jusqu'à la case 91.
+
+Serpents et morsures glissantes vers l’arrière
+Le plateau contient huit serpents rusés qui se cachent pour les joueurs avancés.
+Si votre mouvement de dé se termine exactement à la tête d'un serpent, vous glissez instantanément vers le bas avec le bruit d'une morsure de serpent, tombant sur sa queue dans une case inférieure, vous renvoyant en arrière !
+Emplacements des huit serpents et leurs résultats :
+Premier serpent : sur la case 17, vous mord jusqu'à la case 7.
+Deuxième serpent : sur la case 54, vous mordez jusqu'à la case 34.
+Troisième serpent : à la case 62, vous mordez jusqu'à la case 19.
+Quatrième serpent : sur la case 64, vous mord jusqu'à la case 60.
+Cinquième Serpent : Sur la case 87, vous mord jusqu'à la case 24.
+Sixième Serpent : Sur la case 93, vous mord jusqu'à la case 73.
+Septième Serpent : Sur la case 95, vous mord jusqu'à la case 75.
+Huitième serpent : à la case 98, vous mordez jusqu'à la case 79.
+
+Exemple pratique de grimper sur une échelle :
+Supposons qu’un joueur se trouve sur la case numéro 24, qu’il lance les dés et obtienne le numéro 4.
+Qu'arrive-t-il au joueur ?
+Le joueur avance de 4 pas et atteint la case 28 (24 plus 4 égale 28).
+Puisque la case 28 est la base d’une échelle géante, le joueur grimpe instantanément au sommet de l’échelle à la case 84 et devient très proche de la ligne d’arrivée !
+
+Exemple pratique de morsure de serpent :
+Supposons qu’un joueur se trouve sur la case numéro 83, qu’il lance les dés et obtienne le numéro 4.
+Qu'arrive-t-il au joueur ?
+Le joueur avance de 4 pas et atteint la case 87 (83 plus 4 égale 87).
+Puisque la case 87 contient une tête de serpent, le serpent les mord instantanément et ils glissent jusqu'à sa queue sur la case 24 !
+
+Troisième partie : Règles des dés spéciaux et décision de la fin
+
+La règle du numéro 6 et le lancer supplémentaire gratuit
+Si vous lancez les dés et obtenez le chiffre 6 :
+Vous avancez de 6 pas complets.
+Vous recevez immédiatement un bonus, qui est un lancer supplémentaire gratuit dans le même tour pour relancer et avancer plus loin !
+
+La règle de pénalité de trois six consécutifs
+Si vous avez la chance de lancer le chiffre 6 deux fois de suite, puis de lancer le chiffre 6 une troisième fois consécutive au cours du même tour :
+Le jeu considère cette cupidité excessive, et annule complètement tous vos mouvements effectués durant ce tour.
+Le jeu vous ramène immédiatement à la case sur laquelle vous vous trouviez avant le début du tour, et votre tour se termine automatiquement et passe au joueur suivant !
+
+La règle consistant à atteindre exactement la case 100 et à dépasser la fin
+Pour gagner le match, le jeu nécessite d'atteindre la case numéro 100 avec le chiffre restant exact sans excès :
+Si le nombre obtenu dépasse la case 100 (par exemple, vous étiez sur la case 97 et avez obtenu un 5, totalisant 102), votre mouvement est considéré comme invalide et vous ne bougez pas d'un seul pas. Vous restez fixe à votre place sur la case 97, et le jeu annonce qu'aucun coup n'est possible et passe le tour au joueur suivant.
+Il n’y a pas de retour en arrière au-delà de cent ; le joueur reste simplement debout jusqu'à ce qu'il obtienne le résultat exact.
+
+Exemple pratique de tentative de victoire et de dépassement de la fin :
+Supposons qu'un joueur se trouve sur la case numéro 98 et qu'il ait besoin d'exactement deux pas pour gagner.
+Si le joueur lance et obtient le chiffre 3 (98 plus 3 égale 101) :
+Le joueur ne bouge pas du tout, reste sur la case 98 et c'est le tour du joueur suivant.
+Cependant, si lors de leur prochain tour, ils lancent exactement le chiffre 2 (98 plus 2 égale 100) :
+Ils atteignent la case 100 et gagnent le match instantanément !
+
+Quatrième partie : Modes avancés (tuiles Knockout et Mystery)
+
+Mode Knockout et Attaque (Mode Knockout)
+Lorsque ce mode est activé dans les paramètres de la pièce :
+Si le mouvement de votre dé se termine exactement sur la même case occupée par un joueur adverse, vous l'assommez de force, le renvoyant 10 pas en arrière vers le début !
+
+Mode Tuiles Mystère (Mode Tuiles Mystère)
+Des boîtes cadeaux et surprises aléatoires sont dispersées sur le plateau, qui se régénèrent continuellement à chaque fois qu'elles sont ouvertes par un joueur.
+Lorsque vous atterrissez sur une boîte mystère, elle vous ouvre l'une des surprises suivantes :
+1. Bouclier : vous accorde un bouclier qui vous protège automatiquement de la prochaine morsure de n'importe quel serpent et détruit le serpent au lieu que vous glissiez vers le bas.
+2. Freeze Trap : vous gèle dans un bloc de glace pendant un tour complet, vous obligeant à sauter votre prochain tour sans jouer jusqu'à ce que la glace fonde au tour suivant.
+3. Boost : vous propulse instantanément de 3 à 7 pas supplémentaires.
+4. Échange magique : échangez comme par magie et instantanément votre position avec le joueur principal du jeu, prenant ainsi sa place avancée !
+5. Dés dorés (lancement bonus) : vous accorde un lancer de dés supplémentaire gratuit et immédiat.
+6. Tempête de vent : Une tempête vous fait reculer de 2 à 4 pas.
+7. Coin Box (Coins) : vous accorde un solde de pièces ajoutées à votre compte.
+
+Exemple pratique de mode KO :
+Supposons que le deuxième joueur se trouve sur la case 50 et que le premier joueur se trouve sur la case 46 et ait obtenu un 4.
+Le premier joueur atteint la case 50 et assomme le deuxième joueur, le poussant de 10 pas en arrière pour que le deuxième joueur atterrisse sur la case 40 !
+
+Exemple pratique de la Swap Box :
+Supposons que le troisième joueur soit en retard sur la case 12 et que le leader soit sur la case 85.
+Le troisième joueur a atterri sur une boîte mystère et a obtenu l'échange de position magique :
+Le troisième joueur passe instantanément à la case 85 et le leader tombe à la case 12 !

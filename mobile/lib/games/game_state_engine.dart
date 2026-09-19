@@ -251,11 +251,6 @@ class GameStateEngine {
           // Strictly trigger tactile haptic vibration when it becomes my turn
           HapticService.instance.playTurnHaptic();
           SoundService.instance.playSound('TURN_START');
-        } else {
-          final isNewDealBatch = (gt == 'SCOPA' && et == 'DEAL_BATCH');
-          if (!spokeEvent && !isNewDealBatch) {
-            AccessibilityManager.instance.announce(tr('دور {name}', {'name': currentName}), interrupt: false);
-          }
         }
       }
     } else if (['MATCH_WON', 'MATCH_FINISHED', 'ROUND_FINISHED', 'ROUND_END'].contains(et)) {

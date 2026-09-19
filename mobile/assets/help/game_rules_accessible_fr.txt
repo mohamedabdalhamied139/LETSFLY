@@ -1,0 +1,4 @@
+TableVerse — Explication du jeu actuel
+L'explication du jeu pour la table actuelle n'a pas encore été ajoutée.
+Utilisez F1 pour afficher les raccourcis de jeu disponibles.
+Utilisez Ctrl+F1 pour ouvrir l'explication complète du jeu une fois son fichier de règles ajouté.

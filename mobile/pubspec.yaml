@@ -38,6 +38,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/help/
     - assets/locales/
     - assets/sounds/
     - assets/sounds/domino/

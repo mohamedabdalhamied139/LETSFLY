@@ -1,0 +1,16 @@
+1. Raccourcis des tables de jeu :
+• P : Annoncer la liste et le nombre de joueurs présents à la table.
+• T : Annoncer le nom du joueur dont c'est le tour.
+• R : Annoncez les extrémités ouvertes des dominos et leur somme pour obtenir des multiples de cinq.
+• C : Annoncer le nombre de tuiles restantes dans le tirage (banque).
+• S : Annoncez le total de points que chaque joueur a dans le match.
+• V : Afficher la liste des tuiles jouées sur la table.
+2. Jouer et dessiner des raccourcis :
+• Flèches haut et bas : naviguez entre vos tuiles de dominos.
+• Entrée : lit la tuile actuellement sélectionnée.
+• Espace ou D : piochez dans la banque lorsque vous n'avez pas de tuile correspondante.
+3. Raccourcis de gestion du jeu (pour l'hôte de la salle) :
+• Enter : Démarrez le jeu une fois positionné sur l'élément de la table.
+• Maj + X : Terminez la partie en cours.
+• B : Ajoutez un joueur robot (bot) à la salle.
+• Maj + B : supprime le dernier bot ajouté.

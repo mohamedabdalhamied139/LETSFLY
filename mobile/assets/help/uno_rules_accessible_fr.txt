@@ -1,0 +1,372 @@
+Guide et règles complets du jeu Uno
+
+Première section : Introduction et gameplay de base
+
+But du jeu
+Le but principal du jeu Uno est d'être le premier joueur à se débarrasser de toutes les cartes qu'il a en main, tout en essayant d'empêcher ses adversaires de se débarrasser des leurs.
+Le gagnant à la fin de chaque tour reçoit le total des points des cartes restantes dans les mains des perdants. Les tours se poursuivent jusqu'à ce qu'un joueur atteigne l'objectif fixé pour le match, qui est de 500 points en mode standard.
+
+Nombre de joueurs
+Uno se joue avec deux à dix joueurs dans la même pièce.
+
+Début du match et du tour
+Au début de chaque nouveau tour :
+Le jeu de cartes est complètement mélangé.
+Chaque joueur reçoit sept cartes en main.
+Une carte est tirée et placée face visible au centre de la table comme carte de départ. Si la carte de départ est une carte joker, elle est remise dans le paquet et une autre est tirée.
+
+Scénarios de cartes de départ
+Si la carte de départ est une carte numérotée normale, le premier joueur commence le jeu directement en faisant correspondre sa couleur ou son numéro.
+Si la carte de départ est une carte Passer, le premier joueur est sauté et le deuxième joueur commence immédiatement.
+Si la carte de départ est une carte inversée, le sens du jeu est immédiatement inversé.
+Si la carte de départ est une carte Draw 2, le premier joueur pioche deux cartes du paquet et perd son tour, à moins que la règle d'empilement ne soit activée, auquel cas le jeu commence par une séquence de tirage en attente.
+
+Qui commence et direction du jeu
+Le tour commence avec le premier joueur, et le sens de jeu par défaut va dans le sens des aiguilles d'une montre jusqu'à ce qu'il soit inversé par une carte inversée.
+
+Ce qu'un joueur fait à son tour
+Quand c'est votre tour, vous pouvez choisir et jouer une carte valide de votre main, ou piocher une carte du paquet si vous n'avez aucune carte valide à jouer.
+Après avoir joué une carte ou tiré, le tour passe automatiquement au joueur suivant dans le sens du jeu.
+
+Quand se terminent le tour et le match
+Le tour se termine immédiatement lorsqu'un joueur réussit à se débarrasser de sa dernière carte et que le solde de sa carte devient nul.
+L'ensemble du match se termine en faveur du premier joueur à atteindre un score cumulé égal à l'objectif fixé pour le match (500 points).
+
+Exemple pratique de début de tour dans un match à trois joueurs :
+Supposons qu'un tour commence avec trois joueurs et que la carte de départ face visible sur la table est un 4 bleu.
+Que fait le premier joueur dont c'est le tour ?
+Le premier joueur doit jouer une carte bleue de sa main, ou une carte portant le numéro 4 de n'importe quelle autre couleur, ou n'importe quel joker. S'ils n'ont pas de cartes correspondantes, ils doivent appuyer sur la commande de tirage pour piocher une carte du paquet.
+
+Section deux : Mode par défaut
+
+Règles de jeu de base
+Dans le mode par défaut du jeu, les cartes à jouer sont soumises aux règles de correspondance classiques suivantes :
+
+Correspondance des couleurs
+Vous pouvez jouer n'importe quelle carte de votre main qui a la même couleur que la carte de table face visible, par exemple jouer une carte rouge sur une carte rouge.
+
+Correspondance des nombres
+Vous pouvez jouer n'importe quelle carte numérique de votre main qui a la même valeur numérique que la carte de table face visible même si la couleur est différente, comme jouer un 6 vert sur un 6 jaune.
+
+Correspondance du type de carte
+Vous pouvez jouer une carte action du même type même si la couleur est différente, comme jouer une benne bleue sur une benne rouge.
+
+Caractères joker
+Les jokers sont toujours valables pour jouer à tout moment, quelle que soit la couleur actuelle sur la table.
+
+Règle de tirage par défaut
+Si vous n'avez pas de carte valide à jouer, vous piochez une carte du paquet. Si la carte piochée est valide, vous pouvez la jouer immédiatement ou passer votre tour et la conserver. S'il n'est pas valide, le tour passe automatiquement au joueur suivant.
+Remarque importante : le jeu empêche le tirage volontaire de cartes si vous détenez une carte jouable valide dans votre main.
+
+Exemple pratique du mode par défaut :
+Supposons que la carte de table soit un 7 vert et que la main du deuxième joueur contienne : 7 rouge, 2 vert et 5 jaune.
+Que peut faire le deuxième joueur ?
+Le deuxième joueur peut jouer le 7 rouge pour correspondre au numéro, ou jouer le 2 vert pour correspondre à la couleur. Ils ne peuvent pas jouer le 5 jaune car il ne correspond ni à la couleur ni au numéro.
+
+Troisième section : Les cartes
+
+Les cartes Uno sont divisées en grands groupes, chacun ayant une fonction spécifique :
+
+Cartes régulières (cartes numériques)
+Le jeu comprend des cartes numérotées de 0 à 9 en quatre couleurs : rouge, jaune, vert et bleu.
+Leur fonction : faire correspondre une couleur ou un chiffre pour passer le tour et réduire les cartes en main sans déclencher d'effet spécial sur le joueur suivant (sauf lorsque les règles 0 et 7 sont actives).
+
+Exemple de carte numérotée :
+Supposons que la carte de table face visible soit un 3 rouge et que le premier joueur ait joué un 3 jaune.
+Que fait le deuxième joueur ?
+La nouvelle couleur active devient le jaune et le deuxième joueur doit jouer un carton jaune, une carte avec le numéro 3 ou un joker.
+
+Cartes d'action
+
+Passer la carte
+Sa fonction : sauter immédiatement le joueur suivant, le privant de son tour, et passer le jeu au joueur suivant.
+
+Exemple de Skip Card entre deux joueurs :
+Supposons que le premier joueur joue une carte Blue Skip contre le deuxième joueur dans un match à deux joueurs.
+Qu'arrive-t-il au deuxième joueur ?
+Le deuxième joueur est totalement privé de son tour, et le tour revient immédiatement au premier joueur de jouer une nouvelle carte de couleur bleue.
+
+Exemple de Passer la Carte entre Trois Joueurs :
+Supposons que l'ordre soit le premier, puis le deuxième, puis le troisième, et que le premier joueur joue une carte Red Skip.
+Que font les deuxième et troisième joueurs ?
+Le deuxième joueur est sauté sans jouer et le troisième joueur doit jouer son tour sur la couleur rouge.
+
+Exemple de Skip Card entre quatre joueurs :
+Supposons que l'ordre soit le premier, puis le deuxième, puis le troisième, puis le quatrième, et que le premier joueur joue une carte Passer verte.
+Qu'arrive-t-il aux joueurs ?
+Seul le deuxième joueur est ignoré et le tour passe directement au troisième joueur de jouer sur la couleur verte, tandis que le quatrième joueur attend son tour après le troisième.
+
+Carte inversée
+Sa fonction : inverse le sens de jeu du sens des aiguilles d'une montre vers le sens inverse des aiguilles d'une montre et vice versa.
+
+Exemple de carte inversée entre deux joueurs :
+Supposons que le premier joueur joue une carte jaune inversée dans un match à deux joueurs.
+Qu'arrive-t-il au deuxième joueur ?
+Dans un match à deux joueurs, la carte Reverse agit exactement comme une carte Passer, privant le deuxième joueur de son tour et rendant immédiatement le tour au premier joueur.
+
+Exemple de carte inversée entre trois joueurs :
+Supposons que le chemin de jeu soit le suivant : premier, puis deuxième, puis troisième, et que le premier joueur joue une carte verte inversée.
+Que se passe-t-il au tour ?
+Le chemin de jeu s'inverse pour revenir en arrière, en sautant le deuxième joueur, et le tour passe immédiatement au troisième joueur de jouer sur la couleur verte.
+
+Exemple de carte inversée entre quatre joueurs :
+Supposons que le chemin de jeu soit le suivant : premier, puis deuxième, puis troisième, puis quatrième, et que le deuxième joueur joue une carte Blue Reverse.
+Que se passe-t-il au tour ?
+Le sens de jeu s'inverse vers le premier joueur au lieu du troisième joueur, donc le premier joueur joue directement après le deuxième joueur sur la couleur bleue.
+
+Piochez 2 cartes
+Sa fonction : oblige le joueur suivant à piocher deux cartes du paquet et à perdre son tour (ou à contribuer à une séquence de pioche en attente si la règle d'empilement est activée).
+
+Exemple de carte Draw 2 en mode par défaut :
+Supposons que le premier joueur joue une carte Red Draw 2 en mode standard.
+Que fait le deuxième joueur ?
+Le deuxième joueur doit piocher deux cartes du paquet et les ajouter à sa main, perdant automatiquement son tour sans jouer, et le tour passe directement au troisième joueur.
+
+Jeter toutes les cartes
+Sa fonction : Lorsque la règle Tout défausser est activée, cette carte permet à un joueur de défausser d'un seul coup la carte jouée ainsi que toutes les autres cartes de sa main de la même couleur.
+
+Exemple de carte Tout rejeter :
+Supposons que le premier joueur ait dans sa main : Bleu 2, Bleu 7, Bleu Draw 2 et une carte Bleue Tout rejeter, et qu'il joue la carte Tout rejeter.
+Qu'arrive-t-il à la main du premier joueur ?
+Les quatre cartes bleues tombent de la main du premier joueur sur la table en même temps, le solde de sa main devient nul et il remporte la manche immédiatement.
+
+Passer la carte Tout le monde
+Sa fonction : un joker qui saute tous les joueurs assis à la table quel que soit leur numéro, et renvoie immédiatement le tour au même joueur de rejouer sur la couleur de son choix.
+
+Exemple de carte Passer tout le monde :
+Supposons que le premier joueur joue une carte Passer tout le monde à une table à quatre joueurs.
+Que font les autres joueurs ?
+Les tours des deuxième, troisième et quatrième joueurs sont tous sautés sans qu'ils jouent, et le tour revient immédiatement au premier joueur pour jouer une autre carte de sa main.
+
+Section quatre : les jokers
+
+Carte de couleurs sauvages
+Sa fonction : un joker qui permet au joueur de choisir la nouvelle couleur active (rouge, jaune, vert ou bleu) et peut être joué à tout moment.
+
+Exemple de carte de couleurs sauvages :
+Supposons que le premier joueur joue une carte Wild Color et choisisse le jaune.
+Que fait le deuxième joueur ?
+Le deuxième joueur doit jouer un carton jaune, tout autre joker, ou piocher dans le paquet s'il n'a pas de carton jaune.
+
+Carte Wild Draw 4
+Sa fonction : un joker qui permet au joueur de choisir la nouvelle couleur, et oblige le joueur suivant à piocher quatre cartes et à perdre son tour. Dans ce projet, un joueur peut jouer cette carte à tout moment même s'il possède des cartes correspondant à la couleur actuelle de la table.
+
+Exemple de carte Wild Draw 4 :
+Supposons que la carte de table soit un 9 rouge et que le premier joueur ait une carte rouge 3 et une carte Wild Draw 4 et joue le Draw 4.
+Que font le premier et le deuxième joueurs ?
+Le premier joueur choisit par exemple le bleu. Le deuxième joueur doit piocher quatre cartes du paquet et perdre son tour, puis le troisième joueur joue sur la couleur bleue.
+
+Cartes Wild majeures : piochez 2, piochez 6 et piochez 10
+Leur fonction : des jokers qui permettent de choisir la nouvelle couleur et obligent le joueur suivant à piocher le nombre de cartes spécifié (2, 6 ou 10 cartes) et à perdre son tour.
+
+Exemple de carte Draw 10 :
+Supposons que le premier joueur joue une carte Wild Draw 10 et choisisse le vert.
+Que fait le deuxième joueur ?
+Le deuxième joueur doit piocher dix cartes complètes du paquet, les ajouter à sa main et perdre son tour, puis le troisième joueur joue sur la couleur verte.
+
+Carte Wild Reverse Draw 4
+Sa fonction : combiner le changement de couleur, inverser immédiatement le sens du jeu, et obliger le nouveau joueur suivant dans le nouveau sens à piocher quatre cartes et à perdre son tour.
+
+Exemple de carte Wild Reverse Draw 4 :
+Supposons que le sens du jeu aille du premier au deuxième puis au troisième, et que le premier joueur joue un Wild Reverse Draw 4 et choisisse le rouge.
+Que se passe-t-il au tour et que fait le troisième joueur ?
+Le sens du jeu s'inverse vers le troisième joueur. Le troisième joueur doit piocher quatre cartes et perdre son tour, puis le deuxième joueur joue sur la couleur rouge.
+
+Carte de roue chromatique
+Sa fonction : le joueur sélectionne une couleur cible lorsqu'il joue cette carte, puis oblige le joueur suivant à continuer de piocher des cartes du paquet une à une en continu jusqu'à ce qu'il pioche une carte correspondant à la couleur cible.
+
+Exemple de carte de roue chromatique :
+Supposons que le premier joueur joue une carte Roue chromatique et choisisse le bleu.
+Que fait le deuxième joueur ?
+Le deuxième joueur commence à piocher les cartes du paquet une par une jusqu'à ce qu'il pioche une carte bleue ; à ce stade, le processus de tirage s'arrête et ils gardent toutes les cartes tirées en main, puis le tour passe au joueur suivant.
+
+Section cinq : Règles spéciales
+
+Règle de séquence
+Quelle est la règle de séquence :
+La règle de séquence est une fonctionnalité spéciale qui permet à un joueur de se débarrasser simultanément de plusieurs cartes numérotées au cours du même tour.
+
+Conditions de déclenchement d'une séquence :
+La séquence doit commencer en jouant légalement une carte numérique régulière (0 à 9) sur la carte de table.
+Les cartes correspondantes doivent être exactement de la même couleur que la première carte.
+Les nombres doivent être séquentiels par pas de un (ascendant +1 comme 3 puis 4 puis 5, ou décroissant -1 comme 5 puis 4 puis 3).
+La séquence doit être composée d'au moins deux cartes.
+La séquence est strictement limitée aux cartes numérotées ; ni les cartes d'action ni les jokers ne peuvent être utilisés dans une séquence.
+
+Comment fonctionne la séquence :
+Lorsque le joueur joue la première carte, le jeu vérifie automatiquement sa main dans les deux sens (ascendant et descendant), sélectionne le chemin séquentiel le plus long de la même couleur et dépose toutes les cartes du chemin sur la table en même temps au cours du même tour.
+Si les chemins ascendants et descendants sont de même longueur, le système choisit automatiquement le chemin ascendant.
+La dernière carte de la séquence devient la carte face visible du dessus de la table et le tour passe au joueur suivant qui joue dessus.
+
+Exemple de séquence ascendante :
+Supposons que la carte de table soit Verte 1 et que la main du premier joueur contienne : Vert 3, Vert 4, Vert 5 et Jaune 8, et qu'il joue le Vert 3.
+Qu'arrive-t-il à la main du premier joueur et que fait le deuxième joueur ?
+Le système dépose automatiquement les trois cartes : Verte 3 puis Verte 4 puis Verte 5 en même temps. La carte face visible du dessus de la table devient le 5 vert et le premier joueur se retrouve avec une seule carte, le 8 jaune, entrant dans l'état Uno. Le deuxième joueur doit jouer son tour sur la carte Verte 5.
+
+Exemple de séquence décroissante :
+Supposons que la carte de table soit le Rouge 8 et que le premier joueur possède : Rouge 6, Rouge 5, Rouge 4 et Rouge 3, et qu'il joue le Rouge 6.
+Qu'arrive-t-il à la main du premier joueur ?
+Le système dépose automatiquement les quatre cartes : Rouge 6 puis Rouge 5 puis Rouge 4 puis Rouge 3 en même temps. Le haut de la table devient Rouge 3 et le joueur suivant joue sur la carte Rouge 3.
+
+Exemple de séquence entre deux joueurs :
+Supposons que le premier joueur joue une séquence de Vert 2, 3, 4 contre le deuxième joueur dans un match à deux joueurs.
+Que fait le deuxième joueur ?
+Le tour passe immédiatement au deuxième joueur (l'adversaire direct) et il doit jouer sur la carte Verte 4.
+
+Exemple de séquence entre trois joueurs :
+Supposons que l'ordre de jeu va du premier au deuxième puis au troisième, et que le premier joueur joue une séquence de Rouge 4, 5, 6.
+Que font les deuxième et troisième joueurs ?
+Le tour passe immédiatement au deuxième joueur pour jouer sur la carte Rouge 6, tandis que le troisième joueur attend son tour après le deuxième.
+
+Exemple de victoire d'un tour avec une séquence :
+Supposons que le premier joueur ne possède que deux cartes : Bleu 7 et Bleu 8, et que la carte de table était Bleu 2, et qu'il a joué le Bleu 7.
+Que se passe-t-il ?
+La séquence du Bleu 7 et du Bleu 8 tombe, la main du premier joueur est complètement vidée (zéro carte) et il remporte la manche immédiatement.
+
+Règle 0 et 7
+Lorsque la règle 0/7 est activée :
+Carte zéro (0) : lorsqu'une carte portant le numéro 0 est jouée, les mains de tous les joueurs tournent d'un pas dans le sens du jeu, chaque joueur donnant la totalité de sa main au joueur suivant.
+Sept (7) cartes : lorsqu'une carte portant le numéro 7 est jouée, la progression du tour s'arrête jusqu'à ce que le joueur choisisse un autre joueur avec lequel échanger complètement ses mains.
+
+Exemple de carte 7 :
+Supposons que le premier joueur possède six cartes, dont un 7 bleu, et que le deuxième joueur ne possède qu'une seule carte et que le premier joueur joue le 7 bleu.
+Que fait le premier joueur ?
+Le premier joueur choisit le deuxième joueur comme cible de l'échange, donc leurs mains sont immédiatement échangées ; la main du premier joueur contient désormais une carte et il entre dans l'état Uno, tandis que la main du deuxième joueur contient désormais six cartes.
+
+Règle d'appel Uno et d'arrestation des contrevenants
+Appeler Uno : Lorsqu'un joueur joue une carte et qu'il ne lui reste qu'une seule carte en main, il doit immédiatement appuyer sur la touche d'appel Uno (touche U).
+Attraper un contrevenant : si un joueur oublie d'appeler Uno et est en retard, et qu'un autre joueur appuie sur la touche Attraper le contrevenant (touche C), le jeu impose une pénalité au détenteur d'une carte, l'obligeant à tirer quatre cartes de pénalité du jeu et à les ajouter à sa main.
+
+Exemple d'Attraper Uno :
+Supposons que le premier joueur ait deux cartes, en joue une et se retrouve avec une carte, mais n'appuie pas sur la touche U pour appeler Uno.
+Que fait le deuxième joueur ?
+Le deuxième joueur peut immédiatement appuyer sur la touche C pour détecter la violation, et le jeu punit le premier joueur en lui faisant tirer quatre cartes de pénalité du jeu pour les ajouter à sa main.
+
+Règle du défi Draw 4 Bluff
+Lorsque la règle de défi est activée et qu'une carte Wild Draw 4 est jouée :
+Le système vérifie secrètement si le joueur qui a joué le Draw 4 possède en main une carte normale correspondant à la couleur de la table précédente.
+Le joueur ciblé se voit proposer deux options : accepter le tirage au sort ou défier en appuyant sur la touche X.
+Si le défi réussit (il est prouvé que le premier joueur détenait une couleur correspondante) : le premier joueur est pénalisé en piochant quatre cartes de pénalité, et le challenger ne pioche rien.
+Si le défi échoue (le premier joueur était innocent et ne détenait pas une couleur correspondante) : le challenger pioche six cartes complètes (quatre cartes de base plus deux cartes de pénalité pour le faux défi).
+
+Exemple de défi :
+Supposons que la couleur de la table soit rouge, que le premier joueur joue une carte Draw 4 et choisisse le bleu, et que le premier joueur ait un Red 5 dans sa main.
+Que se passe-t-il si le deuxième joueur choisit de défier ?
+Le deuxième joueur appuie sur la touche X, prouvant l'existence du carton rouge dans la main du premier joueur. Le premier joueur est pénalisé en tirant quatre cartes, et le deuxième joueur est épargné.
+
+Règle d'intervention et d'interception
+Lorsque la règle d'interception est activée :
+Si la carte de table face visible est Rouge 4 et qu'un joueur hors tour a une carte exactement correspondante, Rouge 4 (même couleur et même numéro), ce joueur peut appuyer sur la touche Entrée pour intervenir et jouer la carte immédiatement, interceptant le tour sans attendre qu'elle l'atteigne. Le chemin de jeu change pour partir d'eux.
+En super interception, l'interception est autorisée si le nombre ou le symbole correspond, même si la couleur diffère.
+
+Exemple de Jump-In :
+Supposons que c'est le tour du premier joueur et que la carte de table face visible soit le 9 vert, et que le troisième joueur possède également un 9 vert.
+Que fait le troisième joueur ?
+Le troisième joueur peut appuyer sur la touche Entrée et jouer immédiatement le Green 9 avant que le premier joueur ne joue. La carte tombe, interceptant le tour, et le tour suivant revient au joueur suivant le troisième joueur.
+
+Carte cloche
+Lorsque la règle Bell est activée et que la carte Bell est jouée :
+Le jeu entre en état d'alerte pour tous les joueurs actifs.
+Chaque joueur à la table doit immédiatement appuyer sur la touche Cloche (touche B) aussi vite que possible.
+Le jeu enregistre l'ordre des pressions des joueurs, et le dernier joueur à appuyer sur la touche est pénalisé en tirant des cartes de pénalité du paquet.
+
+Exemple de carte Bell :
+Supposons que le premier joueur joue la carte Bell dans une pièce à trois joueurs.
+Que font les joueurs ?
+Les premier, deuxième et troisième joueurs doivent appuyer immédiatement sur la touche B. Si le deuxième appuie en premier, puis le premier et que le troisième est en retard, le troisième joueur est pénalisé en tirant les cartes de pénalité.
+
+Règle de tirage au sort et de chaîne de réponse d'empilement
+Lorsque la règle d'empilement est activée et qu'une carte de tirage est jouée, une séquence de tirage en attente est créée.
+Le joueur suivant peut répondre avec une carte de tirage appropriée, empiler les tirages et les passer au joueur suivant jusqu'à ce que quelqu'un soit incapable de répondre et doive tirer la somme totale accumulée de toutes les cartes.
+En mode No Mercy, les réponses suivent une hiérarchie de pouvoir (répondre avec un tirage équivalent ou plus fort).
+
+Exemple de tirages empilés :
+Supposons que le premier joueur ait joué un Red Draw 2, que le deuxième joueur ait un Blue Draw 2 et que le troisième joueur n'ait aucune carte à piocher.
+Que font les deuxième et troisième joueurs ?
+Le deuxième joueur joue le Blue Draw 2, ce qui fait que le total de quatre cartes est tiré, et le tour passe au troisième joueur. Puisque le troisième joueur n’a pas de cartes à piocher, il doit piocher quatre cartes pleines et perdre son tour.
+
+Section six : Règles de dessin
+
+Tirage normal et passage du tour
+Si un joueur n'a pas de carte valide, il pioche une carte du paquet. Si elle est valide, ils peuvent la jouer immédiatement ou appuyer sur la commande de tirage pour passer le tour et conserver la carte. S'il n'est pas valide, le tour passe automatiquement au joueur suivant.
+
+Empêcher le tirage lorsqu'une carte valide est disponible
+Si vous détenez une carte pouvant être légalement jouée, le jeu vous empêche de piocher et affiche un avertissement indiquant qu'une carte jouable existe.
+
+Dessinez jusqu'à ce que vous puissiez jouer
+Lorsque l'option « Dessiner jusqu'à jouer » est activée, si un joueur n'a pas de carte valide, le jeu pioche automatiquement des cartes en continu et les ajoute à sa main jusqu'à ce qu'une carte jouable soit tirée.
+
+Remaniement de la pile de défausse
+Lorsque la pioche est à court de cartes, le jeu prend automatiquement toutes les cartes de la pile de défausse, à l'exception de la dernière carte face visible, et les mélange complètement pour former une nouvelle pioche afin que le jeu puisse continuer sans problème.
+
+Section Sept : Modes de jeu
+
+Mode standard
+Le jeu se joue avec le jeu classique Uno (108 cartes) et les règles de correspondance et de dessin par défaut.
+
+Mode sans pitié
+Un mode impitoyable comprenant des cartes de tirage majeures (Tirage 6 et Tirage 10), Ignorer tout le monde, Tout rejeter et la Roue chromatique, avec la règle d'élimination active dès que 25 cartes en main sont atteintes.
+
+Exemple d'élimination en mode sans pitié :
+Supposons que le deuxième joueur détienne 20 cartes et reçoive une séquence de tirage de 6 cartes, ce qui porte son total à 26 cartes.
+Qu'arrive-t-il au deuxième joueur ?
+Le jeu annonce immédiatement l'élimination du deuxième joueur pour dépassement de la limite maximale (25 cartes). Ils sont retirés du tour et la compétition continue entre les joueurs restants.
+
+Mode Flip Uno
+Présente un côté clair et un côté obscur. Lorsqu'une carte Flip est jouée, toutes les cartes se retournent du côté obscur avec de nouvelles couleurs (orange, rose, violet, bleu sarcelle) et les cartes se transforment en versions plus fortes (comme Skip se transformant en Skip Everyone et Draw 2 en Draw 5).
+
+Exemple de mode Flip :
+Supposons que le jeu soit léger et que le premier joueur joue une carte Flip.
+Qu'arrive-t-il à la main du deuxième joueur ?
+La main du deuxième joueur et toutes les cartes de table passent aux couleurs sombres, la couleur de jeu passe à l'une des couleurs sombres et les cartes Piochez 2 dans la main du deuxième joueur deviennent Piochez 5 cartes.
+
+Section huit : notation
+
+Marquer des points
+A la fin de chaque tour, le gagnant reçoit le total des points des cartes restantes dans les mains de tous les joueurs perdants selon les valeurs fixes suivantes :
+Cartes numérotées de 0 à 9 : notées selon leur valeur nominale (zéro vaut 0, cinq vaut 5, neuf vaut 9 points).
+Cartes d'action colorées (Skip, Reverse, Draw 2, Jeter All, Flip, Draw 5) : 20 points par carte.
+Piochez 1 carte : 10 points.
+Cartes joker de tous types (Wild Color, Draw 4, Wild Draw 2, Draw 6, Draw 10, Reverse Draw 4, Color Wheel, Skip Everyone) : 50 points par carte.
+Carte cloche : 0 point.
+
+Exemple de score pour la fin d'un tour :
+Supposons que le premier joueur vide ses cartes et remporte la manche. La main du deuxième joueur contient : un 7 rouge (7 points) et une carte Passer (20 points). La main du troisième joueur contient : une carte Wild Draw 4 (50 points).
+Combien de points le premier joueur obtient-il ?
+Les points sont résumés : 7 + 20 + 50 = 77 points. Un total de 77 points sont ajoutés au score cumulé du premier joueur dans le match.
+
+Section 9 : Fin du tour et du match
+
+Fin du tour
+Le tour se termine immédiatement lorsqu'un joueur réussit à se débarrasser de toutes ses cartes, après avoir terminé toutes les actions en attente.
+Les points du tour sont calculés et ajoutés au score cumulé du vainqueur.
+
+Début du prochain tour
+Si aucun joueur n'a atteint l'objectif fixé pour le match, un nouveau tour commence en distribuant sept nouvelles cartes à chaque joueur, en faisant tourner la carte de départ et en poursuivant la compétition.
+
+Fin du match et détermination du vainqueur
+Le match se termine complètement en faveur du premier joueur à atteindre son score cumulé à l'objectif fixé pour le match (500 points en mode standard). Le jeu annonce leur victoire dans le tournoi et joue un son de célébration gagnant.
+
+Section dix : Raccourcis du jeu
+
+1. Raccourcis généraux des tables de jeu :
+• P : Annoncer la liste et le nombre de joueurs présents à la table.
+• T : Annoncer le nom du joueur dont c'est actuellement le tour.
+• C : Appelez Uno (quand il reste une carte).
+• S : annonce le score actuel, les points et l'objectif.
+• V : Annoncer le nombre de cartes en main des joueurs.
+• Espace : piochez une carte de la pile.
+• R : Annonce la carte actuellement jouée et la couleur sélectionnée.
+• U : Annoncez une victoire ou criez Uno pour attraper un joueur qui a oublié de dire Uno.
+• X : Défiez une carte Piochez 4 colorée.
+
+2. Raccourcis de lecture de cartes (pendant le jeu) :
+• Flèches gauche et droite : Naviguez entre les groupes de couleurs.
+• Flèches haut et bas : naviguez entre les cartes de la couleur sélectionnée.
+• Enter : jouez la carte actuellement sélectionnée.
+
+3. Raccourcis de gestion du jeu (pour le propriétaire de la salle) :
+• Enter : démarrez le jeu en vous tenant debout sur l'élément de la table.
+• Maj + X : Terminez la partie en cours.
+• B : Ajoutez un joueur bot à la salle.
+• Maj + B : supprime le dernier bot ajouté.

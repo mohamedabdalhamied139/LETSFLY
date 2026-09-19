@@ -16,6 +16,7 @@ import '../widgets/two_finger_gesture_detector.dart';
 import 'activity_log_widget.dart';
 import 'responsive_shell.dart';
 import 'table_players_dialog.dart';
+import 'game_rules_dialog.dart';
 
 class TableView extends StatefulWidget {
   final Map<String, dynamic> room;
@@ -506,6 +507,17 @@ class _TableViewState extends State<TableView> {
                 onTap: () {
                   Navigator.of(ctx).pop();
                   _toggleSpectator();
+                },
+              ),
+
+              // 4. Game Rules (قواعد اللعب)
+              ListTile(
+                leading: const Icon(Icons.menu_book, color: AppColors.primary),
+                title: Text(tr('قواعد اللعب'), style: const TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+                  GameRulesDialog.show(context, gameType: gameType);
                 },
               ),
 
