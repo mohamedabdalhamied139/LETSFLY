@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/localization.dart';
@@ -32,10 +33,31 @@ class _TableViewState extends State<TableView> {
   bool _actionInProgress = false;
   StreamSubscription? _wsSubscription;
 
+  static int? _extractSubFromToken(String? token) {
+    if (token == null || token.isEmpty) return null;
+    try {
+      final parts = token.split('.');
+      if (parts.length >= 2) {
+        final normalized = base64Url.normalize(parts[1]);
+        final payload = utf8.decode(base64Url.decode(normalized));
+        final map = json.decode(payload);
+        if (map is Map && map.containsKey('sub')) {
+          return int.tryParse(map['sub'].toString());
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
     _room = Map<String, dynamic>.from(widget.room);
+    final token = ApiService.instance.token;
+    final tokenUid = _extractSubFromToken(token);
+    if (tokenUid != null && tokenUid != 0) {
+      _myUserId = tokenUid;
+    }
     _initUser();
     _fetchRoomDetails();
 
@@ -83,7 +105,7 @@ class _TableViewState extends State<TableView> {
 
   Future<void> _initUser() async {
     final user = await AuthStorageService.instance.getActiveUser();
-    if (user != null && mounted) {
+    if (user != null && user.id != 0 && mounted) {
       setState(() => _myUserId = user.id);
     }
   }
@@ -389,13 +411,17 @@ class _TableViewState extends State<TableView> {
   }
 
   bool get _isHost {
+    if (_room['is_host'] == true || _room['role'] == 'captain') return true;
     final hostId = int.tryParse(_room['host_id']?.toString() ?? '0') ?? 0;
-    return (_myUserId == hostId && hostId != 0);
+    if (_myUserId != 0 && hostId != 0 && _myUserId == hostId) return true;
+    return false;
   }
 
   bool get _isCoHost {
+    if (_room['is_co_host'] == true || _room['role'] == 'co_host') return true;
     final coHostId = int.tryParse(_room['co_host_id']?.toString() ?? '0') ?? 0;
-    return (_myUserId == coHostId && coHostId != 0);
+    if (_myUserId != 0 && coHostId != 0 && _myUserId == coHostId) return true;
+    return false;
   }
 
   bool get _isPlaying => _room['status'] == 'playing';
@@ -437,9 +463,12 @@ class _TableViewState extends State<TableView> {
                 ListTile(
                   leading: const Icon(Icons.stop, color: AppColors.error),
                   title: Text(tr('إيقاف اللعبة'), style: const TextStyle(color: AppColors.textPrimary)),
-                  enabled: isHost || isCoHost,
                   onTap: () {
                     Navigator.of(ctx).pop();
+                    if (!isHost && !isCoHost) {
+                      AccessibilityManager.instance.announce(tr('إيقاف اللعبة متاح للقائد أو نائب القائد فقط.'));
+                      return;
+                    }
                     _stopGame();
                   },
                 )
@@ -447,7 +476,6 @@ class _TableViewState extends State<TableView> {
                 ListTile(
                   leading: const Icon(Icons.play_arrow, color: AppColors.success),
                   title: Text(tr('بدء اللعبة'), style: const TextStyle(color: AppColors.textPrimary)),
-                  enabled: (isHost || isCoHost) && !isPlaying,
                   onTap: () {
                     Navigator.of(ctx).pop();
                     _startGame();
@@ -478,9 +506,12 @@ class _TableViewState extends State<TableView> {
               ListTile(
                 leading: const Icon(Icons.save, color: AppColors.textSecondary),
                 title: Text(tr('حفظ الطاولة'), style: const TextStyle(color: AppColors.textPrimary)),
-                enabled: isPlaying && players.length > 1,
                 onTap: () {
                   Navigator.of(ctx).pop();
+                  if (!isPlaying || players.length <= 1) {
+                    AccessibilityManager.instance.announce(tr('حفظ الطاولة متاح فقط أثناء اللعب النشط مع لاعبين اثنين على الأقل.'));
+                    return;
+                  }
                   _saveTable();
                 },
               ),
@@ -492,20 +523,30 @@ class _TableViewState extends State<TableView> {
                   isPrivate ? tr('اجعل الطاولة عامة') : tr('اجعل الطاولة خاصة'),
                   style: const TextStyle(color: AppColors.textPrimary),
                 ),
-                enabled: isHost,
                 onTap: () {
                   Navigator.of(ctx).pop();
+                  if (!isHost) {
+                    AccessibilityManager.instance.announce(tr('تغيير خصوصية الطاولة متاح للقائد فقط.'));
+                    return;
+                  }
                   _togglePrivacy();
                 },
               ),
 
               // 6. Add Bot
               ListTile(
-                leading: const Icon(Icons.smart_toy, color: AppColors.textSecondary),
+                leading: const Icon(Icons.smart_toy, color: AppColors.primary),
                 title: Text(tr('إضافة بوت'), style: const TextStyle(color: AppColors.textPrimary)),
-                enabled: isHost && !isPlaying,
                 onTap: () {
                   Navigator.of(ctx).pop();
+                  if (!isHost) {
+                    AccessibilityManager.instance.announce(tr('إضافة بوت متاح لمضيف الطاولة فقط.'));
+                    return;
+                  }
+                  if (isPlaying) {
+                    AccessibilityManager.instance.announce(tr('لا يمكن إضافة بوت أثناء اللعب.'));
+                    return;
+                  }
                   _addBot();
                 },
               ),
@@ -514,9 +555,16 @@ class _TableViewState extends State<TableView> {
               ListTile(
                 leading: const Icon(Icons.remove_circle_outline, color: AppColors.textSecondary),
                 title: Text(tr('إزالة بوت'), style: const TextStyle(color: AppColors.textPrimary)),
-                enabled: isHost && !isPlaying,
                 onTap: () {
                   Navigator.of(ctx).pop();
+                  if (!isHost) {
+                    AccessibilityManager.instance.announce(tr('إزالة بوت متاح لمضيف الطاولة فقط.'));
+                    return;
+                  }
+                  if (isPlaying) {
+                    AccessibilityManager.instance.announce(tr('لا يمكن إزالة بوت أثناء اللعب.'));
+                    return;
+                  }
                   _removeBot();
                 },
               ),
@@ -540,12 +588,43 @@ class _TableViewState extends State<TableView> {
   }
 
   Future<void> _startGame() async {
+    if (!_isHost && !_isCoHost) {
+      AccessibilityManager.instance.announce(tr('بدء اللعبة متاح للقائد أو نائب القائد فقط.'));
+      return;
+    }
     final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
     final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
     final players = List<dynamic>.from(_room['players'] ?? []);
 
     if (players.length < 2) {
-      AccessibilityManager.instance.announce(tr('يجب وجود لاعبين اثنين على الأقل لبدء اللعبة.'));
+      AccessibilityManager.instance.announce(tr('يجب وجود لاعبين اثنين على الأقل لبدء اللعبة. أضف بوتاً للبدء فوراً.'));
+      if (mounted) {
+        final addBotConfirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            title: Text(tr('لاعب واحد في الطاولة'), style: const TextStyle(color: AppColors.textPrimary)),
+            content: Text(
+              tr('يجب وجود لاعبين اثنين على الأقل لبدء اللعبة. هل تريد إضافة بوت لبدء اللعبة فوراً؟'),
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(tr('إلغاء')),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                child: Text(tr('إضافة بوت'), style: const TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+        if (addBotConfirm == true) {
+          await _addBot();
+        }
+      }
       return;
     }
 
@@ -763,16 +842,6 @@ class _TableViewState extends State<TableView> {
       title: tr('طاولة {game}', {'game': _getGameTitle()}),
       actions: [
         Semantics(
-          label: tr('سجل الأحداث والدردشة'),
-          button: true,
-          excludeSemantics: true,
-          child: IconButton(
-            icon: const Icon(Icons.forum_outlined),
-            tooltip: tr('سجل الأحداث والدردشة'),
-            onPressed: () => ActivityLogWidget.showAsBottomSheet(context),
-          ),
-        ),
-        Semantics(
           label: tr('قائمة خيارات الطاولة'),
           button: true,
           excludeSemantics: true,
@@ -881,18 +950,44 @@ class _TableViewState extends State<TableView> {
                               : _buildWaitingLobby(context, players),
                         ),
                         if (!isPlaying && (_isHost || _isCoHost))
-                          ElevatedButton.icon(
-                            onPressed: _startGame,
-                            icon: const Icon(Icons.play_arrow, color: Colors.white),
-                            label: Text(
-                              tr('بدء اللعبة'),
-                              style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.success,
-                              minimumSize: const Size.fromHeight(50),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: ElevatedButton.icon(
+                                  onPressed: _startGame,
+                                  icon: const Icon(Icons.play_arrow, color: Colors.white),
+                                  label: Text(
+                                    tr('بدء اللعبة'),
+                                    style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.success,
+                                    minimumSize: const Size.fromHeight(50),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                ),
+                              ),
+                              if (_isHost) ...[
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  flex: 1,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _addBot,
+                                    icon: const Icon(Icons.smart_toy, color: Colors.white, size: 20),
+                                    label: Text(
+                                      tr('بوت'),
+                                      style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      minimumSize: const Size.fromHeight(50),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                       ],
                     ),

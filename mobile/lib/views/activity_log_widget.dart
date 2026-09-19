@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/localization.dart';
+import '../core/accessibility_manager.dart';
 import '../services/activity_service.dart';
 import '../services/api_service.dart';
 
@@ -59,6 +60,20 @@ class _ActivityLogWidgetState extends State<ActivityLogWidget> {
     'GIFTS': 'الهدايا',
   };
 
+  void _selectNextCategory(int direction) {
+    final service = ActivityLogService.instance;
+    final cats = service.visibleCategories;
+    if (cats.length <= 1) return;
+    final currentIndex = cats.indexOf(service.selectedCategory);
+    int newIndex = currentIndex + direction;
+    if (newIndex < 0) newIndex = cats.length - 1;
+    if (newIndex >= cats.length) newIndex = 0;
+    final newCat = cats[newIndex];
+    service.selectCategory(newCat);
+    final label = tr(_categoryLabels[newCat] ?? newCat);
+    AccessibilityManager.instance.announce(tr('القسم الحالي: {category}', {'category': label}));
+  }
+
   @override
   void dispose() {
     _chatController.dispose();
@@ -96,8 +111,18 @@ class _ActivityLogWidgetState extends State<ActivityLogWidget> {
             : 'ALL';
         final filteredEvents = service.filteredEvents;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onHorizontalDragEnd: (details) {
+            final vx = details.primaryVelocity ?? 0.0;
+            if (vx > 250) {
+              _selectNextCategory(-1);
+            } else if (vx < -250) {
+              _selectNextCategory(1);
+            }
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header Bar
             Container(
@@ -264,8 +289,9 @@ class _ActivityLogWidgetState extends State<ActivityLogWidget> {
               ),
             ),
           ],
-        );
-      },
+        ),
+      );
+    },
     );
   }
 }

@@ -91,8 +91,25 @@ class AuthStorageService {
     await _writeString(accountsKey, json.encode(data));
   }
 
+  static int? _extractSubFromToken(String? token) {
+    if (token == null || token.isEmpty) return null;
+    try {
+      final parts = token.split('.');
+      if (parts.length >= 2) {
+        final normalized = base64Url.normalize(parts[1]);
+        final payload = utf8.decode(base64Url.decode(normalized));
+        final map = json.decode(payload);
+        if (map is Map && map.containsKey('sub')) {
+          return int.tryParse(map['sub'].toString());
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// Saves or updates an account profile and sets it as the active session.
   Future<void> saveActiveAccount({
+    int? id,
     required String username,
     required String password,
     required String displayName,
@@ -101,9 +118,12 @@ class AuthStorageService {
     final store = await _readStore();
     final List<dynamic> accounts = List<dynamic>.from(store['accounts'] ?? []);
 
+    final resolvedId = id ?? _extractSubFromToken(token) ?? 0;
+
     // Remove existing profile with identical username to update
     accounts.removeWhere((a) => a is Map && a['username'] == username);
     accounts.add({
+      'id': resolvedId,
       'username': username,
       'password': password,
       'display_name': displayName,
@@ -140,6 +160,14 @@ class AuthStorageService {
   Future<User?> getActiveUser() async {
     final map = await loadActiveAccount();
     if (map == null) return null;
+    int id = map['id'] is int ? map['id'] : int.tryParse(map['id']?.toString() ?? '0') ?? 0;
+    if (id == 0) {
+      final token = map['token'] as String? ?? await getActiveSessionToken();
+      final sub = _extractSubFromToken(token);
+      if (sub != null && sub != 0) {
+        map['id'] = sub;
+      }
+    }
     return User.fromJson(map);
   }
 

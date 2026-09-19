@@ -242,8 +242,10 @@ class _AuthViewState extends State<AuthView> {
 
       final token = (res is Map) ? (res['access_token'] ?? res['token'])?.toString() ?? '' : '';
       final displayName = res['user']?['display_name'] ?? res['display_name'] ?? u;
+      final userId = int.tryParse((res['user']?['id'] ?? res['id'])?.toString() ?? '0');
 
       await AuthStorageService.instance.saveActiveAccount(
+        id: userId,
         username: u,
         password: p,
         displayName: displayName,
@@ -305,8 +307,10 @@ class _AuthViewState extends State<AuthView> {
 
       final token = (res is Map) ? (res['access_token'] ?? res['token'])?.toString() ?? '' : '';
       final displayName = res['user']?['display_name'] ?? res['display_name'] ?? d;
+      final userId = int.tryParse((res['user']?['id'] ?? res['id'])?.toString() ?? '0');
 
       await AuthStorageService.instance.saveActiveAccount(
+        id: userId,
         username: u,
         password: p,
         displayName: displayName,
