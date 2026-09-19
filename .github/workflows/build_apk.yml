@@ -1,51 +1,104 @@
-name: Build Mobile Android APK
+name: Build Release APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
+    name: Build Android Release APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
+          flutter-version: '3.29.0'
           channel: 'stable'
           cache: true
 
-      - name: Generate Android platform scaffold
-        working-directory: ./mobile
+      - name: Scaffold Android Files
         run: |
-          flutter create . --platforms=android --org com.tableverse --project-name tableverse_mobile
-          python3 patch_manifest.py
-          cat android/app/src/main/AndroidManifest.xml
-          # Set minSdkVersion 21 for flutter_tts compatibility
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle || sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
+          cd mobile
+          flutter create . --platforms=android --org=com.tableverse
 
-      - name: Install dependencies
-        working-directory: ./mobile
-        run: flutter pub get
+      - name: Setup Permanent Release Keystore & Signing Config
+        run: |
+          cd mobile
+          mkdir -p android/keystore
+          cp keystore/release.jks android/keystore/release.jks
+          cp keystore/key.properties android/key.properties
 
-      - name: Build APK
-        working-directory: ./mobile
-        run: flutter build apk --release
+          python3 -c "
+          import re
 
-      - name: Upload APK artifact
+          gradle_path = 'android/app/build.gradle'
+          with open(gradle_path, 'r') as f:
+              content = f.read()
+
+          # Inject signing configuration
+          signing_code = '''
+              signingConfigs {
+                  release {
+                      keyAlias 'tableverse'
+                      keyPassword 'tableverse_key_2026'
+                      storeFile file('../keystore/release.jks')
+                      storePassword 'tableverse_key_2026'
+                      v1SigningEnabled true
+                      v2SigningEnabled true
+                  }
+              }
+          '''
+
+          if 'signingConfigs {' not in content:
+              content = content.replace('buildTypes {', signing_code + '\n    buildTypes {')
+
+          content = re.sub(r'signingConfig\s+signingConfigs\.debug', 'signingConfig signingConfigs.release', content)
+          content = re.sub(r'compileSdk\s*=\s*\d+', 'compileSdk = 35', content)
+          content = re.sub(r'targetSdk\s*=\s*\d+', 'targetSdk = 35', content)
+          content = re.sub(r'minSdk\s*=\s*\d+', 'minSdk = 21', content)
+
+          with open(gradle_path, 'w') as f:
+              f.write(content)
+          print('Updated build.gradle with permanent release signing and SDK 35')
+          "
+
+      - name: Install Flutter Dependencies
+        run: |
+          cd mobile
+          flutter pub get
+
+      - name: Build Android Release APK
+        run: |
+          cd mobile
+          flutter build apk --release
+
+      - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tableverse-mobile-release
+          name: TableVerse-Release-APK
           path: mobile/build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v1.0.0-beta mobile/build/app/outputs/flutter-apk/app-release.apk \
+            --title "TableVerse Android Release v1.0.0-beta" \
+            --notes "تطبيق TableVerse لنظام أندرويد متوافق مع أحدث إصدارات أندرويد 14 و 15 وموقع بشهادة إصدار دائمة تدعم التحديث المستمر دون إزالة التطبيق." \
+            --clobber || true
