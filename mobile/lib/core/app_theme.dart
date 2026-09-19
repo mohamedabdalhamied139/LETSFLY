@@ -12,9 +12,11 @@ class AppColors {
   static const Color textSecondary = Color(0xFFA0A0A0);
   static const Color textMuted = Color(0xFFA0A0A0);
   static const Color card = Color(0xFF252526);
+  static const Color surfaceLight = Color(0xFF2D2D30);
   static const Color divider = Color(0xFF3E3E42);
   static const Color success = Color(0xFF28A745);
   static const Color error = Color(0xFFDC3545);
+  static const Color info = Color(0xFF17A2B8);
   static const Color selectedGold = Color(0xFFFFD700);
 }
 

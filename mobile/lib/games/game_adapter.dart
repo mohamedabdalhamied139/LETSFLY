@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../core/accessibility_manager.dart';
 import '../core/localization.dart';
+import 'farkle_adapter.dart';
 import 'ninety_nine_adapter.dart';
 import 'scopa_adapter.dart';
+import 'snakes_adapter.dart';
 import 'uno_adapter.dart';
 
 /// Abstract adapter that each game implements to provide its board UI
@@ -48,6 +50,8 @@ class GameAdapterRegistry {
     register(UnoGameAdapter());
     register(ScopaGameAdapter());
     register(NinetyNineGameAdapter());
+    register(FarkleGameAdapter());
+    register(SnakesGameAdapter());
   }
 
   void register(GameAdapter adapter) {

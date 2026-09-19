@@ -131,6 +131,10 @@ class GameStateEngine {
       // Handle Scopa round finished
       if (gt == 'SCOPA' && ['ROUND_FINISHED', 'ROUND_END', 'ROUND_WON'].contains(et)) {
         eventCues = [];
+      } else if (gt == 'SNAKES_LADDERS') {
+        if (!['MATCH_WON', 'MATCH_FINISHED'].contains(et)) {
+          eventCues = eventCues.where((c) => !['SNAKE_BITE', 'LADDER_CLIMB', 'FREEZE_TRAP', 'MYSTERY_BOX', 'PLAYER_BUMP'].contains(c)).toList();
+        }
       }
 
       // Play Sound Cues (sequenced if multiple cues e.g. Domino or 99)
@@ -225,9 +229,13 @@ class GameStateEngine {
     final currentName = (state['current_player_name'] ?? state['current_turn_name'] ?? tr('غير معروف')).toString();
     dynamic currId = state['current_turn_id'] ?? state['current_player_id'];
 
+    final int snakesRoll = int.tryParse(state['last_roll']?.toString() ?? '0') ?? 0;
+    final bool isSnakesStepping = gt == 'SNAKES_LADDERS' && ['DICE_ROLLED', 'BONUS_ROLL'].contains(et) && snakesRoll > 0;
+
     final bool isTurnAllowed = isPlayingMode &&
         state['pending_deal_batch'] != true &&
         state['pending_round_finalize'] != true &&
+        !isSnakesStepping &&
         !['MATCH_WON', 'MATCH_FINISHED', 'ROUND_FINISHED', 'ROUND_END'].contains(et);
 
     if (isTurnAllowed && currId != null) {
