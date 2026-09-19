@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_storage_service.dart';
 
 class ApiService {
   static final ApiService instance = ApiService._();
+  static const String defaultBaseUrl = 'https://letsfly.onrender.com';
+  static const String _serverUrlPrefKey = 'tableverse_server_url';
+
   ApiService._() {
-    _dio.options.baseUrl = 'http://127.0.0.1:8000';
+    _dio.options.baseUrl = defaultBaseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 15);
     _dio.options.receiveTimeout = const Duration(seconds: 15);
 
@@ -25,8 +29,55 @@ class ApiService {
   final Dio _dio = Dio();
   String? _token;
 
+  String get baseUrl => _dio.options.baseUrl;
+
   void setBaseUrl(String url) {
-    _dio.options.baseUrl = url;
+    _dio.options.baseUrl = url.replaceAll(RegExp(r'/+$'), '');
+  }
+
+  Future<void> init() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_serverUrlPrefKey);
+      if (saved != null && saved.trim().isNotEmpty) {
+        setBaseUrl(saved.trim());
+      }
+    } catch (_) {}
+  }
+
+  Future<void> saveBaseUrl(String url) async {
+    setBaseUrl(url);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_serverUrlPrefKey, url.trim());
+    } catch (_) {}
+  }
+
+  Future<void> resetBaseUrl() async {
+    setBaseUrl(defaultBaseUrl);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_serverUrlPrefKey);
+    } catch (_) {}
+  }
+
+  String getWsUrl([String path = '']) {
+    var base = _dio.options.baseUrl.replaceAll(RegExp(r'/+$'), '');
+    String wsBase;
+    if (base.startsWith('https://')) {
+      wsBase = 'wss://${base.substring(8)}';
+    } else if (base.startsWith('http://')) {
+      wsBase = 'ws://${base.substring(7)}';
+    } else if (base.startsWith('wss://') || base.startsWith('ws://')) {
+      wsBase = base;
+    } else {
+      wsBase = 'wss://$base';
+    }
+    if (path.isNotEmpty) {
+      final cleanPath = path.startsWith('/') ? path : '/$path';
+      return '$wsBase$cleanPath';
+    }
+    return wsBase;
   }
 
   void setToken(String? token) {

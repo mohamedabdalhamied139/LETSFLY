@@ -4,6 +4,7 @@ import '../core/accessibility_manager.dart';
 import '../core/localization.dart';
 import '../services/activity_service.dart';
 import '../services/api_service.dart';
+import '../services/ws_service.dart';
 import 'rooms_menu_view.dart';
 
 /// Landing Home screen hosting RoomsMenuView with global Navigation Drawer access.
@@ -20,6 +21,15 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
+
+    // Connect to WebSocket events for real-time lobby updates
+    final token = ApiService.instance.token;
+    if (token != null && token.isNotEmpty) {
+      WebSocketService.instance.connect(
+        ApiService.instance.getWsUrl('/ws/events'),
+        token: token,
+      );
+    }
 
     final greeting = tr('مرحبًا بعودتك {name}.', {'name': widget.userDisplayName});
 

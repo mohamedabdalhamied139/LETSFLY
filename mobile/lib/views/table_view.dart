@@ -37,6 +37,16 @@ class _TableViewState extends State<TableView> {
     super.initState();
     _room = Map<String, dynamic>.from(widget.room);
     _initUser();
+
+    // Connect WebSocket to this room's real-time events & gameplay stream
+    final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
+    if (roomId.isNotEmpty) {
+      WebSocketService.instance.connect(
+        ApiService.instance.getWsUrl('/ws/room/$roomId'),
+        token: ApiService.instance.token,
+      );
+    }
+
     _listenToWsEvents();
     if (_isPlaying) {
       _fetchGameState();
@@ -46,6 +56,14 @@ class _TableViewState extends State<TableView> {
   @override
   void dispose() {
     _wsSubscription?.cancel();
+    // Reconnect WebSocket to lobby events
+    final token = ApiService.instance.token;
+    if (token != null && token.isNotEmpty) {
+      WebSocketService.instance.connect(
+        ApiService.instance.getWsUrl('/ws/events'),
+        token: token,
+      );
+    }
     super.dispose();
   }
 

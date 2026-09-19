@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../core/accessibility_manager.dart';
 import '../core/app_theme.dart';
@@ -251,7 +252,22 @@ class _AuthViewState extends State<AuthView> {
         );
       }
     } catch (e) {
-      final msg = tr('فشل تسجيل الدخول. تأكد من صحة البيانات.');
+      String msg = tr('فشل تسجيل الدخول. تأكد من صحة البيانات.');
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError) {
+          msg = tr('تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت أو إعدادات الخادم.');
+        } else if (e.response?.statusCode == 401) {
+          msg = tr('اسم المستخدم أو كلمة المرور غير صحيحة.');
+        } else if (e.response?.data is Map && (e.response!.data as Map).containsKey('detail')) {
+          final detail = (e.response!.data as Map)['detail'];
+          if (detail != null && detail.toString().isNotEmpty) {
+            msg = detail.toString();
+          }
+        }
+      }
       await AccessibilityManager.instance.announce(msg);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -294,7 +310,22 @@ class _AuthViewState extends State<AuthView> {
         );
       }
     } catch (e) {
-      final msg = tr('فشل إنشاء الحساب. قد يكون اسم المستخدم مستخدمًا بالفعل.');
+      String msg = tr('فشل إنشاء الحساب. قد يكون اسم المستخدم مستخدمًا بالفعل.');
+      if (e is DioException) {
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionError) {
+          msg = tr('تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت أو إعدادات الخادم.');
+        } else if (e.response?.statusCode == 409) {
+          msg = tr('اسم المستخدم مستخدم بالفعل.');
+        } else if (e.response?.data is Map && (e.response!.data as Map).containsKey('detail')) {
+          final detail = (e.response!.data as Map)['detail'];
+          if (detail != null && detail.toString().isNotEmpty) {
+            msg = detail.toString();
+          }
+        }
+      }
       await AccessibilityManager.instance.announce(msg);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -321,10 +352,76 @@ class _AuthViewState extends State<AuthView> {
     }
   }
 
+  Future<void> _showServerSettings() async {
+    final controller = TextEditingController(text: ApiService.instance.baseUrl);
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(tr('إعدادات الخادم'), style: const TextStyle(color: AppColors.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              tr('عنوان خادم اللعبة:'),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(
+                hintText: ApiService.defaultBaseUrl,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                controller.text = ApiService.defaultBaseUrl;
+              },
+              child: Text(tr('استعادة العنوان الافتراضي')),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(tr('إلغاء')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(tr('حفظ')),
+          ),
+        ],
+      ),
+    );
+
+    if (changed == true) {
+      final newUrl = controller.text.trim();
+      if (newUrl.isNotEmpty) {
+        await ApiService.instance.saveBaseUrl(newUrl);
+        await AccessibilityManager.instance.announce(tr('تم حفظ عنوان الخادم.'));
+      }
+    }
+    controller.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.dns_outlined, color: AppColors.textSecondary),
+            tooltip: tr('إعدادات الخادم'),
+            onPressed: _showServerSettings,
+          ),
+        ],
+      ),
       body: TwoFingerSwipeDetector(
         onTwoFingerSwipeRight: () => ActivityLogWidget.showAsBottomSheet(context),
         child: SafeArea(
