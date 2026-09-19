@@ -1031,11 +1031,11 @@ class _TableViewState extends State<TableView> {
               const SizedBox(height: 12),
             ],
 
-            // Clean Table: waiting players list or active game board
+            // Clean Table: empty surface in waiting mode (matching Windows FocusableWidget), or active game board when playing
             Expanded(
               child: isPlaying && adapter != null
                   ? adapter.buildBoard(context, _gameState)
-                  : _buildWaitingLobby(context, players),
+                  : _buildEmptyTableSurface(context),
             ),
           ],
         ),
@@ -1043,171 +1043,14 @@ class _TableViewState extends State<TableView> {
     );
   }
 
-  Widget _buildWaitingLobby(BuildContext context, List<dynamic> players) {
-    final hostId = int.tryParse(_room['host_id']?.toString() ?? '0') ?? 0;
-    final hostName = _room['host_name']?.toString() ?? tr('القائد');
-    final coHostId = int.tryParse(_room['co_host_id']?.toString() ?? '0');
-    final spectators = List<dynamic>.from(_room['spectators'] ?? []);
-    final rawNames = List<dynamic>.from(_room['player_names'] ?? []);
-    final playersDict = Map<dynamic, dynamic>.from(_room['players_dict'] ?? {});
-
-    String getPlayerName(int uid) {
-      final suid = uid.toString();
-      if (playersDict.containsKey(suid) && playersDict[suid] != null && playersDict[suid].toString().isNotEmpty) {
-        return playersDict[suid].toString();
-      }
-      if (rawNames.isNotEmpty) {
-        final idx = players.indexOf(uid);
-        if (idx >= 0 && idx < rawNames.length && rawNames[idx] != null && rawNames[idx].toString().isNotEmpty) {
-          return rawNames[idx].toString();
-        }
-      }
-      if (uid == hostId) return hostName;
-      return uid > 0 ? tr('لاعب {0}', {'0': '$uid'}) : 'Bot ${uid.abs()}';
-    }
-
-    final List<Map<String, dynamic>> participantItems = [];
-
-    // 1. Host / Captain
-    final hostIsSpec = spectators.contains(hostId);
-    participantItems.add({
-      'id': hostId,
-      'name': hostName,
-      'role': tr('القائد'),
-      'is_host': true,
-      'is_co_host': false,
-      'is_spectator': hostIsSpec,
-      'is_bot': false,
-    });
-
-    // 2. Co-Host
-    if (coHostId != null && coHostId != 0 && coHostId != hostId && (players.contains(coHostId) || spectators.contains(coHostId))) {
-      final coName = getPlayerName(coHostId);
-      final coIsSpec = spectators.contains(coHostId);
-      participantItems.add({
-        'id': coHostId,
-        'name': coName,
-        'role': tr('نائب القائد'),
-        'is_host': false,
-        'is_co_host': true,
-        'is_spectator': coIsSpec,
-        'is_bot': false,
-      });
-    }
-
-    // 3. Other players
-    for (final p in players) {
-      final uid = int.tryParse(p.toString()) ?? 0;
-      if (uid == hostId || uid == coHostId || uid == 0) continue;
-      final isBot = uid < 0;
-      final pName = getPlayerName(uid);
-      participantItems.add({
-        'id': uid,
-        'name': pName,
-        'role': isBot ? tr('روبوت') : tr('لاعب'),
-        'is_host': false,
-        'is_co_host': false,
-        'is_spectator': false,
-        'is_bot': isBot,
-      });
-    }
-
-    // 4. Spectators (excluding host and co-host)
-    for (final s in spectators) {
-      final uid = int.tryParse(s.toString()) ?? 0;
-      if (uid == hostId || uid == coHostId || uid == 0) continue;
-      final sName = getPlayerName(uid);
-      participantItems.add({
-        'id': uid,
-        'name': sName,
-        'role': tr('متفرج'),
-        'is_host': false,
-        'is_co_host': false,
-        'is_spectator': true,
-        'is_bot': false,
-      });
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      itemCount: participantItems.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (ctx, idx) {
-        final item = participantItems[idx];
-        final name = item['name'] as String;
-        final role = item['role'] as String;
-        final isHost = item['is_host'] == true;
-        final isCoHost = item['is_co_host'] == true;
-        final isBot = item['is_bot'] == true;
-        final isSpec = item['is_spectator'] == true;
-        final semanticLabel = '$name، $role';
-
-        return Semantics(
-          label: semanticLabel,
-          button: true,
-          excludeSemantics: true,
-          child: Card(
-            color: AppColors.surfaceLight,
-            margin: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-              leading: CircleAvatar(
-                radius: 18,
-                backgroundColor: isHost
-                    ? AppColors.primary
-                    : isCoHost
-                        ? Colors.teal
-                        : isBot
-                            ? Colors.grey
-                            : AppColors.surface,
-                child: isBot
-                    ? const Icon(Icons.smart_toy, size: 18, color: Colors.white)
-                    : Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-              ),
-              title: Text(
-                name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isHost
-                      ? AppColors.primary.withOpacity(0.2)
-                      : isCoHost
-                          ? Colors.teal.withOpacity(0.2)
-                          : isSpec
-                              ? Colors.purple.withOpacity(0.2)
-                              : AppColors.surface,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  role,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isHost
-                        ? AppColors.primary
-                        : isCoHost
-                            ? Colors.tealAccent
-                            : isSpec
-                                ? Colors.purpleAccent
-                                : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-              onTap: _openPlayersDialog,
-            ),
-          ),
-        );
-      },
+  /// Completely clean waiting surface matching Windows client's FocusableWidget.
+  /// All players, host, spectators, etc. are accessed exclusively via 'قائمة اللاعبين'
+  /// in the Table Context Menu ('قائمة سياق الطاولة').
+  Widget _buildEmptyTableSurface(BuildContext context) {
+    return Semantics(
+      label: tr('الطاولة جاهزة، في انتظار بدء اللعبة.'),
+      container: true,
+      child: const SizedBox.expand(),
     );
   }
 }
