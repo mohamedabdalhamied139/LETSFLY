@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/room_models.dart';
 
 /// Secure storage service managing credentials, multi-account profiles,
 /// and active session tokens matching the Windows desktop client authentication architecture.
@@ -135,8 +136,12 @@ class AuthStorageService {
     return null;
   }
 
-  /// Alias for loadActiveAccount returning active profile or null
-  Future<Map<String, dynamic>?> getActiveUser() => loadActiveAccount();
+  /// Returns the active user model or null if no account is active.
+  Future<User?> getActiveUser() async {
+    final map = await loadActiveAccount();
+    if (map == null) return null;
+    return User.fromJson(map);
+  }
 
   /// Retrieves the active session token, checking token key first then active account.
   Future<String?> getActiveSessionToken() async {
