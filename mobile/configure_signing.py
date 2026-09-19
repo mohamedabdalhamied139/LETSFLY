@@ -27,6 +27,8 @@ if os.path.exists(kts_path):
     content = re.sub(r'targetSdk\s*=\s*\S+', 'targetSdk = 35', content)
     content = re.sub(r'compileSdk\s*=\s*\S+', 'compileSdk = 35', content)
     content = re.sub(r'minSdk\s*=\s*\S+', 'minSdk = 21', content)
+    if 'ndkVersion' not in content:
+        content = content.replace('android {', 'android {\n    ndkVersion = "27.0.12077973"')
 
     with open(kts_path, 'w', encoding='utf-8') as f:
         f.write(content)
@@ -55,6 +57,8 @@ elif os.path.exists(groovy_path):
     content = re.sub(r'compileSdk\s*=\s*\d+', 'compileSdk = 35', content)
     content = re.sub(r'targetSdk\s*=\s*\d+', 'targetSdk = 35', content)
     content = re.sub(r'minSdk\s*=\s*\d+', 'minSdk = 21', content)
+    if 'ndkVersion' not in content:
+        content = content.replace('android {', 'android {\n    ndkVersion "27.0.12077973"')
 
     with open(groovy_path, 'w', encoding='utf-8') as f:
         f.write(content)

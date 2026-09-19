@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import '../core/accessibility.dart';
+import '../core/accessibility_manager.dart';
 import '../core/localization.dart';
 import '../core/sound_service.dart';
 
