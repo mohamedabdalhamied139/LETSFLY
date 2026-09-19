@@ -1011,7 +1011,6 @@ class _TableViewState extends State<TableView> {
 
     return ResponsiveShell(
       title: tr('طاولة {game}', {'game': _getGameTitle()}),
-      showDrawer: false,
       actions: [
         Semantics(
           label: tr('قائمة سياق الطاولة'),
