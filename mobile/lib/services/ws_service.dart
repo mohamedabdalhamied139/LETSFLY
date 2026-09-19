@@ -18,6 +18,7 @@ class WebSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
+  Stream<Map<String, dynamic>> get events => _messageController.stream;
   bool get isConnected => _isConnected;
   bool get isDisposed => _isDisposed;
 

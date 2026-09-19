@@ -4,9 +4,13 @@ import '../core/app_theme.dart';
 import '../core/localization.dart';
 import '../core/sound_service.dart';
 import '../core/accessibility_manager.dart';
+import '../games/game_adapter.dart';
+import '../games/game_state_engine.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage_service.dart';
 import '../services/ws_service.dart';
+import '../widgets/two_finger_gesture_detector.dart';
+import 'activity_log_widget.dart';
 import 'responsive_shell.dart';
 import 'table_players_dialog.dart';
 
@@ -21,6 +25,7 @@ class TableView extends StatefulWidget {
 
 class _TableViewState extends State<TableView> {
   late Map<String, dynamic> _room;
+  Map<String, dynamic> _gameState = {};
   int _myUserId = 0;
   bool _actionInProgress = false;
   StreamSubscription? _wsSubscription;
@@ -31,6 +36,9 @@ class _TableViewState extends State<TableView> {
     _room = Map<String, dynamic>.from(widget.room);
     _initUser();
     _listenToWsEvents();
+    if (_isPlaying) {
+      _fetchGameState();
+    }
   }
 
   @override
@@ -96,7 +104,6 @@ class _TableViewState extends State<TableView> {
         final name = event['name']?.toString() ?? tr('لاعب');
         final uid = event['user_id'];
         if (uid != null && uid.toString() == _myUserId.toString()) {
-          // I was kicked
           AccessibilityManager.instance.announce(tr('تم طردك من الطاولة بواسطة القائد.'));
           Navigator.of(context).pop();
         } else {
@@ -106,8 +113,14 @@ class _TableViewState extends State<TableView> {
         setState(() => _room['status'] = 'playing');
         SoundService.instance.playSound('ROUND_START');
         AccessibilityManager.instance.announce(tr('بدأت اللعبة.'));
+        _fetchGameState();
       } else if (type == 'game_stopped') {
-        setState(() => _room['status'] = 'waiting');
+        setState(() {
+          _room['status'] = 'waiting';
+          _gameState = {'active': false};
+        });
+        final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+        GameStateEngine.instance.resetGameRuntimeState(gameType);
         SoundService.instance.playSound('GAME_STOPPED');
         AccessibilityManager.instance.announce(tr('توقفت اللعبة.'));
       } else if (type == 'captain_changed') {
@@ -119,8 +132,162 @@ class _TableViewState extends State<TableView> {
         });
       } else if (type == 'co_captain_changed') {
         setState(() => _room['co_host_id'] = event['co_host_id']);
+      } else if ([
+        'uno_state_changed',
+        'game_state_changed',
+        'ninety_nine_state_changed',
+        'thief_state_changed',
+        'farkle_state_changed',
+        'domino_state_changed',
+        'american_domino_state_changed',
+        'snakes_state_changed',
+        'scopa_state_changed'
+      ].contains(type)) {
+        final state = event['state'];
+        if (state is Map<String, dynamic>) {
+          _processGameState(state);
+        } else if (state is Map) {
+          _processGameState(Map<String, dynamic>.from(state));
+        } else {
+          _fetchGameState();
+        }
       }
     });
+  }
+
+  Future<void> _fetchGameState() async {
+    final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
+    if (roomId.isEmpty) return;
+    try {
+      final res = await ApiService.instance.getGameState(roomId);
+      if (res is Map<String, dynamic> && mounted) {
+        _processGameState(res);
+      } else if (res is Map && mounted) {
+        _processGameState(Map<String, dynamic>.from(res));
+      }
+    } catch (_) {}
+  }
+
+  void _processGameState(Map<String, dynamic> state) {
+    final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+    final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
+
+    GameStateEngine.instance.processCommonState(
+      gameType: gameType,
+      state: state,
+      roomId: roomId,
+      myUserId: _myUserId,
+      onStateProcessed: (isPlaying, isRoundFinished) {
+        if (mounted) {
+          setState(() {
+            _gameState = state;
+            _room['status'] = isPlaying ? 'playing' : 'waiting';
+          });
+        }
+      },
+    );
+  }
+
+  // Directional 2-finger gesture handlers replacing keyboard shortcuts
+  void _onSwipeLeftTopAnnouncement() {
+    final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+    final adapter = GameAdapterRegistry.instance.get(gameType);
+    if (adapter != null) {
+      adapter.announceTop(context, _gameState);
+    } else {
+      _defaultAnnounceTop(gameType, _gameState);
+    }
+  }
+
+  void _onSwipeUpTurnAnnouncement() {
+    final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+    final adapter = GameAdapterRegistry.instance.get(gameType);
+    if (adapter != null) {
+      adapter.announceTurn(context, _gameState);
+    } else {
+      _defaultAnnounceTurn(_gameState);
+    }
+  }
+
+  void _onSwipeDownSpaceAction() {
+    final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+    final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
+    final adapter = GameAdapterRegistry.instance.get(gameType);
+    if (adapter != null) {
+      adapter.onSpaceAction(context, _gameState, roomId);
+    } else {
+      _defaultSpaceAction(gameType, _gameState, roomId);
+    }
+  }
+
+  void _defaultAnnounceTurn(Map<String, dynamic> state) {
+    if (state['active'] != true && !_isPlaying) {
+      AccessibilityManager.instance.announce(tr('المباراة لم تبدأ بعد.'));
+      return;
+    }
+    final name = (state['current_player_name'] ?? state['current_turn_name'] ?? '').toString();
+    if (name.isNotEmpty) {
+      AccessibilityManager.instance.announce(tr('دور {name}', {'name': name}));
+    } else {
+      AccessibilityManager.instance.announce(tr('غير محدد'));
+    }
+  }
+
+  void _defaultAnnounceTop(String gameType, Map<String, dynamic> state) {
+    if (state['active'] != true && !_isPlaying) {
+      AccessibilityManager.instance.announce(tr('المباراة لم تبدأ بعد.'));
+      return;
+    }
+    if (gameType == 'NINETY_NINE') {
+      final pile = state['pile_value'] ?? 0;
+      AccessibilityManager.instance.announce(tr('المجموع {pile}', {'pile': pile.toString()}));
+    } else if (gameType == 'SCOPA') {
+      final tableCards = state['table_cards'];
+      if (tableCards is List && tableCards.isNotEmpty) {
+        final names = tableCards.map((c) => c.toString()).join('، ');
+        AccessibilityManager.instance.announce(names);
+      } else {
+        AccessibilityManager.instance.announce(tr('الطاولة فارغة.'));
+      }
+    } else if (gameType == 'UNO') {
+      final top = state['top_card'];
+      if (top != null) {
+        AccessibilityManager.instance.announce(top.toString());
+      } else {
+        AccessibilityManager.instance.announce(tr('لا توجد ورقة مكشوفة.'));
+      }
+    } else if (gameType == 'FARKLE') {
+      final roll = state['last_roll'] ?? state['dice'];
+      if (roll is List && roll.isNotEmpty) {
+        AccessibilityManager.instance.announce(roll.join('، '));
+      } else {
+        AccessibilityManager.instance.announce(tr('لا توجد رمية سابقة.'));
+      }
+    } else if (gameType == 'SNAKES_LADDERS') {
+      final roll = state['last_roll'] ?? 0;
+      if (roll > 0) {
+        AccessibilityManager.instance.announce(tr('آخر نرد: {roll}', {'roll': roll.toString()}));
+      } else {
+        AccessibilityManager.instance.announce(tr('لا توجد رمية سابقة.'));
+      }
+    } else {
+      AccessibilityManager.instance.announce(tr('لا توجد معلومات حالة متاحة.'));
+    }
+  }
+
+  void _defaultSpaceAction(String gameType, Map<String, dynamic> state, String roomId) {
+    if (state['active'] != true && !_isPlaying) {
+      return;
+    }
+    if (gameType == 'UNO') {
+      ApiService.instance.sendGameAction(roomId, {'action': 'draw'});
+    } else if (gameType == 'DOMINO' || gameType == 'AMERICAN_DOMINO') {
+      if (state['can_draw'] == true) {
+        ApiService.instance.sendGameAction(roomId, {'action': 'draw'});
+      } else if (state['can_pass'] == true) {
+        ApiService.instance.sendGameAction(roomId, {'action': 'pass'});
+      }
+    }
   }
 
   String _getGameTitle() {
@@ -297,6 +464,7 @@ class _TableViewState extends State<TableView> {
       setState(() => _room['status'] = 'playing');
       await SoundService.instance.playSound('ROUND_START');
       AccessibilityManager.instance.announce(tr('بدأت اللعبة.'));
+      _fetchGameState();
     } catch (e) {
       await SoundService.instance.playSound('INVALID_ACTION');
       AccessibilityManager.instance.announce(tr('تعذر بدء اللعبة: {error}', {'error': e.toString()}));
@@ -307,7 +475,12 @@ class _TableViewState extends State<TableView> {
     final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
     try {
       await ApiService.instance.stopGame(roomId);
-      setState(() => _room['status'] = 'waiting');
+      setState(() {
+        _room['status'] = 'waiting';
+        _gameState = {'active': false};
+      });
+      final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+      GameStateEngine.instance.resetGameRuntimeState(gameType);
       await SoundService.instance.playSound('GAME_STOPPED');
       AccessibilityManager.instance.announce(tr('توقفت اللعبة.'));
     } catch (e) {
@@ -326,7 +499,7 @@ class _TableViewState extends State<TableView> {
         try {
           final res = await ApiService.instance.getGameState(roomId);
           if (res is Map<String, dynamic> && mounted) {
-            setState(() => _room = res);
+            _processGameState(res);
           }
         } catch (_) {}
       },
@@ -467,84 +640,35 @@ class _TableViewState extends State<TableView> {
     final players = List<dynamic>.from(_room['players'] ?? []);
     final isPlaying = _isPlaying;
     final statusText = isPlaying ? tr('جارية') : tr('في الانتظار');
+    final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+    final adapter = GameAdapterRegistry.instance.get(gameType);
 
     return ResponsiveShell(
       title: tr('طاولة {game}', {'game': _getGameTitle()}),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.forum_outlined),
+          tooltip: tr('سجل الأحداث والدردشة'),
+          onPressed: () => ActivityLogWidget.showAsBottomSheet(context),
+        ),
         IconButton(
           icon: const Icon(Icons.more_vert),
           tooltip: tr('قائمة خيارات الطاولة'),
           onPressed: _showRoomOptionsMenu,
         ),
       ],
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Status Card
-            Card(
-              color: AppColors.surface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _getGameTitle(),
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isPlaying ? AppColors.success.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            statusText,
-                            style: TextStyle(
-                              color: isPlaying ? AppColors.success : Colors.orange,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      tr('المضيف: {name}', {'name': hostName}),
-                      style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      tr('عدد اللاعبين: {count}', {'count': '${players.length}'}),
-                      style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
-                    ),
-                    if (roomId.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        tr('معرف الطاولة: {id}', {'id': roomId}),
-                        style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Waiting Lobby or In-Game area
-            Expanded(
-              child: Card(
+      child: TwoFingerSwipeDetector(
+        onTwoFingerSwipeRight: () => ActivityLogWidget.showAsBottomSheet(context),
+        onTwoFingerSwipeLeft: _onSwipeLeftTopAnnouncement,
+        onTwoFingerSwipeUp: _onSwipeUpTurnAnnouncement,
+        onTwoFingerSwipeDown: _onSwipeDownSpaceAction,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Status Card
+              Card(
                 color: AppColors.surface,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Padding(
@@ -553,66 +677,130 @@ class _TableViewState extends State<TableView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            isPlaying ? tr('مجريات اللعبة') : tr('قائمة الانتظار'),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                          Expanded(
+                            child: Text(
+                              _getGameTitle(),
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
                             ),
                           ),
-                          TextButton.icon(
-                            icon: const Icon(Icons.people_outline, size: 18),
-                            label: Text(tr('اللاعبون ({count})', {'count': '${players.length}'})),
-                            onPressed: _openPlayersDialog,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isPlaying ? AppColors.success.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              statusText,
+                              style: TextStyle(
+                                color: isPlaying ? AppColors.success : Colors.orange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      const Divider(color: AppColors.divider),
-                      Expanded(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                isPlaying ? Icons.sports_esports : Icons.hourglass_top,
-                                size: 54,
-                                color: AppColors.primary.withOpacity(0.7),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                isPlaying
-                                    ? tr('اللعبة جارية الآن.')
-                                    : tr('في انتظار بدء اللعبة بواسطة المضيف.'),
-                                style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
+                      const SizedBox(height: 10),
+                      Text(
+                        tr('المضيف: {name}', {'name': hostName}),
+                        style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
                       ),
-                      if (!isPlaying && (_isHost || _isCoHost))
-                        ElevatedButton.icon(
-                          onPressed: _startGame,
-                          icon: const Icon(Icons.play_arrow, color: Colors.white),
-                          label: Text(
-                            tr('بدء اللعبة'),
-                            style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.success,
-                            minimumSize: const Size.fromHeight(50),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                      const SizedBox(height: 4),
+                      Text(
+                        tr('عدد اللاعبين: {count}', {'count': '${players.length}'}),
+                        style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                      ),
+                      if (roomId.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          tr('معرف الطاولة: {id}', {'id': roomId}),
+                          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
                         ),
+                      ],
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+
+              // Waiting Lobby or Active Gameplay Area
+              Expanded(
+                child: Card(
+                  color: AppColors.surface,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              isPlaying ? tr('مجريات اللعبة') : tr('قائمة الانتظار'),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            TextButton.icon(
+                              icon: const Icon(Icons.people_outline, size: 18),
+                              label: Text(tr('اللاعبون ({count})', {'count': '${players.length}'})),
+                              onPressed: _openPlayersDialog,
+                            ),
+                          ],
+                        ),
+                        const Divider(color: AppColors.divider),
+                        Expanded(
+                          child: isPlaying && adapter != null
+                              ? adapter.buildBoard(context, _gameState)
+                              : Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        isPlaying ? Icons.sports_esports : Icons.hourglass_top,
+                                        size: 54,
+                                        color: AppColors.primary.withOpacity(0.7),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        isPlaying
+                                            ? tr('اللعبة جارية الآن.')
+                                            : tr('في انتظار بدء اللعبة بواسطة المضيف.'),
+                                        style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                        ),
+                        if (!isPlaying && (_isHost || _isCoHost))
+                          ElevatedButton.icon(
+                            onPressed: _startGame,
+                            icon: const Icon(Icons.play_arrow, color: Colors.white),
+                            label: Text(
+                              tr('بدء اللعبة'),
+                              style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.success,
+                              minimumSize: const Size.fromHeight(50),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
