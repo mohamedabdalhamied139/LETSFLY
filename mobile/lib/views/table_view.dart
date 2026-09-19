@@ -6,6 +6,8 @@ import '../core/sound_service.dart';
 import '../core/accessibility_manager.dart';
 import '../games/game_adapter.dart';
 import '../games/game_state_engine.dart';
+import '../games/dialogs/start_game_dialog.dart';
+import '../games/dialogs/table_team_selection_dialog.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage_service.dart';
 import '../services/ws_service.dart';
@@ -460,8 +462,42 @@ class _TableViewState extends State<TableView> {
 
   Future<void> _startGame() async {
     final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
+    final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+    final players = List<dynamic>.from(_room['players'] ?? []);
+
+    if (players.length < 2) {
+      AccessibilityManager.instance.announce(tr('يجب وجود لاعبين اثنين على الأقل لبدء اللعبة.'));
+      return;
+    }
+
+    // Prompt default vs custom settings matching Windows _choose_start_mode
+    final startResult = await StartGameDialog.show(
+      context,
+      gameType: gameType,
+      currentRoom: _room,
+    );
+    if (startResult == null) return; // Cancelled
+
+    final targetScore = startResult.targetScore;
+    final rules = Map<String, dynamic>.from(startResult.rules);
+
+    // Scopa team selection: If teams are enabled and 4 or 6 players, host chooses teams
+    if (gameType == 'SCOPA' && rules['teams_enabled'] == true && (players.length == 4 || players.length == 6)) {
+      final teamMap = await TableTeamSelectionDialog.show(
+        context,
+        players: players.map((p) {
+          if (p is Map) return Map<String, dynamic>.from(p);
+          final uid = int.tryParse(p.toString()) ?? 0;
+          return {'id': uid, 'name': 'لاعب $uid'};
+        }).toList(),
+        currentUserId: _myUserId,
+      );
+      if (teamMap == null) return; // Cancelled
+      rules['custom_teams'] = teamMap;
+    }
+
     try {
-      await ApiService.instance.startGame(roomId);
+      await ApiService.instance.startGame(roomId, targetScore: targetScore, rules: rules);
       setState(() => _room['status'] = 'playing');
       await SoundService.instance.playSound('ROUND_START');
       AccessibilityManager.instance.announce(tr('بدأت اللعبة.'));
