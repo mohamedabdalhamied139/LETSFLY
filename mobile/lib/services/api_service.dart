@@ -96,17 +96,20 @@ class ApiService {
   }
 
   Future<dynamic> createRoom({
-    required String name,
-    required String gameType,
+    String? game,
+    String? name,
+    String? gameType,
     int maxPlayers = 4,
     String? password,
     Map<String, dynamic>? settings,
   }) {
+    final selectedGame = game ?? gameType ?? 'UNO';
     return post('/api/rooms', data: {
-      'name': name,
-      'game_type': gameType,
+      'game': selectedGame,
+      if (name != null) 'name': name,
+      if (gameType != null) 'game_type': gameType,
       'max_players': maxPlayers,
-      'password': password,
+      if (password != null) 'password': password,
       'settings': settings ?? {},
     });
   }

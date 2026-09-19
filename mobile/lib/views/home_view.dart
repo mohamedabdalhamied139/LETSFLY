@@ -9,6 +9,7 @@ import '../services/auth_storage_service.dart';
 import '../services/ws_service.dart';
 import 'auth_view.dart';
 import 'responsive_shell.dart';
+import 'rooms_menu_view.dart';
 
 /// Accessible Home screen matching 100% of Windows client home_view.py.
 /// Displays the 8 canonical items, live online users counter, return greeting,
@@ -110,7 +111,9 @@ class _HomeViewState extends State<HomeView> {
     switch (tag) {
       case 'rooms':
         AccessibilityManager.instance.announce(tr('فتح قائمة الطاولات'));
-        // In Phase 4, navigates to RoomsMenuView
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const RoomsMenuView()),
+        );
         break;
       case 'friends':
         AccessibilityManager.instance.announce(tr('فتح قائمة الأصدقاء'));

@@ -52,6 +52,7 @@ class SoundService {
     'MATCH_LOSS': 'match_loss.wav',
     'GAME_STOPPED': 'game_stopped.wav',
     'INVALID_ACTION': 'invalid_action.wav',
+    'ACTION_CLICK': 'player_left.wav',
     // UNO
     'CARD_DRAW': 'uno/draw.wav',
     'CARD_DRAW_TWO': 'uno/draw_two.wav',

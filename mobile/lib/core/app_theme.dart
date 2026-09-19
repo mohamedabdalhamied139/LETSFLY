@@ -7,8 +7,10 @@ class AppColors {
   static const Color header = Color(0xFF2D2D2D);
   static const Color border = Color(0xFF3E3E42);
   static const Color accent = Color(0xFF005FB8);
+  static const Color primary = accent;
   static const Color textPrimary = Colors.white;
   static const Color textSecondary = Color(0xFFA0A0A0);
+  static const Color textMuted = Color(0xFFA0A0A0);
   static const Color card = Color(0xFF252526);
   static const Color divider = Color(0xFF3E3E42);
   static const Color success = Color(0xFF28A745);
