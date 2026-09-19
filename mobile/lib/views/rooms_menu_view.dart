@@ -206,16 +206,20 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
       },
       child: ResponsiveShell(
         title: _getTitle(),
-        leading: _mode == 'main'
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  if (_handleBack()) {
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
+        leading: Semantics(
+          label: tr('رجوع'),
+          button: true,
+          excludeSemantics: true,
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            tooltip: tr('رجوع'),
+            onPressed: () {
+              if (_handleBack()) {
+                Navigator.of(context).pop();
+              }
+            },
+          ),
+        ),
         child: _creating
             ? const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),

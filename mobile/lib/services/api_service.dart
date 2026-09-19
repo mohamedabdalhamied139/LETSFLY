@@ -148,6 +148,10 @@ class ApiService {
     return get('/api/rooms');
   }
 
+  Future<dynamic> getRoom(String roomId) {
+    return get('/api/rooms/$roomId');
+  }
+
   Future<dynamic> createRoom({
     String? game,
   }) {

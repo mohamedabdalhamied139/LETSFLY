@@ -37,6 +37,7 @@ class _TableViewState extends State<TableView> {
     super.initState();
     _room = Map<String, dynamic>.from(widget.room);
     _initUser();
+    _fetchRoomDetails();
 
     // Connect WebSocket to this room's real-time events & gameplay stream
     final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
@@ -51,6 +52,19 @@ class _TableViewState extends State<TableView> {
     if (_isPlaying) {
       _fetchGameState();
     }
+  }
+
+  Future<void> _fetchRoomDetails() async {
+    final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
+    if (roomId.isEmpty) return;
+    try {
+      final res = await ApiService.instance.getRoom(roomId);
+      if (res is Map<String, dynamic> && mounted) {
+        setState(() {
+          _room = res;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -92,6 +106,24 @@ class _TableViewState extends State<TableView> {
           AccessibilityManager.instance.announce(tr('{name} انضم للطاولة', {'name': name}));
         }
         setState(() {
+          if (uid != null) {
+            final intUid = int.tryParse(uid.toString()) ?? 0;
+            final currentPlayers = List<dynamic>.from(_room['players'] ?? []);
+            final toAdd = intUid != 0 ? intUid : uid;
+            if (!currentPlayers.contains(intUid) && !currentPlayers.contains(uid)) {
+              currentPlayers.add(toAdd);
+              _room['players'] = currentPlayers;
+            }
+            final pdict = Map<String, dynamic>.from(_room['players_dict'] ?? {});
+            pdict[uid.toString()] = name;
+            _room['players_dict'] = pdict;
+
+            final pnames = List<dynamic>.from(_room['player_names'] ?? []);
+            if (!pnames.contains(name)) {
+              pnames.add(name);
+              _room['player_names'] = pnames;
+            }
+          }
           if (event['players'] is List) {
             _room['players'] = event['players'];
           }
@@ -102,6 +134,7 @@ class _TableViewState extends State<TableView> {
             _room['players_dict'] = event['players_dict'];
           }
         });
+        _fetchRoomDetails();
       } else if (type == 'player_left' || type == 'bot_removed') {
         final name = event['name']?.toString() ?? tr('لاعب');
         final uid = event['user_id'];
@@ -110,6 +143,17 @@ class _TableViewState extends State<TableView> {
           AccessibilityManager.instance.announce(tr('{name} غادر الطاولة', {'name': name}));
         }
         setState(() {
+          if (uid != null) {
+            final intUid = int.tryParse(uid.toString()) ?? 0;
+            final currentPlayers = List<dynamic>.from(_room['players'] ?? []);
+            currentPlayers.remove(intUid);
+            currentPlayers.remove(uid);
+            _room['players'] = currentPlayers;
+
+            final pnames = List<dynamic>.from(_room['player_names'] ?? []);
+            pnames.remove(name);
+            _room['player_names'] = pnames;
+          }
           if (event['players'] is List) {
             _room['players'] = event['players'];
           }
@@ -120,6 +164,9 @@ class _TableViewState extends State<TableView> {
             _room['players_dict'] = event['players_dict'];
           }
         });
+        _fetchRoomDetails();
+      } else if (type == 'room_updated') {
+        _fetchRoomDetails();
       } else if (type == 'player_kicked') {
         final name = event['name']?.toString() ?? tr('لاعب');
         final uid = event['user_id'];
@@ -715,15 +762,25 @@ class _TableViewState extends State<TableView> {
     return ResponsiveShell(
       title: tr('طاولة {game}', {'game': _getGameTitle()}),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.forum_outlined),
-          tooltip: tr('سجل الأحداث والدردشة'),
-          onPressed: () => ActivityLogWidget.showAsBottomSheet(context),
+        Semantics(
+          label: tr('سجل الأحداث والدردشة'),
+          button: true,
+          excludeSemantics: true,
+          child: IconButton(
+            icon: const Icon(Icons.forum_outlined),
+            tooltip: tr('سجل الأحداث والدردشة'),
+            onPressed: () => ActivityLogWidget.showAsBottomSheet(context),
+          ),
         ),
-        IconButton(
-          icon: const Icon(Icons.more_vert),
-          tooltip: tr('قائمة خيارات الطاولة'),
-          onPressed: _showRoomOptionsMenu,
+        Semantics(
+          label: tr('قائمة خيارات الطاولة'),
+          button: true,
+          excludeSemantics: true,
+          child: IconButton(
+            icon: const Icon(Icons.more_vert),
+            tooltip: tr('قائمة خيارات الطاولة'),
+            onPressed: _showRoomOptionsMenu,
+          ),
         ),
       ],
       child: TwoFingerSwipeDetector(
@@ -783,13 +840,6 @@ class _TableViewState extends State<TableView> {
                         tr('عدد اللاعبين: {count}', {'count': '${players.length}'}),
                         style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
                       ),
-                      if (roomId.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          tr('معرف الطاولة: {id}', {'id': roomId}),
-                          style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -828,26 +878,7 @@ class _TableViewState extends State<TableView> {
                         Expanded(
                           child: isPlaying && adapter != null
                               ? adapter.buildBoard(context, _gameState)
-                              : Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        isPlaying ? Icons.sports_esports : Icons.hourglass_top,
-                                        size: 54,
-                                        color: AppColors.primary.withOpacity(0.7),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        isPlaying
-                                            ? tr('اللعبة جارية الآن.')
-                                            : tr('في انتظار بدء اللعبة بواسطة المضيف.'),
-                                        style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              : _buildWaitingLobby(context, players),
                         ),
                         if (!isPlaying && (_isHost || _isCoHost))
                           ElevatedButton.icon(
@@ -872,6 +903,192 @@ class _TableViewState extends State<TableView> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildWaitingLobby(BuildContext context, List<dynamic> players) {
+    final hostId = int.tryParse(_room['host_id']?.toString() ?? '0') ?? 0;
+    final hostName = _room['host_name']?.toString() ?? tr('القائد');
+    final coHostId = int.tryParse(_room['co_host_id']?.toString() ?? '0');
+    final spectators = List<dynamic>.from(_room['spectators'] ?? []);
+    final rawNames = List<dynamic>.from(_room['player_names'] ?? []);
+    final playersDict = Map<dynamic, dynamic>.from(_room['players_dict'] ?? {});
+
+    String getPlayerName(int uid) {
+      final suid = uid.toString();
+      if (playersDict.containsKey(suid) && playersDict[suid] != null && playersDict[suid].toString().isNotEmpty) {
+        return playersDict[suid].toString();
+      }
+      if (rawNames.isNotEmpty) {
+        final idx = players.indexOf(uid);
+        if (idx >= 0 && idx < rawNames.length && rawNames[idx] != null && rawNames[idx].toString().isNotEmpty) {
+          return rawNames[idx].toString();
+        }
+      }
+      if (uid == hostId) return hostName;
+      return uid > 0 ? tr('لاعب {0}', {'0': '$uid'}) : 'Bot ${uid.abs()}';
+    }
+
+    final List<Map<String, dynamic>> participantItems = [];
+
+    // 1. Host / Captain
+    final hostIsSpec = spectators.contains(hostId);
+    participantItems.add({
+      'id': hostId,
+      'name': hostName,
+      'role': tr('القائد'),
+      'is_host': true,
+      'is_co_host': false,
+      'is_spectator': hostIsSpec,
+      'is_bot': false,
+    });
+
+    // 2. Co-Host
+    if (coHostId != null && coHostId != 0 && coHostId != hostId && (players.contains(coHostId) || spectators.contains(coHostId))) {
+      final coName = getPlayerName(coHostId);
+      final coIsSpec = spectators.contains(coHostId);
+      participantItems.add({
+        'id': coHostId,
+        'name': coName,
+        'role': tr('نائب القائد'),
+        'is_host': false,
+        'is_co_host': true,
+        'is_spectator': coIsSpec,
+        'is_bot': false,
+      });
+    }
+
+    // 3. Other players
+    for (final p in players) {
+      final uid = int.tryParse(p.toString()) ?? 0;
+      if (uid == hostId || uid == coHostId || uid == 0) continue;
+      final isBot = uid < 0;
+      final pName = getPlayerName(uid);
+      participantItems.add({
+        'id': uid,
+        'name': pName,
+        'role': isBot ? tr('روبوت') : tr('لاعب'),
+        'is_host': false,
+        'is_co_host': false,
+        'is_spectator': false,
+        'is_bot': isBot,
+      });
+    }
+
+    // 4. Spectators (excluding host and co-host)
+    for (final s in spectators) {
+      final uid = int.tryParse(s.toString()) ?? 0;
+      if (uid == hostId || uid == coHostId || uid == 0) continue;
+      final sName = getPlayerName(uid);
+      participantItems.add({
+        'id': uid,
+        'name': sName,
+        'role': tr('متفرج'),
+        'is_host': false,
+        'is_co_host': false,
+        'is_spectator': true,
+        'is_bot': false,
+      });
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Text(
+            tr('اللاعبون في الطاولة ({count}):', {'count': '${participantItems.length}'}),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            itemCount: participantItems.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 6),
+            itemBuilder: (ctx, idx) {
+              final item = participantItems[idx];
+              final name = item['name'] as String;
+              final role = item['role'] as String;
+              final isHost = item['is_host'] == true;
+              final isCoHost = item['is_co_host'] == true;
+              final isBot = item['is_bot'] == true;
+              final isSpec = item['is_spectator'] == true;
+              final semanticLabel = '$name، $role';
+
+              return Semantics(
+                label: semanticLabel,
+                button: true,
+                excludeSemantics: true,
+                child: Card(
+                  color: AppColors.surfaceLight,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    leading: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: isHost
+                          ? AppColors.primary
+                          : isCoHost
+                              ? Colors.teal
+                              : isBot
+                                  ? Colors.grey
+                                  : AppColors.surface,
+                      child: isBot
+                          ? const Icon(Icons.smart_toy, size: 18, color: Colors.white)
+                          : Text(
+                              name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                    title: Text(
+                      name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isHost
+                            ? AppColors.primary.withOpacity(0.2)
+                            : isCoHost
+                                ? Colors.teal.withOpacity(0.2)
+                                : isSpec
+                                    ? Colors.purple.withOpacity(0.2)
+                                    : AppColors.surface,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        role,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isHost
+                              ? AppColors.primary
+                              : isCoHost
+                                  ? Colors.tealAccent
+                                  : isSpec
+                                      ? Colors.purpleAccent
+                                      : AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    onTap: _openPlayersDialog,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
