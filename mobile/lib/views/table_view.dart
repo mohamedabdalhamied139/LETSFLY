@@ -152,6 +152,20 @@ class _TableViewState extends State<TableView> {
         });
       } else if (type == 'co_captain_changed') {
         setState(() => _room['co_host_id'] = event['co_host_id']);
+      } else if (type == 'player_connection_lost') {
+        final name = event['name']?.toString() ?? tr('لاعب');
+        final uid = event['user_id'];
+        if (uid != null && uid.toString() != _myUserId.toString()) {
+          SoundService.instance.playSound('CONNECTION_LOST');
+          AccessibilityManager.instance.announce(tr('{name} فقد الاتصال', {'name': name}));
+        }
+      } else if (type == 'player_reconnected') {
+        final name = event['name']?.toString() ?? tr('لاعب');
+        final uid = event['user_id'];
+        if (uid != null && uid.toString() != _myUserId.toString()) {
+          SoundService.instance.playSound('CONNECTED');
+          AccessibilityManager.instance.announce(tr('{name} أعاد الاتصال مجددا', {'name': name}));
+        }
       } else if ([
         'uno_state_changed',
         'game_state_changed',

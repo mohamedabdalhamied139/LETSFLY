@@ -112,8 +112,9 @@ class ApiService {
       'username': username,
       'password': password,
     });
-    if (res is Map && res['token'] != null) {
-      setToken(res['token'].toString());
+    final token = (res is Map) ? (res['access_token'] ?? res['token'])?.toString() : null;
+    if (token != null && token.isNotEmpty) {
+      setToken(token);
     }
     return res;
   }
@@ -124,8 +125,9 @@ class ApiService {
       'password': password,
       'display_name': displayName,
     });
-    if (res is Map && res['token'] != null) {
-      setToken(res['token'].toString());
+    final token = (res is Map) ? (res['access_token'] ?? res['token'])?.toString() : null;
+    if (token != null && token.isNotEmpty) {
+      setToken(token);
     }
     return res;
   }
@@ -148,35 +150,20 @@ class ApiService {
 
   Future<dynamic> createRoom({
     String? game,
-    String? name,
-    String? gameType,
-    int maxPlayers = 4,
-    String? password,
-    Map<String, dynamic>? settings,
   }) {
-    final selectedGame = game ?? gameType ?? 'UNO';
+    final selectedGame = (game ?? 'UNO').toUpperCase();
     return post('/api/rooms', data: {
       'game': selectedGame,
-      if (name != null) 'name': name,
-      if (gameType != null) 'game_type': gameType,
-      'max_players': maxPlayers,
-      if (password != null) 'password': password,
-      'settings': settings ?? {},
     });
   }
 
   Future<Map<String, dynamic>> joinRoom(
     String roomId, {
-    String? password,
     bool asSpectator = false,
   }) async {
     final queryParams = asSpectator ? {'as_spectator': true} : null;
     final res = await post(
       '/api/rooms/$roomId/join',
-      data: {
-        if (password != null) 'password': password,
-        'as_spectator': asSpectator,
-      },
       queryParameters: queryParams,
     );
     if (res is Map<String, dynamic>) {

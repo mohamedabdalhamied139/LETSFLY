@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/accessibility_manager.dart';
 import '../core/app_theme.dart';
 import '../core/localization.dart';
+import '../core/sound_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage_service.dart';
 import '../widgets/two_finger_gesture_detector.dart';
@@ -111,6 +112,7 @@ class _AccountSwitcherDialogState extends State<AccountSwitcherDialog> {
                               label: title,
                               selected: isSelected,
                               button: true,
+                              excludeSemantics: true,
                               child: ListTile(
                                 tileColor: isSelected ? AppColors.accent.withOpacity(0.2) : AppColors.surface,
                                 title: Text(
@@ -232,10 +234,14 @@ class _AuthViewState extends State<AuthView> {
     }
 
     setState(() => _isLoading = true);
+    SoundService.instance.playLooping('CONNECTING');
     try {
       final res = await ApiService.instance.login(u, p);
-      final token = res['token']?.toString() ?? '';
-      final displayName = res['display_name'] ?? res['user']?['display_name'] ?? u;
+      SoundService.instance.stopLooping('CONNECTING');
+      SoundService.instance.playSound('CONNECTED');
+
+      final token = (res is Map) ? (res['access_token'] ?? res['token'])?.toString() ?? '' : '';
+      final displayName = res['user']?['display_name'] ?? res['display_name'] ?? u;
 
       await AuthStorageService.instance.saveActiveAccount(
         username: u,
@@ -252,6 +258,7 @@ class _AuthViewState extends State<AuthView> {
         );
       }
     } catch (e) {
+      SoundService.instance.stopLooping('CONNECTING');
       String msg = tr('فشل تسجيل الدخول. تأكد من صحة البيانات.');
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionTimeout ||
@@ -290,10 +297,14 @@ class _AuthViewState extends State<AuthView> {
     }
 
     setState(() => _isLoading = true);
+    SoundService.instance.playLooping('CONNECTING');
     try {
       final res = await ApiService.instance.register(u, p, d);
-      final token = res['token']?.toString() ?? '';
-      final displayName = res['display_name'] ?? d;
+      SoundService.instance.stopLooping('CONNECTING');
+      SoundService.instance.playSound('CONNECTED');
+
+      final token = (res is Map) ? (res['access_token'] ?? res['token'])?.toString() ?? '' : '';
+      final displayName = res['user']?['display_name'] ?? res['display_name'] ?? d;
 
       await AuthStorageService.instance.saveActiveAccount(
         username: u,
@@ -310,6 +321,7 @@ class _AuthViewState extends State<AuthView> {
         );
       }
     } catch (e) {
+      SoundService.instance.stopLooping('CONNECTING');
       String msg = tr('فشل إنشاء الحساب. قد يكون اسم المستخدم مستخدمًا بالفعل.');
       if (e is DioException) {
         if (e.type == DioExceptionType.connectionTimeout ||
@@ -454,50 +466,41 @@ class _AuthViewState extends State<AuthView> {
 
                     // Display Name (Registration mode only)
                     if (_registerMode) ...[
-                      Semantics(
-                        label: tr('الاسم'),
-                        child: TextField(
-                          controller: _displayNameController,
-                          style: const TextStyle(color: AppColors.textPrimary),
-                          decoration: InputDecoration(
-                            labelText: tr('الاسم'),
-                            hintText: tr('اكتب الاسم'),
-                            prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.textSecondary),
-                          ),
+                      TextField(
+                        controller: _displayNameController,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: tr('الاسم'),
+                          hintText: tr('اكتب الاسم'),
+                          prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.textSecondary),
                         ),
                       ),
                       const SizedBox(height: 14),
                     ],
 
                     // Username Input
-                    Semantics(
-                      label: tr('اسم المستخدم'),
-                      child: TextField(
-                        controller: _usernameController,
-                        style: const TextStyle(color: AppColors.textPrimary),
-                        decoration: InputDecoration(
-                          labelText: tr('اسم المستخدم'),
-                          hintText: tr('اكتب اسم المستخدم'),
-                          prefixIcon: const Icon(Icons.person_outline, color: AppColors.textSecondary),
-                        ),
+                    TextField(
+                      controller: _usernameController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        labelText: tr('اسم المستخدم'),
+                        hintText: tr('اكتب اسم المستخدم'),
+                        prefixIcon: const Icon(Icons.person_outline, color: AppColors.textSecondary),
                       ),
                     ),
                     const SizedBox(height: 14),
 
                     // Password Input
-                    Semantics(
-                      label: tr('كلمة المرور'),
-                      child: TextField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        style: const TextStyle(color: AppColors.textPrimary),
-                        decoration: InputDecoration(
-                          labelText: tr('كلمة المرور'),
-                          hintText: tr('اكتب كلمة المرور'),
-                          prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
-                        ),
-                        onSubmitted: (_) => _registerMode ? _handleRegister() : _handleLogin(),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        labelText: tr('كلمة المرور'),
+                        hintText: tr('اكتب كلمة المرور'),
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
                       ),
+                      onSubmitted: (_) => _registerMode ? _handleRegister() : _handleLogin(),
                     ),
                     const SizedBox(height: 22),
 

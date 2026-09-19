@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import '../core/accessibility.dart';
+import '../core/localization.dart';
+import '../core/sound_service.dart';
 
 class WebSocketService {
   static final WebSocketService instance = WebSocketService._();
@@ -104,9 +107,15 @@ class WebSocketService {
   }
 
   void _handleDisconnect() {
+    final wasConnected = _isConnected;
     _isConnected = false;
     _heartbeatTimer?.cancel();
     _messageController.add({'type': 'ws_disconnected'});
+
+    if (!_isDisposed && wasConnected) {
+      SoundService.instance.playSound('CONNECTION_LOST');
+      AccessibilityManager.instance.announce(tr('connection lost'));
+    }
   }
 
   void disconnect() {

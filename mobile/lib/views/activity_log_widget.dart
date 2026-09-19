@@ -145,6 +145,7 @@ class _ActivityLogWidgetState extends State<ActivityLogWidget> {
                     return Semantics(
                       selected: isSelected,
                       button: true,
+                      excludeSemantics: true,
                       label: label,
                       child: ChoiceChip(
                         label: Text(label),
@@ -191,6 +192,7 @@ class _ActivityLogWidgetState extends State<ActivityLogWidget> {
                         final time = (event['time'] ?? event['timestamp'] ?? '').toString();
 
                         return Semantics(
+                          excludeSemantics: true,
                           label: time.isNotEmpty ? '$text، $time' : text,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),

@@ -148,6 +148,7 @@ class SnakesGameAdapter extends GameAdapter {
       children: [
         // 1. Radar & Position Card
         Semantics(
+          excludeSemantics: true,
           label: _buildRadarSpeech(radar),
           child: Container(
             padding: const EdgeInsets.all(12.0),
@@ -291,6 +292,7 @@ class SnakesGameAdapter extends GameAdapter {
               );
 
               return Semantics(
+                excludeSemantics: true,
                 label: itemSemantic,
                 child: Card(
                   color: AppColors.surfaceLight,

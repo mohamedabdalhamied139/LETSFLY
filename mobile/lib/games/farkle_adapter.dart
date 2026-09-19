@@ -31,6 +31,7 @@ class FarkleGameAdapter extends GameAdapter {
       children: [
         // Score & Dice Summary Card
         Semantics(
+          excludeSemantics: true,
           label: tr('نقاط الدور الحالي: {score}', {'score': '$turnScore'}),
           child: Container(
             padding: const EdgeInsets.all(12.0),

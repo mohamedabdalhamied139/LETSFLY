@@ -28,10 +28,22 @@ class SoundService {
         ),
       ),
     );
+    _loopPlayer.setAudioContext(
+      AudioContext(
+        android: const AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.game,
+          audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+        ),
+      ),
+    );
   }
 
   final AudioPlayer _player = AudioPlayer();
   final AudioPlayer _pannedPlayer = AudioPlayer();
+  final AudioPlayer _loopPlayer = AudioPlayer();
 
   // Stable cue mapping matching Windows SoundEngine.SOUND_REGISTRY
   static const Map<String, String> _cueMap = {
@@ -135,6 +147,7 @@ class SoundService {
     final effective = _isMuted ? 0.0 : _volume;
     _player.setVolume(effective);
     _pannedPlayer.setVolume(effective);
+    _loopPlayer.setVolume(effective);
   }
 
   void setMuted(bool muted) {
@@ -142,6 +155,29 @@ class SoundService {
     final effective = _isMuted ? 0.0 : _volume;
     _player.setVolume(effective);
     _pannedPlayer.setVolume(effective);
+    _loopPlayer.setVolume(effective);
+  }
+
+  /// Start looped playback of a registered cue matching Windows SoundEngine.play_looping
+  Future<void> playLooping(String cueOrPath) async {
+    if (_isMuted) return;
+    try {
+      final cueUpper = cueOrPath.toUpperCase();
+      String resolved = _cueMap[cueUpper] ?? cueOrPath;
+      if (!resolved.endsWith('.wav') && !resolved.endsWith('.mp3')) {
+        resolved = '$resolved.wav';
+      }
+      await _loopPlayer.stop();
+      await _loopPlayer.setReleaseMode(ReleaseMode.loop);
+      await _loopPlayer.play(AssetSource('sounds/$resolved'));
+    } catch (_) {}
+  }
+
+  /// Stop looped playback matching Windows SoundEngine.stop_looping
+  Future<void> stopLooping([String? cueOrPath]) async {
+    try {
+      await _loopPlayer.stop();
+    } catch (_) {}
   }
 
   /// Plays sound naturally matching Windows desktop client.

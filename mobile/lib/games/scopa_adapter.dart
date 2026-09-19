@@ -26,6 +26,7 @@ class ScopaGameAdapter extends GameAdapter {
       children: [
         // Table Cards Header & Container
         Semantics(
+          excludeSemantics: true,
           label: tableCards.isEmpty
               ? tr('الطاولة فارغة.')
               : tr('أوراق الطاولة: {cards}', {'cards': tableCards.map((c) => cardDisplayAr(c as Map<String, dynamic>?)).join('، ')}),

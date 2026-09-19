@@ -27,6 +27,7 @@ class NinetyNineGameAdapter extends GameAdapter {
       children: [
         // Pile Value Display
         Semantics(
+          excludeSemantics: true,
           label: tr('المجموع {pile}', {'pile': pileValue.toString()}),
           child: Container(
             padding: const EdgeInsets.all(12.0),

@@ -35,6 +35,7 @@ class UnoGameAdapter extends GameAdapter {
       children: [
         // Top Card Display
         Semantics(
+          excludeSemantics: true,
           label: tr('الورقة المكشوفة: {card}', {'card': effectiveTopText}),
           child: Container(
             padding: const EdgeInsets.all(12.0),

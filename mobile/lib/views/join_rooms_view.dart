@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/localization.dart';
@@ -87,11 +88,15 @@ class _JoinRoomsViewState extends State<JoinRoomsView> {
       }
     } catch (e) {
       await SoundService.instance.playSound('INVALID_ACTION');
-      AccessibilityManager.instance.announce(tr('تعذر الانضمام للطاولة: {error}', {'error': e.toString()}));
+      String errorMsg = tr('تعذر الانضمام للطاولة');
+      if (e is DioException && e.response?.data is Map && (e.response!.data as Map).containsKey('detail')) {
+        errorMsg = (e.response!.data as Map)['detail']?.toString() ?? errorMsg;
+      }
+      AccessibilityManager.instance.announce(errorMsg);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(tr('تعذر الانضمام للطاولة')),
+            content: Text(errorMsg),
             backgroundColor: AppColors.error,
           ),
         );
@@ -140,6 +145,7 @@ class _JoinRoomsViewState extends State<JoinRoomsView> {
 
                         return Semantics(
                           button: true,
+                          excludeSemantics: true,
                           label: lineText,
                           child: Card(
                             color: AppColors.surface,

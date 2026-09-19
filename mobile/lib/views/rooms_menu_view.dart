@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/localization.dart';
@@ -22,10 +23,16 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
   String _mode = 'main';
   bool _creating = false;
 
+  @override
+  void initState() {
+    super.initState();
+    AccessibilityManager.instance.announce(tr('قائمة الطاولات'));
+  }
+
   String _getTitle() {
     switch (_mode) {
       case 'cards_games':
-        return tr('ألعاب الكروت');
+        return tr('ألعاب الورق');
       case 'dice_games':
         return tr('ألعاب النرد');
       case 'domino_games':
@@ -56,7 +63,7 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
         ];
       case 'domino_games':
         return [
-          {'label': tr('دومينو كلاسيك'), 'tag': 'create_domino', 'game': 'DOMINO'},
+          {'label': tr('دومينو'), 'tag': 'create_domino', 'game': 'DOMINO'},
           {'label': tr('دومينو أمريكاني'), 'tag': 'create_american_domino', 'game': 'AMERICAN_DOMINO'},
         ];
       case 'memory_games':
@@ -94,11 +101,11 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
     ];
     if (subCategories.contains(_mode)) {
       setState(() => _mode = 'games');
-      AccessibilityManager.instance.announce(tr('تصنيفات الألعاب لإنشاء الطاولة'));
+      AccessibilityManager.instance.announce(tr('نوع اللعبة.'));
       return false; // Don't pop route
     } else if (_mode == 'games') {
       setState(() => _mode = 'main');
-      AccessibilityManager.instance.announce(tr('الطاولات'));
+      AccessibilityManager.instance.announce(tr('قائمة الطاولات'));
       return false; // Don't pop route
     }
     return true; // Pop route back to home
@@ -161,11 +168,20 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
       }
     } catch (e) {
       await SoundService.instance.playSound('INVALID_ACTION');
-      AccessibilityManager.instance.announce(tr('تعذر إنشاء الطاولة: {error}', {'error': e.toString()}));
+      String errorMsg = tr('تعذر إنشاء الطاولة');
+      if (e is DioException) {
+        if (e.response?.data is Map && (e.response!.data as Map).containsKey('detail')) {
+          errorMsg = (e.response!.data as Map)['detail']?.toString() ?? errorMsg;
+        } else if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.connectionError) {
+          errorMsg = tr('تعذر الاتصال بالخادم.');
+        }
+      }
+      AccessibilityManager.instance.announce(errorMsg);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(tr('تعذر إنشاء الطاولة')),
+            content: Text(errorMsg),
             backgroundColor: AppColors.error,
           ),
         );
@@ -212,6 +228,7 @@ class _RoomsMenuViewState extends State<RoomsMenuView> {
                   final item = items[idx];
                   return Semantics(
                     button: true,
+                    excludeSemantics: true,
                     label: item['label'],
                     child: Card(
                       color: AppColors.surface,

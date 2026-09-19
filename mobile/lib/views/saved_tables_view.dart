@@ -214,6 +214,7 @@ class _SavedTablesViewState extends State<SavedTablesView> {
 
                         return Semantics(
                           button: true,
+                          excludeSemantics: true,
                           label: lineText,
                           child: Card(
                             color: AppColors.surface,
