@@ -25,7 +25,11 @@ class AccessibilityManager {
   }
 
   /// Announces critical game events directly to TalkBack (Android) or VoiceOver (iOS).
-  Future<void> announce(String message, {TextDirection textDirection = TextDirection.rtl}) async {
+  Future<void> announce(
+    String message, {
+    bool interrupt = false,
+    TextDirection textDirection = TextDirection.rtl,
+  }) async {
     if (message.trim().isEmpty) return;
 
     // 1. Announce through native mobile semantics tree
@@ -36,6 +40,9 @@ class AccessibilityManager {
     // 2. Fallback to FlutterTts if explicitly enabled in settings
     if (_ttsEnabled && _tts != null) {
       try {
+        if (interrupt) {
+          await _tts?.stop();
+        }
         await _tts?.speak(message);
       } catch (_) {}
     }
