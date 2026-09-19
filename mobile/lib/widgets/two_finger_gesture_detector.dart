@@ -46,32 +46,29 @@ class TwoFingerSwipeDetector extends StatefulWidget {
 
 class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
   final Map<int, _PointerTrack> _pointers = {};
+  final Map<int, _PointerTrack> _allTracksThisGesture = {};
   int _maxPointers = 0;
   bool _hasTriggered = false;
   DateTime? _lastTriggerTime;
 
   static const double _swipeThreshold = 25.0;
-  static const Duration _cooldown = Duration(milliseconds: 350);
-
-  bool get _canTrigger {
-    if (_hasTriggered) return false;
-    if (_lastTriggerTime == null) return true;
-    return DateTime.now().difference(_lastTriggerTime!) > _cooldown;
-  }
+  static const Duration _cooldown = Duration(milliseconds: 300);
 
   void _handlePointerDown(PointerDownEvent event) {
-    // If pointers were idle or all lifted or cooldown expired, start fresh
-    if (_pointers.isEmpty || (_lastTriggerTime != null && DateTime.now().difference(_lastTriggerTime!) > _cooldown)) {
-      _pointers.clear();
+    if (_pointers.isEmpty) {
       _hasTriggered = false;
       _maxPointers = 0;
+      _allTracksThisGesture.clear();
     }
 
-    _pointers[event.pointer] = _PointerTrack(
+    final track = _PointerTrack(
       start: event.position,
       current: event.position,
       time: DateTime.now(),
     );
+
+    _pointers[event.pointer] = track;
+    _allTracksThisGesture[event.pointer] = track;
 
     if (_pointers.length > _maxPointers) {
       _maxPointers = _pointers.length;
@@ -82,8 +79,11 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
     if (_pointers.containsKey(event.pointer)) {
       _pointers[event.pointer]!.current = event.position;
     }
+    if (_allTracksThisGesture.containsKey(event.pointer)) {
+      _allTracksThisGesture[event.pointer]!.current = event.position;
+    }
 
-    if (_pointers.length >= 2 && _canTrigger) {
+    if (_pointers.length >= 2 && !_hasTriggered) {
       _evaluateSwipe();
     }
   }
@@ -92,9 +92,12 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
     if (_pointers.containsKey(event.pointer)) {
       _pointers[event.pointer]!.current = event.position;
     }
+    if (_allTracksThisGesture.containsKey(event.pointer)) {
+      _allTracksThisGesture[event.pointer]!.current = event.position;
+    }
 
-    // Also check on pointer up in case of a quick flick
-    if (_maxPointers >= 2 && _canTrigger) {
+    // Check on pointer up in case of a quick flick before lifting
+    if (!_hasTriggered && _maxPointers >= 2) {
       _evaluateSwipe();
     }
 
@@ -102,6 +105,7 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
     if (_pointers.isEmpty) {
       _hasTriggered = false;
       _maxPointers = 0;
+      _allTracksThisGesture.clear();
     }
   }
 
@@ -110,23 +114,31 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
     if (_pointers.isEmpty) {
       _hasTriggered = false;
       _maxPointers = 0;
+      _allTracksThisGesture.clear();
     }
   }
 
   void _evaluateSwipe() {
+    if (_hasTriggered) return;
+    if (_lastTriggerTime != null && DateTime.now().difference(_lastTriggerTime!) < _cooldown) {
+      return;
+    }
     if (_pointers.length < 2 && _maxPointers < 2) return;
+
+    final sourceTracks = _pointers.length >= 2 ? _pointers.values : _allTracksThisGesture.values;
+    if (sourceTracks.length < 2) return;
 
     double totalDx = 0.0;
     double totalDy = 0.0;
     int count = 0;
 
-    for (final track in _pointers.values) {
+    for (final track in sourceTracks) {
       totalDx += (track.current.dx - track.start.dx);
       totalDy += (track.current.dy - track.start.dy);
       count++;
     }
 
-    if (count == 0) return;
+    if (count < 2) return;
 
     final avgDx = totalDx / count;
     final avgDy = totalDy / count;
@@ -139,7 +151,7 @@ class _TwoFingerSwipeDetectorState extends State<TwoFingerSwipeDetector> {
     _lastTriggerTime = DateTime.now();
 
     // Haptic feedback to confirm gesture recognition
-    HapticFeedback.selectionClick();
+    HapticFeedback.mediumImpact();
 
     if (avgDx.abs() > avgDy.abs()) {
       // Horizontal swipe

@@ -456,7 +456,7 @@ class _TableViewState extends State<TableView> {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 child: Text(
-                  tr('قائمة خيارات الطاولة'),
+                  tr('قائمة سياق الطاولة'),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -510,18 +510,7 @@ class _TableViewState extends State<TableView> {
                 },
               ),
 
-              // 4. Game Rules (قواعد اللعب)
-              ListTile(
-                leading: const Icon(Icons.menu_book, color: AppColors.primary),
-                title: Text(tr('قواعد اللعب'), style: const TextStyle(color: AppColors.textPrimary)),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
-                  GameRulesDialog.show(context, gameType: gameType);
-                },
-              ),
-
-              // 4. Save Table
+              // 4. Save Table (Matches Windows position #4)
               ListTile(
                 leading: const Icon(Icons.save, color: AppColors.textSecondary),
                 title: Text(tr('حفظ الطاولة'), style: const TextStyle(color: AppColors.textPrimary)),
@@ -535,7 +524,7 @@ class _TableViewState extends State<TableView> {
                 },
               ),
 
-              // 5. Privacy Toggle
+              // 5. Privacy Toggle (Matches Windows position #5)
               ListTile(
                 leading: Icon(isPrivate ? Icons.lock_open : Icons.lock, color: AppColors.textSecondary),
                 title: Text(
@@ -552,7 +541,9 @@ class _TableViewState extends State<TableView> {
                 },
               ),
 
-              // 6. Add Bot
+              const Divider(color: AppColors.divider, height: 1),
+
+              // 6. Add Bot (Matches Windows position #6)
               ListTile(
                 leading: const Icon(Icons.smart_toy, color: AppColors.primary),
                 title: Text(tr('إضافة بوت'), style: const TextStyle(color: AppColors.textPrimary)),
@@ -570,7 +561,7 @@ class _TableViewState extends State<TableView> {
                 },
               ),
 
-              // 7. Remove Bot
+              // 7. Remove Bot (Matches Windows position #7)
               ListTile(
                 leading: const Icon(Icons.remove_circle_outline, color: AppColors.textSecondary),
                 title: Text(tr('إزالة بوت'), style: const TextStyle(color: AppColors.textPrimary)),
@@ -590,7 +581,18 @@ class _TableViewState extends State<TableView> {
 
               const Divider(color: AppColors.divider, height: 1),
 
-              // 8. Leave Table
+              // 8. Game Rules (قواعد اللعب)
+              ListTile(
+                leading: const Icon(Icons.menu_book, color: AppColors.primary),
+                title: Text(tr('قواعد اللعب'), style: const TextStyle(color: AppColors.textPrimary)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+                  GameRulesDialog.show(context, gameType: gameType);
+                },
+              ),
+
+              // 9. Leave Table (Matches Windows position #9)
               ListTile(
                 leading: const Icon(Icons.exit_to_app, color: AppColors.error),
                 title: Text(tr('مغادرة الطاولة'), style: const TextStyle(color: AppColors.error)),
@@ -844,13 +846,157 @@ class _TableViewState extends State<TableView> {
     }
   }
 
+  String _getFormattedScoreLine() {
+    final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
+    final players = List<dynamic>.from(_room['players'] ?? []);
+    final rawNames = List<dynamic>.from(_room['player_names'] ?? []);
+    final playersDict = Map<dynamic, dynamic>.from(_room['players_dict'] ?? {});
+    final scores = Map<dynamic, dynamic>.from(_gameState['scores'] ?? _room['scores'] ?? {});
+
+    String getPlayerName(dynamic uid) {
+      final suid = uid.toString();
+      if (playersDict.containsKey(suid) && playersDict[suid] != null && playersDict[suid].toString().isNotEmpty) {
+        return playersDict[suid].toString();
+      }
+      final intUid = int.tryParse(suid) ?? 0;
+      if (rawNames.isNotEmpty) {
+        final idx = players.indexOf(intUid != 0 ? intUid : uid);
+        if (idx >= 0 && idx < rawNames.length && rawNames[idx] != null && rawNames[idx].toString().isNotEmpty) {
+          return rawNames[idx].toString();
+        }
+      }
+      final hostId = int.tryParse(_room['host_id']?.toString() ?? '0') ?? 0;
+      if (intUid == hostId && _room['host_name'] != null && _room['host_name'].toString().isNotEmpty) {
+        return _room['host_name'].toString();
+      }
+      return intUid > 0 ? tr('لاعب {0}', {'0': '$intUid'}) : 'Bot ${intUid.abs()}';
+    }
+
+    // 1. Tennis
+    if (gameType == 'TENNIS') {
+      final sc = _gameState['score'] is Map ? Map<String, dynamic>.from(_gameState['score'] as Map) : <String, dynamic>{};
+      final pts = sc['points'] is Map ? Map<String, dynamic>.from(sc['points'] as Map) : <String, dynamic>{};
+      final p0Name = getPlayerName(players.isNotEmpty ? players[0] : 1);
+      final p1Name = getPlayerName(players.length > 1 ? players[1] : 2);
+      final p0Pts = pts['0'] ?? pts[0] ?? '0';
+      final p1Pts = pts['1'] ?? pts[1] ?? '0';
+      return '$p0Name $p0Pts   $p1Name $p1Pts';
+    }
+
+    // 2. Scopa Teams
+    if (gameType == 'SCOPA' && _gameState['is_team_game'] == true) {
+      final teamsMap = Map<dynamic, dynamic>.from(_gameState['teams'] ?? {});
+      final Map<String, List<String>> teamMembers = {};
+      for (final p in players) {
+        final suid = p.toString();
+        final tid = teamsMap[suid] ?? teamsMap[int.tryParse(suid)];
+        if (tid != null) {
+          teamMembers.putIfAbsent(tid.toString(), () => []).add(getPlayerName(p));
+        }
+      }
+      final List<String> parts = [];
+      for (final entry in scores.entries) {
+        final tid = entry.key.toString();
+        final members = teamMembers[tid] ?? [];
+        final label = members.isNotEmpty ? members.join(' & ') : tr('فريق {0}', {'0': '${(int.tryParse(tid) ?? 0) + 1}'});
+        parts.add('$label ${entry.value}');
+      }
+      if (parts.isNotEmpty) return parts.join('   ');
+    }
+
+    // 3. State players list with individual scores/positions/tokens
+    final statePlayers = _gameState['players'];
+    if (statePlayers is List && statePlayers.isNotEmpty && statePlayers.first is Map) {
+      final List<String> parts = [];
+      for (final p in statePlayers) {
+        final m = Map<String, dynamic>.from(p as Map);
+        final uid = (m['id'] ?? m['user_id'])?.toString();
+        final name = (m['name'] ?? getPlayerName(uid)).toString();
+        dynamic scoreVal = 0;
+        if (gameType == 'SNAKES_LADDERS') {
+          scoreVal = m['position'] ?? 0;
+        } else if (gameType == 'NINETY_NINE') {
+          final tokens = Map<dynamic, dynamic>.from(_gameState['tokens'] ?? {});
+          scoreVal = tokens[uid] ?? m['tokens'] ?? m['score'] ?? 0;
+        } else {
+          scoreVal = m['score'] ?? scores[uid] ?? 0;
+        }
+        parts.add('$name $scoreVal');
+      }
+      if (parts.isNotEmpty) {
+        return parts.join('   ');
+      }
+    }
+
+    // 4. Default fallback by room players and scores
+    final List<String> parts = [];
+    for (final p in players) {
+      final suid = p.toString();
+      final name = getPlayerName(p);
+      final sc = scores[suid] ?? scores[int.tryParse(suid)] ?? 0;
+      parts.add('$name $sc');
+    }
+    return parts.isNotEmpty ? parts.join('   ') : '';
+  }
+
+  Widget _buildScoreBar() {
+    final scoreLine = _getFormattedScoreLine();
+    if (scoreLine.isEmpty) return const SizedBox.shrink();
+
+    final actions = <CustomSemanticsAction, VoidCallback>{
+      CustomSemanticsAction(label: tr('معرفة الدور')): () {
+        HapticFeedback.mediumImpact();
+        _onSwipeUpTurnAnnouncement();
+      },
+      CustomSemanticsAction(label: tr('مسطرة المسافة')): () {
+        HapticFeedback.mediumImpact();
+        _onSwipeDownSpaceAction();
+      },
+      CustomSemanticsAction(label: tr('معرفة المكشوف على الطاولة')): () {
+        HapticFeedback.mediumImpact();
+        _onSwipeLeftTopAnnouncement();
+      },
+      CustomSemanticsAction(label: tr('سجل الأحداث والدردشة')): () {
+        HapticFeedback.mediumImpact();
+        ActivityLogWidget.showAsBottomSheet(context);
+      },
+    };
+
+    return Semantics(
+      label: tr('النتيجة: {score}', {'score': scoreLine}),
+      container: true,
+      customSemanticsActions: actions,
+      child: Card(
+        color: AppColors.surface,
+        margin: EdgeInsets.zero,
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Text(
+              scoreLine,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final roomId = _room['id']?.toString() ?? _room['room_id']?.toString() ?? '';
-    final hostName = _room['host_name']?.toString() ?? tr('مجهول');
     final players = List<dynamic>.from(_room['players'] ?? []);
     final isPlaying = _isPlaying;
-    final statusText = isPlaying ? tr('جارية') : tr('في الانتظار');
     final gameType = _room['game']?.toString().toUpperCase() ?? 'UNO';
     final adapter = GameAdapterRegistry.instance.get(gameType);
 
@@ -858,12 +1004,12 @@ class _TableViewState extends State<TableView> {
       title: tr('طاولة {game}', {'game': _getGameTitle()}),
       actions: [
         Semantics(
-          label: tr('قائمة خيارات الطاولة'),
+          label: tr('قائمة سياق الطاولة'),
           button: true,
           excludeSemantics: true,
           child: IconButton(
             icon: const Icon(Icons.more_vert),
-            tooltip: tr('قائمة خيارات الطاولة'),
+            tooltip: tr('قائمة سياق الطاولة'),
             onPressed: _showRoomOptionsMenu,
           ),
         ),
@@ -877,91 +1023,21 @@ class _TableViewState extends State<TableView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-              // Status Card
-              Card(
-                color: AppColors.surface,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _getGameTitle(),
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isPlaying ? AppColors.success.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              statusText,
-                              style: TextStyle(
-                                color: isPlaying ? AppColors.success : Colors.orange,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        tr('المضيف: {name}', {'name': hostName}),
-                        style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        tr('عدد اللاعبين: {count}', {'count': '${players.length}'}),
-                        style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Waiting Lobby or Active Gameplay Area
-              Expanded(
-                child: Card(
-                  color: AppColors.surface,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isPlaying ? tr('مجريات اللعبة') : tr('قائمة الانتظار'),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const Divider(color: AppColors.divider),
-                        Expanded(
-                          child: isPlaying && adapter != null
-                              ? adapter.buildBoard(context, _gameState)
-                              : _buildWaitingLobby(context, players),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            // Score Bar appears directly after context menu button, only when game has started
+            if (isPlaying) ...[
+              _buildScoreBar(),
+              const SizedBox(height: 12),
             ],
-          ),
+
+            // Clean Table: waiting players list or active game board
+            Expanded(
+              child: isPlaying && adapter != null
+                  ? adapter.buildBoard(context, _gameState)
+                  : _buildWaitingLobby(context, players),
+            ),
+          ],
         ),
+      ),
     );
   }
 
@@ -1050,104 +1126,86 @@ class _TableViewState extends State<TableView> {
       });
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Text(
-            tr('اللاعبون في الطاولة ({count}):', {'count': '${participantItems.length}'}),
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            itemCount: participantItems.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 6),
-            itemBuilder: (ctx, idx) {
-              final item = participantItems[idx];
-              final name = item['name'] as String;
-              final role = item['role'] as String;
-              final isHost = item['is_host'] == true;
-              final isCoHost = item['is_co_host'] == true;
-              final isBot = item['is_bot'] == true;
-              final isSpec = item['is_spectator'] == true;
-              final semanticLabel = '$name، $role';
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      itemCount: participantItems.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (ctx, idx) {
+        final item = participantItems[idx];
+        final name = item['name'] as String;
+        final role = item['role'] as String;
+        final isHost = item['is_host'] == true;
+        final isCoHost = item['is_co_host'] == true;
+        final isBot = item['is_bot'] == true;
+        final isSpec = item['is_spectator'] == true;
+        final semanticLabel = '$name، $role';
 
-              return Semantics(
-                label: semanticLabel,
-                button: true,
-                excludeSemantics: true,
-                child: Card(
-                  color: AppColors.surfaceLight,
-                  margin: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                    leading: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: isHost
-                          ? AppColors.primary
-                          : isCoHost
-                              ? Colors.teal
-                              : isBot
-                                  ? Colors.grey
-                                  : AppColors.surface,
-                      child: isBot
-                          ? const Icon(Icons.smart_toy, size: 18, color: Colors.white)
-                          : Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                            ),
-                    ),
-                    title: Text(
-                      name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: AppColors.textPrimary,
+        return Semantics(
+          label: semanticLabel,
+          button: true,
+          excludeSemantics: true,
+          child: Card(
+            color: AppColors.surfaceLight,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              leading: CircleAvatar(
+                radius: 18,
+                backgroundColor: isHost
+                    ? AppColors.primary
+                    : isCoHost
+                        ? Colors.teal
+                        : isBot
+                            ? Colors.grey
+                            : AppColors.surface,
+                child: isBot
+                    ? const Icon(Icons.smart_toy, size: 18, color: Colors.white)
+                    : Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: isHost
-                            ? AppColors.primary.withOpacity(0.2)
-                            : isCoHost
-                                ? Colors.teal.withOpacity(0.2)
-                                : isSpec
-                                    ? Colors.purple.withOpacity(0.2)
-                                    : AppColors.surface,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        role,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isHost
-                              ? AppColors.primary
-                              : isCoHost
-                                  ? Colors.tealAccent
-                                  : isSpec
-                                      ? Colors.purpleAccent
-                                      : AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                    onTap: _openPlayersDialog,
+              ),
+              title: Text(
+                name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isHost
+                      ? AppColors.primary.withOpacity(0.2)
+                      : isCoHost
+                          ? Colors.teal.withOpacity(0.2)
+                          : isSpec
+                              ? Colors.purple.withOpacity(0.2)
+                              : AppColors.surface,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  role,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isHost
+                        ? AppColors.primary
+                        : isCoHost
+                            ? Colors.tealAccent
+                            : isSpec
+                                ? Colors.purpleAccent
+                                : AppColors.textSecondary,
                   ),
                 ),
-              );
-            },
+              ),
+              onTap: _openPlayersDialog,
+            ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }

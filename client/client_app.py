@@ -3092,7 +3092,7 @@ class TableVerseApp(QMainWindow):
 
     def _show_room_context_menu(self):
         menu = QMenu(self)
-        menu.setAccessibleName(tr("قائمة خيارات الطاولة"))
+        menu.setAccessibleName(tr("قائمة سياق الطاولة"))
         is_host = str(self.current_room.get("host_id")) == str((self.user or {}).get("id"))
         is_co_host = str(self.current_room.get("co_host_id")) == str((self.user or {}).get("id"))
         status = self.current_room.get("status")

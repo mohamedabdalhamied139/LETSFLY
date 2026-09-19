@@ -180,7 +180,7 @@ class _AppNavigationDrawerState extends State<AppNavigationDrawer> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    tr('مرحبًا بعودتك {name}.', {'name': _displayName}),
+                    _displayName,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
