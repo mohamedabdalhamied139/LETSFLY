@@ -868,16 +868,15 @@ class _TableViewState extends State<TableView> {
           ),
         ),
       ],
-      child: TwoFingerSwipeDetector(
-        onTwoFingerSwipeRight: () => ActivityLogWidget.showAsBottomSheet(context),
-        onTwoFingerSwipeLeft: _onSwipeLeftTopAnnouncement,
-        onTwoFingerSwipeUp: _onSwipeUpTurnAnnouncement,
-        onTwoFingerSwipeDown: _onSwipeDownSpaceAction,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+      onTwoFingerSwipeRight: () => ActivityLogWidget.showAsBottomSheet(context),
+      onTwoFingerSwipeLeft: _onSwipeLeftTopAnnouncement,
+      onTwoFingerSwipeUp: _onSwipeUpTurnAnnouncement,
+      onTwoFingerSwipeDown: _onSwipeDownSpaceAction,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
               // Status Card
               Card(
                 color: AppColors.surface,
@@ -963,7 +962,6 @@ class _TableViewState extends State<TableView> {
             ],
           ),
         ),
-      ),
     );
   }
 
